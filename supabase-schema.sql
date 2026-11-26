@@ -1,5 +1,5 @@
 -- ============================================================================
--- GÓC THỢ QUANH TA — SQL Schema cho 3 bảng trên Supabase
+-- GÓC THỢ QUANH TA — SQL Schema & Migration không làm mất dữ liệu cũ
 -- Chạy đoạn SQL này trong Supabase Dashboard -> SQL Editor
 -- ============================================================================
 
@@ -50,20 +50,45 @@ create table if not exists public.status_reports (
   created_at text not null default ''
 );
 
--- 3. Bảng tài khoản Quản trị & Cộng tác viên
+-- 3. Bảng tài khoản hợp nhất (Super Admin, Cộng tác viên, Người dùng)
+-- Giữ nguyên toàn bộ tài khoản cũ, chỉ bổ sung các cột mới nếu chưa có
 create table if not exists public.admin_accounts (
   id text primary key,
-  name text not null,
-  email text not null unique,
+  name text not null default '',
+  email text unique,
+  username text unique,
+  display_name text not null default '',
   password text not null,
-  role text not null default 'Cộng tác viên',
+  role text not null default 'user',
   active boolean not null default true,
+  revived_count integer not null default 0,
+  badges jsonb not null default '[]'::jsonb,
+  favorite_artisan_ids jsonb not null default '[]'::jsonb,
   created_at text not null default ''
 );
 
--- Thêm tài khoản Super Admin mặc định (nếu chưa tồn tại)
-insert into public.admin_accounts (id, name, email, password, role, active, created_at)
+-- Migration an toàn cho bảng admin_accounts đã tồn tại trước đó (KHÔNG xóa hay ghi đè tài khoản cũ)
+alter table public.admin_accounts add column if not exists username text;
+alter table public.admin_accounts add column if not exists display_name text;
+alter table public.admin_accounts add column if not exists revived_count integer not null default 0;
+alter table public.admin_accounts add column if not exists badges jsonb not null default '[]'::jsonb;
+alter table public.admin_accounts add column if not exists favorite_artisan_ids jsonb not null default '[]'::jsonb;
+
+-- Điền username & display_name mặc định cho các tài khoản cũ nếu đang null (giữ nguyên mật khẩu & vai trò cũ)
+update public.admin_accounts
+set
+  username = coalesce(nullif(username, ''), email),
+  display_name = coalesce(nullif(display_name, ''), name, email)
+where username is null or username = '' or display_name is null or display_name = '';
+
+-- Tạo chỉ mục duy nhất cho username (bỏ qua giá trị rỗng)
+create unique index if not exists idx_admin_accounts_username_unique
+  on public.admin_accounts (lower(username))
+  where username is not null and username <> '';
+
+-- Chỉ thêm tài khoản mặc định nếu chưa tồn tại (KHÔNG ghi đè tài khoản cũ)
+insert into public.admin_accounts (id, name, display_name, email, username, password, role, active, revived_count, badges, favorite_artisan_ids, created_at)
 values
-  ('admin-super-1', 'William Gia Minh (Điều phối dự án)', 'admin@goctho.vn', 'admin123', 'Super Admin', true, '01/11/2026'),
-  ('admin-ctv-1', 'Quang Huy (Cộng tác viên Q.1)', 'ctv@goctho.vn', 'ctv123', 'Cộng tác viên', true, '12/11/2026')
+  ('admin-super-1', 'William Gia Minh (Điều phối dự án)', 'William Gia Minh (Điều phối dự án)', 'admin@goctho.vn', 'admin@goctho.vn', 'admin123', 'super_admin', true, 0, '[]'::jsonb, '[]'::jsonb, '01/11/2026'),
+  ('admin-ctv-1', 'Quang Huy (Cộng tác viên Q.1)', 'Quang Huy (Cộng tác viên Q.1)', 'ctv@goctho.vn', 'ctv@goctho.vn', 'ctv123', 'collaborator', true, 0, '[]'::jsonb, '[]'::jsonb, '12/11/2026')
 on conflict (email) do nothing;

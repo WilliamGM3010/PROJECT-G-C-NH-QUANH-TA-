@@ -21,7 +21,12 @@ import type {
   PriceItem,
   StatusReport,
 } from '../types/artisan';
-import { formatVietnamDate, formatVietnamTimestamp, toIsoDate } from '../utils/storage';
+import {
+  formatVietnamDate,
+  formatVietnamTimestamp,
+  normalizeAccountRole,
+  toIsoDate,
+} from '../utils/storage';
 
 type UnknownRow = Record<string, unknown>;
 
@@ -53,6 +58,10 @@ export function formatSupabaseError(err: unknown): string {
 
   if (lower.includes('row-level security') || lower.includes('permission denied')) {
     return 'Supabase đang chặn quyền truy cập bảng (RLS). Vui lòng bật policy cho phép đọc/ghi trên 3 bảng artisans, status_reports, admin_accounts.';
+  }
+
+  if (lower.includes('column') && lower.includes('does not exist')) {
+    return 'Bảng admin_accounts trên Supabase chưa có đủ cột mới (username, display_name, revived_count, badges, favorite_artisan_ids). Vui lòng chạy đoạn ALTER TABLE trong file supabase-schema.sql.';
   }
 
   return rawMessage
@@ -254,6 +263,22 @@ export function rowToArtisan(row: UnknownRow): Artisan {
     kudos: parseKudos(row.kudos),
     praises,
     revivedCount: Number(row.revived_count ?? row.revivedCount ?? 0) || 0,
+    submittedBy:
+      typeof row.submitted_by === 'string' && row.submitted_by.trim()
+        ? row.submitted_by.trim()
+        : typeof row.submittedBy === 'string' && row.submittedBy.trim()
+          ? row.submittedBy.trim()
+          : undefined,
+    submittedAt:
+      typeof row.submitted_at === 'string' && row.submitted_at.trim()
+        ? row.submitted_at.trim()
+        : typeof row.submittedAt === 'string' && row.submittedAt.trim()
+          ? row.submittedAt.trim()
+          : undefined,
+    approvalStatus:
+      String(row.approval_status ?? 'approved').toLowerCase() === 'pending'
+        ? 'pending'
+        : 'approved',
     pic: typeof row.pic === 'string' && row.pic.trim() ? row.pic : undefined,
     internalNotes:
       typeof row.internal_notes === 'string' && row.internal_notes.trim()
@@ -334,6 +359,8 @@ export function artisanToRow(
     revived_count: artisan.revivedCount ?? 0,
     pic: artisan.pic ?? null,
     internal_notes: artisan.internalNotes ?? null,
+    ...(artisan.submittedBy ? { submitted_by: artisan.submittedBy } : {}),
+    ...(artisan.submittedAt ? { submitted_at: artisan.submittedAt } : {}),
   };
 }
 
@@ -397,16 +424,59 @@ export function rowToStatusReport(row: UnknownRow): StatusReport {
 }
 
 export function rowToAdminAccount(row: UnknownRow): AdminAccount {
-  const roleStr = String(row.role ?? '');
-  const role: AdminRole = roleStr === 'Super Admin' ? 'Super Admin' : 'Cộng tác viên';
+  const role: AdminRole = normalizeAccountRole(row.role);
+  const rawEmail = String(row.email ?? '').trim();
+  const rawUsername = String(row.username ?? '').trim() || rawEmail;
+  const rawDisplayName =
+    String(row.display_name ?? row.displayName ?? '').trim() ||
+    String(row.name ?? '').trim() ||
+    rawUsername ||
+    'Thành viên';
+
+  const badges = parseArrayField<string>(row.badges, [])
+    .map((b) => String(b).trim())
+    .filter(Boolean);
+  const favoriteArtisanIds = parseArrayField<string>(
+    row.favorite_artisan_ids ?? row.favoriteArtisanIds,
+    []
+  )
+    .map((id) => String(id).trim())
+    .filter(Boolean);
+
   return {
     id: String(row.id),
-    name: String(row.name ?? row.email ?? 'Quản trị viên'),
-    email: String(row.email ?? ''),
+    displayName: rawDisplayName,
+    name: String(row.name ?? rawDisplayName).trim() || rawDisplayName,
+    username: rawUsername,
+    email: rawEmail || rawUsername,
     password: String(row.password ?? ''),
     role,
     active: row.active === undefined ? true : Boolean(row.active),
+    revivedCount: Number(row.revived_count ?? row.revivedCount ?? 0) || 0,
+    badges,
+    favoriteArtisanIds,
     createdAt: String(row.created_at ?? row.createdAt ?? formatVietnamDate()),
+  };
+}
+
+function accountToDbRow(account: AdminAccount): Record<string, unknown> {
+  const normalizedUsername = (account.username || account.email)
+    .trim()
+    .toLowerCase();
+  const displayName = (account.displayName || account.name).trim();
+  return {
+    id: account.id,
+    name: displayName,
+    display_name: displayName,
+    username: normalizedUsername,
+    email: (account.email || normalizedUsername).trim().toLowerCase(),
+    password: account.password,
+    role: account.role,
+    active: account.active,
+    revived_count: account.revivedCount ?? 0,
+    badges: account.badges ?? [],
+    favorite_artisan_ids: account.favoriteArtisanIds ?? [],
+    created_at: account.createdAt,
   };
 }
 
@@ -561,6 +631,60 @@ export async function deleteArtisanDb(artisanId: string): Promise<void> {
   if (error) throw error;
 }
 
+export interface UserContributionItem {
+  id: string;
+  name: string;
+  district: District;
+  categories: CraftCategory[];
+  addressLandmark: string;
+  submittedAt: string;
+  approvalStatus: 'pending' | 'approved';
+}
+
+/**
+ * Lịch sử đóng góp: tải các cô chú thợ do tài khoản hiện tại gợi ý (cả 'pending' và 'approved').
+ */
+export async function fetchUserSubmittedArtisansDb(
+  account: Pick<AdminAccount, 'id' | 'username' | 'email'>
+): Promise<UserContributionItem[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const identifiers = Array.from(
+    new Set(
+      [account.username, account.id, account.email]
+        .map((v) => String(v ?? '').trim())
+        .filter(Boolean)
+    )
+  );
+  if (identifiers.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('artisans')
+    .select('*')
+    .in('submitted_by', identifiers)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((raw) => {
+    const row = raw as UnknownRow;
+    const isPending =
+      String(row.approval_status ?? 'approved').toLowerCase() === 'pending';
+    return {
+      id: String(row.id),
+      name: String(row.name ?? 'Góc thợ'),
+      district: normalizeDistrict(row.district),
+      categories: normalizeCategories(row.categories),
+      addressLandmark: String(row.address_landmark ?? ''),
+      submittedAt: String(
+        row.submitted_at ?? row.verified_date ?? formatVietnamDate()
+      ),
+      approvalStatus: isPending ? 'pending' : 'approved',
+    };
+  });
+}
+
 // ============================================================================
 // BẢNG status_reports
 // ============================================================================
@@ -620,7 +744,7 @@ export async function resolveStatusReportDb(reportId: string): Promise<void> {
 }
 
 // ============================================================================
-// BẢNG admin_accounts
+// BẢNG admin_accounts (Tài khoản hợp nhất: super_admin, collaborator, user)
 // ============================================================================
 
 export async function fetchAdminAccountsDb(): Promise<AdminAccount[]> {
@@ -637,11 +761,31 @@ export async function fetchAdminAccountsDb(): Promise<AdminAccount[]> {
   return (data ?? []).map((r) => rowToAdminAccount(r as UnknownRow));
 }
 
+export async function fetchAccountByIdDb(
+  accountId: string
+): Promise<AdminAccount | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const { data, error } = await supabase
+    .from('admin_accounts')
+    .select('*')
+    .eq('id', accountId)
+    .limit(1);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  const acc = rowToAdminAccount(data[0] as UnknownRow);
+  return acc.active ? acc : null;
+}
+
 /**
- * Kiểm tra đăng nhập trực tiếp trên bảng admin_accounts của Supabase
- * (so khớp email & password bằng truy vấn tham số hóa).
+ * Kiểm tra đăng nhập trên bảng admin_accounts:
+ * So khớp theo username HOẶC email (tương thích hoàn toàn với tài khoản cũ) và password.
+ * Sử dụng các truy vấn .eq() tham số hóa độc lập (an toàn, không dùng chuỗi filter .or).
  */
-export async function authenticateAdminDb(
+export async function authenticateUserDb(
   identifier: string,
   password: string
 ): Promise<AdminAccount | null> {
@@ -650,50 +794,257 @@ export async function authenticateAdminDb(
   }
 
   const cleaned = identifier.trim().toLowerCase();
+  if (!cleaned || !password) return null;
 
-  // Truy vấn so khớp chính xác email & password trên Supabase
-  const { data, error } = await supabase
+  // 1. Thử khớp theo cột username (nếu cột username đã có trên Supabase)
+  const byUsername = await supabase
+    .from('admin_accounts')
+    .select('*')
+    .eq('username', cleaned)
+    .eq('password', password)
+    .limit(1);
+
+  if (!byUsername.error && byUsername.data && byUsername.data.length > 0) {
+    const acc = rowToAdminAccount(byUsername.data[0] as UnknownRow);
+    return acc.active ? acc : null;
+  }
+
+  // Nếu lỗi không phải do thiếu cột username thì ném lỗi mạng/RLS ngay
+  if (
+    byUsername.error &&
+    !String(byUsername.error.message ?? '').toLowerCase().includes('username')
+  ) {
+    throw byUsername.error;
+  }
+
+  // 2. Thử khớp theo cột email (tương thích mọi tài khoản Super Admin & CTV cũ)
+  const byEmail = await supabase
     .from('admin_accounts')
     .select('*')
     .eq('email', cleaned)
     .eq('password', password)
     .limit(1);
 
-  if (error) throw error;
-
-  if (data && data.length > 0) {
-    const acc = rowToAdminAccount(data[0] as UnknownRow);
+  if (byEmail.error) throw byEmail.error;
+  if (byEmail.data && byEmail.data.length > 0) {
+    const acc = rowToAdminAccount(byEmail.data[0] as UnknownRow);
     return acc.active ? acc : null;
   }
 
-  // Nếu bảng admin_accounts trên Supabase hoàn toàn trống (lần đầu mới khởi tạo),
-  // hỗ trợ tài khoản khởi tạo mặc định và tự đồng bộ lên bảng admin_accounts.
+  // 3. Trường hợp bảng admin_accounts hoàn toàn trống (lần đầu khởi tạo), hỗ trợ tài khoản khởi tạo
   const { count, error: countError } = await supabase
     .from('admin_accounts')
     .select('*', { count: 'exact', head: true });
 
   if (!countError && (count ?? 0) === 0) {
     const bootstrapMatch = INITIAL_ADMIN_ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === cleaned && a.password === password
+      (a) =>
+        (a.username.toLowerCase() === cleaned ||
+          a.email.toLowerCase() === cleaned) &&
+        a.password === password
     );
     if (bootstrapMatch) {
-      await supabase.from('admin_accounts').upsert(
-        INITIAL_ADMIN_ACCOUNTS.map((a) => ({
-          id: a.id,
-          name: a.name,
-          email: a.email,
-          password: a.password,
-          role: a.role,
-          active: a.active,
-          created_at: a.createdAt,
-        })),
-        { onConflict: 'email' }
-      );
+      await supabase
+        .from('admin_accounts')
+        .upsert(INITIAL_ADMIN_ACCOUNTS.map(accountToDbRow), {
+          onConflict: 'email',
+        });
       return bootstrapMatch;
     }
   }
 
   return null;
+}
+
+/** Alias giữ tương thích nếu có nơi gọi tên cũ */
+export const authenticateAdminDb = authenticateUserDb;
+
+/**
+ * Kiểm tra tên đăng nhập đã tồn tại trong cột username hoặc email chưa.
+ */
+export async function checkUsernameTakenDb(
+  username: string,
+  excludeAccountId?: string
+): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const cleaned = username.trim().toLowerCase();
+
+  const byUsername = await supabase
+    .from('admin_accounts')
+    .select('id')
+    .eq('username', cleaned)
+    .limit(2);
+
+  if (!byUsername.error && byUsername.data) {
+    const conflict = byUsername.data.some(
+      (row) => String((row as UnknownRow).id) !== excludeAccountId
+    );
+    if (conflict) return true;
+  }
+
+  const byEmail = await supabase
+    .from('admin_accounts')
+    .select('id')
+    .eq('email', cleaned)
+    .limit(2);
+
+  if (byEmail.error) throw byEmail.error;
+  return (byEmail.data ?? []).some(
+    (row) => String((row as UnknownRow).id) !== excludeAccountId
+  );
+}
+
+/**
+ * Đăng ký tài khoản mới từ Cổng Đăng nhập (mặc định role = 'user').
+ */
+export async function registerUserDb(payload: {
+  username: string;
+  displayName: string;
+  password: string;
+}): Promise<AdminAccount> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const cleanedUsername = payload.username.trim().toLowerCase();
+  const cleanedDisplayName = payload.displayName.trim();
+
+  const taken = await checkUsernameTakenDb(cleanedUsername);
+  if (taken) {
+    throw new Error(
+      'Tên đăng nhập này đã được sử dụng. Bạn vui lòng chọn tên khác nhé.'
+    );
+  }
+
+  const newAccount: AdminAccount = {
+    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    displayName: cleanedDisplayName,
+    name: cleanedDisplayName,
+    username: cleanedUsername,
+    email: cleanedUsername,
+    password: payload.password,
+    role: 'user',
+    active: true,
+    revivedCount: 0,
+    badges: [],
+    favoriteArtisanIds: [],
+    createdAt: formatVietnamDate(),
+  };
+
+  const row = accountToDbRow(newAccount);
+  const { data, error } = await supabase
+    .from('admin_accounts')
+    .insert(row)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return rowToAdminAccount((data ?? row) as UnknownRow);
+}
+
+/**
+ * Đồng bộ hồ sơ cá nhân (revived_count, badges, favorite_artisan_ids, display_name) lên bảng admin_accounts.
+ */
+export async function updateAccountProfileDb(
+  accountId: string,
+  patch: {
+    displayName?: string;
+    revivedCount?: number;
+    badges?: string[];
+    favoriteArtisanIds?: string[];
+  }
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.displayName !== undefined) {
+    dbPatch.display_name = patch.displayName;
+    dbPatch.name = patch.displayName;
+  }
+  if (patch.revivedCount !== undefined) {
+    dbPatch.revived_count = patch.revivedCount;
+  }
+  if (patch.badges !== undefined) {
+    dbPatch.badges = patch.badges;
+  }
+  if (patch.favoriteArtisanIds !== undefined) {
+    dbPatch.favorite_artisan_ids = patch.favoriteArtisanIds;
+  }
+
+  if (Object.keys(dbPatch).length === 0) return;
+
+  const { error } = await supabase
+    .from('admin_accounts')
+    .update(dbPatch)
+    .eq('id', accountId);
+
+  if (error) throw error;
+}
+
+/**
+ * Super Admin chỉnh sửa thông tin & vai trò của tài khoản bất kỳ.
+ */
+export async function updateAccountByAdminDb(
+  accountId: string,
+  payload: {
+    displayName: string;
+    username: string;
+    role: AdminRole;
+  }
+): Promise<AdminAccount> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const cleanedUsername = payload.username.trim().toLowerCase();
+  const cleanedDisplayName = payload.displayName.trim();
+
+  const taken = await checkUsernameTakenDb(cleanedUsername, accountId);
+  if (taken) {
+    throw new Error('Tên đăng nhập này đã thuộc về một tài khoản khác.');
+  }
+
+  const dbPatch = {
+    name: cleanedDisplayName,
+    display_name: cleanedDisplayName,
+    username: cleanedUsername,
+    email: cleanedUsername,
+    role: payload.role,
+  };
+
+  const { data, error } = await supabase
+    .from('admin_accounts')
+    .update(dbPatch)
+    .eq('id', accountId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return rowToAdminAccount((data ?? { id: accountId, ...dbPatch }) as UnknownRow);
+}
+
+/**
+ * Super Admin đặt lại / đổi mật khẩu cho bất kỳ tài khoản nào.
+ */
+export async function resetAccountPasswordDb(
+  accountId: string,
+  newPassword: string
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const { error } = await supabase
+    .from('admin_accounts')
+    .update({ password: newPassword })
+    .eq('id', accountId);
+
+  if (error) throw error;
 }
 
 export async function insertAdminAccountDb(
@@ -703,16 +1054,15 @@ export async function insertAdminAccountDb(
     throw new Error('Supabase chưa được cấu hình.');
   }
 
-  const row = {
-    id: account.id,
-    name: account.name,
-    email: account.email.trim().toLowerCase(),
-    password: account.password,
-    role: account.role,
-    active: account.active,
-    created_at: account.createdAt,
-  };
+  const cleanedUsername = (account.username || account.email)
+    .trim()
+    .toLowerCase();
+  const taken = await checkUsernameTakenDb(cleanedUsername);
+  if (taken) {
+    throw new Error('Tên đăng nhập / Email này đã tồn tại trên hệ thống.');
+  }
 
+  const row = accountToDbRow(account);
   const { data, error } = await supabase
     .from('admin_accounts')
     .insert(row)
@@ -730,16 +1080,7 @@ export async function bulkInsertAdminAccountsDb(
     throw new Error('Supabase chưa được cấu hình.');
   }
 
-  const rows = accounts.map((a) => ({
-    id: a.id,
-    name: a.name,
-    email: a.email.trim().toLowerCase(),
-    password: a.password,
-    role: a.role,
-    active: a.active,
-    created_at: a.createdAt,
-  }));
-
+  const rows = accounts.map(accountToDbRow);
   const { data, error } = await supabase
     .from('admin_accounts')
     .upsert(rows, { onConflict: 'email' })

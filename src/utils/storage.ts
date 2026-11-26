@@ -18,12 +18,51 @@ export const STORAGE_KEYS = {
   REPORTS: 'gtqt_v2_status_reports',
   ADMINS: 'gtqt_v2_admin_accounts',
   CURRENT_ADMIN: 'gtqt_v2_current_admin_id',
+  AUTH_SESSION: 'gtqt_v3_auth_session',
   REVIVED_COUNT: 'gtqt_v2_revived_count',
   KUDOS_REACTED: 'gtqt_v2_kudos_reacted',
   AUDIT_LOGS: 'gtqt_v2_audit_logs',
   THANK_YOU_NOTES: 'gtqt_v2_thank_you_notes',
   USER_CONTRIBUTION: 'gtqt_v2_user_contribution',
 } as const;
+
+export function normalizeAccountRole(raw: unknown): AdminRole {
+  const str = String(raw ?? '').trim().toLowerCase();
+  if (str === 'super_admin' || str === 'super admin' || str.includes('super')) {
+    return 'super_admin';
+  }
+  if (
+    str === 'collaborator' ||
+    str === 'cộng tác viên' ||
+    str === 'cong tac vien' ||
+    str === 'ctv'
+  ) {
+    return 'collaborator';
+  }
+  return 'user';
+}
+
+export function getRoleDisplayLabel(role: AdminRole): string {
+  switch (role) {
+    case 'super_admin':
+      return 'Super Admin';
+    case 'collaborator':
+      return 'Cộng tác viên';
+    case 'user':
+      return 'Người dùng';
+  }
+}
+
+export function canAccessAdminDashboard(role: AdminRole): boolean {
+  return role === 'super_admin' || role === 'collaborator';
+}
+
+export function isValidUsername(username: string): boolean {
+  const trimmed = username.trim();
+  if (trimmed.length < 3 || trimmed.length > 64) return false;
+  // Không chứa khoảng trắng; cho phép chữ, số, dấu chấm, gạch dưới, gạch ngang, @ (để tương thích email cũ)
+  return !/\s/.test(trimmed) && /^[a-zA-Z0-9._@-]+$/.test(trimmed);
+}
 
 export function loadFromStorage<T>(key: string, fallback: T): T {
   try {
@@ -491,28 +530,29 @@ export function parseBackupJson(jsonText: string): AppBackupPayload {
 }
 
 /**
- * Tải file CSV mẫu để nhập hàng loạt tài khoản Admin / Cộng tác viên.
+ * Tải file CSV mẫu để nhập hàng loạt tài khoản (Super Admin, Cộng tác viên, Người dùng).
  */
 export function downloadAdminAccountsCsvTemplate(): void {
-  const headers = ['Họ tên', 'Email', 'Mật khẩu', 'Vai trò'];
+  const headers = ['Tên hiển thị', 'Tên đăng nhập / Email', 'Mật khẩu', 'Vai trò'];
   const sampleRows = [
-    ['Lan Phương (CTV Bình Thạnh)', 'lanphuong@goctho.vn', 'ctv2026', 'Cộng tác viên'],
-    ['Đức Anh (CTV Quận 3)', 'ducanh@goctho.vn', 'ctv2026', 'Cộng tác viên'],
-    ['Hoàng Nam (Điều phối)', 'hoangnam@goctho.vn', 'admin2026', 'Super Admin'],
+    ['Lan Phương (CTV Bình Thạnh)', 'lanphuong@goctho.vn', 'ctv2026', 'collaborator'],
+    ['Đức Anh (CTV Quận 3)', 'ducanh@goctho.vn', 'ctv2026', 'collaborator'],
+    ['Hoàng Nam (Điều phối)', 'hoangnam@goctho.vn', 'admin2026', 'super_admin'],
+    ['Thanh Trúc (Thành viên)', 'thanhtruc', 'user2026', 'user'],
   ];
   const csvContent = `\uFEFF${headers.map(escapeCsvField).join(',')}\n${sampleRows
     .map((r) => r.map(escapeCsvField).join(','))
     .join('\n')}`;
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  triggerFileDownload(blob, 'mau-nhap-tai-khoan-admin.csv');
+  triggerFileDownload(blob, 'mau-nhap-tai-khoan-goc-tho.csv');
 }
 
 /**
- * Đọc file CSV danh sách tài khoản quản trị mới, tự động bỏ qua dòng thiếu thông tin hoặc trùng email.
+ * Đọc file CSV danh sách tài khoản mới, tự động bỏ qua dòng thiếu thông tin hoặc trùng username/email.
  */
 export function parseAdminAccountsFromCsv(
   csvText: string,
-  existingEmails: string[]
+  existingIdentifiers: string[]
 ): {
   accounts: AdminAccount[];
   skipped: number;
@@ -527,12 +567,12 @@ export function parseAdminAccountsFromCsv(
   const findCol = (keywords: string[]): number =>
     headerNorm.findIndex((h) => keywords.some((kw) => h.includes(kw)));
 
-  const idxName = findCol(['họ tên', 'tên', 'name']);
-  const idxEmail = findCol(['email', 'mail']);
+  const idxName = findCol(['tên hiển thị', 'họ tên', 'display_name', 'name']);
+  const idxUsername = findCol(['tên đăng nhập', 'username', 'email', 'mail']);
   const idxPassword = findCol(['mật khẩu', 'password', 'pass']);
   const idxRole = findCol(['vai trò', 'quyền', 'role']);
 
-  const seenEmails = new Set(existingEmails.map((e) => e.toLowerCase().trim()));
+  const seen = new Set(existingIdentifiers.map((e) => e.toLowerCase().trim()));
   const todayVn = formatVietnamDate();
   const accounts: AdminAccount[] = [];
   let skipped = 0;
@@ -545,33 +585,40 @@ export function parseAdminAccountsFromCsv(
       return idx >= 0 && idx < r.length ? r[idx].trim() : '';
     };
 
-    const name = getCell(idxName, 0);
-    const email = getCell(idxEmail, 1).toLowerCase();
+    const displayName = getCell(idxName, 0);
+    const username = getCell(idxUsername, 1).toLowerCase();
     const password = getCell(idxPassword, 2);
-    const rawRole = getCell(idxRole, 3).toLowerCase();
+    const rawRole = getCell(idxRole, 3);
 
-    if (name.length < 2 || !email.includes('@') || password.length < 4) {
+    if (
+      displayName.length < 2 ||
+      !isValidUsername(username) ||
+      password.length < 4
+    ) {
       skipped += 1;
       continue;
     }
 
-    if (seenEmails.has(email)) {
+    if (seen.has(username)) {
       duplicates += 1;
       continue;
     }
 
-    seenEmails.add(email);
-    const role: AdminRole = rawRole.includes('super')
-      ? 'Super Admin'
-      : 'Cộng tác viên';
+    seen.add(username);
+    const role = normalizeAccountRole(rawRole);
 
     accounts.push({
-      id: `admin-csv-${Date.now()}-${i}`,
-      name,
-      email,
+      id: `acc-csv-${Date.now()}-${i}`,
+      displayName,
+      name: displayName,
+      username,
+      email: username,
       password,
       role,
       active: true,
+      revivedCount: 0,
+      badges: [],
+      favoriteArtisanIds: [],
       createdAt: todayVn,
     });
   }

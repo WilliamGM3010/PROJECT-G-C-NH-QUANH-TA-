@@ -68,6 +68,10 @@ export interface Artisan {
   kudos: Record<KudosKey, number>;
   praises: PraiseEntry[];
   revivedCount?: number;
+  /** Username / ID người dùng đã gợi ý góc thợ này */
+  submittedBy?: string;
+  submittedAt?: string;
+  approvalStatus?: 'approved' | 'pending';
   /** Chỉ hiển thị trong Khu Quản Trị — tuyệt đối không lộ ra trang công khai */
   pic?: string;
   /** Chỉ hiển thị trong Khu Quản Trị — tuyệt đối không lộ ra trang công khai */
@@ -102,16 +106,34 @@ export interface StatusReport {
   resolved: boolean;
 }
 
-export type AdminRole = 'Super Admin' | 'Cộng tác viên';
+export type AdminRole = 'super_admin' | 'collaborator' | 'user';
 
 export interface AdminAccount {
   id: string;
+  /** Tên hiển thị công khai (đồng bộ cột display_name & name) */
+  displayName: string;
+  /** Giữ tương thích với cột name cũ */
   name: string;
+  /** Tên đăng nhập không khoảng trắng (hoặc email với tài khoản cũ) */
+  username: string;
+  /** Email (tương thích ngược với tài khoản cũ) */
   email: string;
   password: string;
   role: AdminRole;
   active: boolean;
+  revivedCount: number;
+  badges: string[];
+  favoriteArtisanIds: string[];
   createdAt: string;
+}
+
+export type UserAccount = AdminAccount;
+
+export interface StoredAuthSession {
+  id: string;
+  username: string;
+  displayName: string;
+  role: AdminRole;
 }
 
 export type AuditCategory =
