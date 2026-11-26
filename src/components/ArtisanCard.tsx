@@ -1,4 +1,11 @@
-import { BadgeCheck, Clock, MapPin, Navigation, Sparkles } from 'lucide-react';
+import {
+  BadgeCheck,
+  Clock,
+  Heart,
+  MapPin,
+  Navigation,
+  Sparkles,
+} from 'lucide-react';
 import type { Artisan } from '../types/artisan';
 import { formatDistanceWithPrefix } from '../utils/geo';
 import { ArtisanIllustration } from './ArtisanIllustration';
@@ -7,9 +14,11 @@ interface ArtisanCardProps {
   artisan: Artisan;
   isSelected: boolean;
   isHovered: boolean;
+  isFavorite?: boolean;
   distanceKm?: number | null;
   onSelect: (artisan: Artisan) => void;
   onHoverChange: (artisanId: string | null) => void;
+  onToggleFavorite?: (artisanId: string) => void;
 }
 
 export function getStatusDisplay(status: Artisan['status']) {
@@ -39,9 +48,11 @@ export function ArtisanCard({
   artisan,
   isSelected,
   isHovered,
+  isFavorite = false,
   distanceKm,
   onSelect,
   onHoverChange,
+  onToggleFavorite,
 }: ArtisanCardProps) {
   const statusInfo = getStatusDisplay(artisan.status);
   const totalKudos = Object.values(artisan.kudos).reduce(
@@ -53,7 +64,7 @@ export function ArtisanCard({
     <article
       onMouseEnter={() => onHoverChange(artisan.id)}
       onMouseLeave={() => onHoverChange(null)}
-      className={`group rounded-2xl bg-white transition-all duration-150 overflow-hidden ${
+      className={`group relative rounded-2xl bg-white transition-all duration-150 overflow-hidden ${
         isSelected
           ? 'ring-2 ring-[#D96B38] shadow-md'
           : isHovered
@@ -61,6 +72,30 @@ export function ArtisanCard({
             : 'border border-[#EBE5DC] shadow-sm hover:shadow-md'
       }`}
     >
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(artisan.id);
+          }}
+          aria-pressed={isFavorite}
+          aria-label={
+            isFavorite
+              ? `Bỏ lưu ${artisan.name}`
+              : `Lưu góc thợ ${artisan.name}`
+          }
+          title={isFavorite ? 'Đã lưu góc thợ' : 'Lưu góc thợ yêu thích'}
+          className={`absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+            isFavorite
+              ? 'bg-[#D96B38]/12 text-[#D96B38]'
+              : 'bg-[#FAF8F5] text-[#7B8794] hover:text-[#D96B38] hover:bg-[#D96B38]/10'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => onSelect(artisan)}
@@ -80,7 +115,7 @@ export function ArtisanCard({
 
         {/* Nội dung chính */}
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2 pr-8">
             <h3 className="text-[15px] font-semibold text-[#1F2933] leading-snug group-hover:text-[#D96B38] transition-colors line-clamp-2">
               {artisan.name}
             </h3>

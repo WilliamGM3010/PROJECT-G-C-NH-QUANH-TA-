@@ -5,6 +5,7 @@ import type { Artisan, ThankYouNote } from '../types/artisan';
 interface WallOfThanksSectionProps {
   artisan: Artisan;
   approvedNotes: ThankYouNote[];
+  currentUserDisplayName: string;
   onSubmitThankYou: (
     artisan: Artisan,
     payload: { author: string; message: string }
@@ -16,10 +17,11 @@ const MAX_MESSAGE_LENGTH = 200;
 export function WallOfThanksSection({
   artisan,
   approvedNotes,
+  currentUserDisplayName,
   onSubmitThankYou,
 }: WallOfThanksSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
-  const [author, setAuthor] = useState('');
+  const [author, setAuthor] = useState(currentUserDisplayName);
   const [message, setMessage] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [justSubmitted, setJustSubmitted] = useState(false);
@@ -33,11 +35,11 @@ export function WallOfThanksSection({
     }
 
     onSubmitThankYou(artisan, {
-      author: author.trim() || 'Ẩn danh',
+      author: author.trim() || currentUserDisplayName || 'Thành viên Góc Thợ',
       message: cleaned.slice(0, MAX_MESSAGE_LENGTH),
     });
 
-    setAuthor('');
+    setAuthor(currentUserDisplayName);
     setMessage('');
     setErrorMsg('');
     setFormOpen(false);

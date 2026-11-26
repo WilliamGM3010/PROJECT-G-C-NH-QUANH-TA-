@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { CRAFT_CATEGORIES, DISTRICT_COORDS, DISTRICTS } from '../data/artisans';
 import type {
+  AdminAccount,
   CraftCategory,
   District,
   ParkingInfo,
@@ -22,6 +23,7 @@ import type {
 import { formatVietnamTimestamp } from '../utils/storage';
 
 interface SuggestArtisanViewProps {
+  currentUser: AdminAccount;
   onSubmitPendingSuggestion: (
     suggestion: PendingSuggestion
   ) => Promise<{ ok: boolean; error?: string }> | { ok: boolean; error?: string } | void;
@@ -29,6 +31,7 @@ interface SuggestArtisanViewProps {
 }
 
 export function SuggestArtisanView({
+  currentUser,
   onSubmitPendingSuggestion,
   onBackToExplore,
 }: SuggestArtisanViewProps) {
@@ -45,7 +48,6 @@ export function SuggestArtisanView({
     useState<PaymentMethod>('Chỉ tiền mặt');
   const [parkingInfo, setParkingInfo] = useState<ParkingInfo>('Dễ đậu xe');
   const [story, setStory] = useState('');
-  const [submittedBy, setSubmittedBy] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(
     undefined
   );
@@ -127,7 +129,7 @@ export function SuggestArtisanView({
       paymentMethod,
       parkingInfo,
       customImageUrl: photoPreview,
-      submittedBy: submittedBy.trim() || 'Thành viên cộng đồng',
+      submittedBy: currentUser.username || currentUser.id,
       submittedAt: formatVietnamTimestamp(),
     };
 
@@ -148,7 +150,6 @@ export function SuggestArtisanView({
       setLandmark('');
       setProblemsText('');
       setStory('');
-      setSubmittedBy('');
       setPhotoPreview(undefined);
       setErrorMsg('');
     } finally {
@@ -432,21 +433,11 @@ export function SuggestArtisanView({
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="submitted-by"
-                    className="block text-sm font-semibold text-[#1F2933] mb-1.5"
-                  >
-                    Tên người giới thiệu (không bắt buộc)
-                  </label>
-                  <input
-                    id="submitted-by"
-                    type="text"
-                    value={submittedBy}
-                    onChange={(e) => setSubmittedBy(e.target.value)}
-                    placeholder="VD: Minh Anh (SV Bình Thạnh)"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:bg-white focus:outline-none focus:border-[#D96B38]"
-                  />
+                <div className="rounded-xl bg-[#FAF8F5] border border-[#E5DFD5] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
+                  <span className="text-[#52606D]">Người đóng góp (lưu lịch sử):</span>
+                  <span className="font-semibold text-[#3A6B5C] truncate">
+                    {currentUser.displayName} (@{currentUser.username})
+                  </span>
                 </div>
 
                 {/* Ô tải ảnh kèm nhắc nhở xin phép */}

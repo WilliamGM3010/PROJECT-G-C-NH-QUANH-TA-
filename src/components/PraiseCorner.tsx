@@ -6,6 +6,7 @@ import type { Artisan, KudosKey } from '../types/artisan';
 interface PraiseCornerProps {
   artisan: Artisan;
   userKudosKeys: KudosKey[];
+  currentUserDisplayName: string;
   onToggleKudos: (artisanId: string, kudosKey: KudosKey) => void;
   onAddPraise: (
     artisanId: string,
@@ -32,11 +33,11 @@ const KUDOS_MAP: Record<KudosKey, { emoji: string; label: string }> = {
 export function PraiseCorner({
   artisan,
   userKudosKeys,
+  currentUserDisplayName,
   onToggleKudos,
   onAddPraise,
 }: PraiseCornerProps) {
   const [selectedTag, setSelectedTag] = useState<KudosKey>('sturdy');
-  const [authorName, setAuthorName] = useState('');
   const [comment, setComment] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -49,13 +50,12 @@ export function PraiseCorner({
     }
 
     onAddPraise(artisan.id, {
-      author: authorName.trim() || 'Bạn trẻ ghé sửa',
+      author: currentUserDisplayName.trim() || 'Thành viên Góc Thợ',
       kudosKey: selectedTag,
       comment: cleaned,
     });
 
     setComment('');
-    setAuthorName('');
     setErrorMsg('');
   };
 
@@ -152,14 +152,12 @@ export function PraiseCorner({
           })}
         </div>
 
-        <input
-          type="text"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          maxLength={40}
-          placeholder="Tên hoặc biệt danh của bạn (không bắt buộc)"
-          className="w-full px-3 py-2 rounded-xl bg-white border border-[#E5DFD5] text-xs text-[#1F2933] placeholder:text-[#7B8794] focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
-        />
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[#52606D] bg-white border border-[#EBE5DC] rounded-xl px-3 py-2">
+          <span>Đang gửi lời khen với tên:</span>
+          <strong className="text-[#3A6B5C] truncate">
+            {currentUserDisplayName}
+          </strong>
+        </div>
 
         <div>
           <textarea

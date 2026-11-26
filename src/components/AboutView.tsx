@@ -1,35 +1,52 @@
 import {
+  Bookmark,
   Compass,
   EyeOff,
   Handshake,
   Heart,
+  History,
   Leaf,
-  Lock,
+  LogOut,
   PlusCircle,
   ShieldCheck,
   Wrench,
 } from 'lucide-react';
 import type { AdminAccount, AppTab } from '../types/artisan';
+import {
+  canAccessAdminDashboard,
+  getRoleDisplayLabel,
+} from '../utils/storage';
 
 interface AboutViewProps {
   totalArtisans: number;
   revivedCount: number;
-  currentAdmin: AdminAccount | null;
+  currentUser: AdminAccount;
+  favoritesCount: number;
+  contributionsCount: number;
   badgeTitle?: string | null;
   onNavigate: (tab: AppTab) => void;
   onOpenBadge: () => void;
+  onOpenSaved: () => void;
+  onOpenContributions: () => void;
   onOpenAdmin: () => void;
+  onLogout: () => void;
 }
 
 export function AboutView({
   totalArtisans,
   revivedCount,
-  currentAdmin,
+  currentUser,
+  favoritesCount,
+  contributionsCount,
   badgeTitle,
   onNavigate,
   onOpenBadge,
+  onOpenSaved,
+  onOpenContributions,
   onOpenAdmin,
+  onLogout,
 }: AboutViewProps) {
+  const canManage = canAccessAdminDashboard(currentUser.role);
   const values = [
     {
       title: 'Kết nối sinh kế bền vững',
@@ -191,26 +208,57 @@ export function AboutView({
           </div>
         </section>
 
-        {/* Nút nhỏ Quản trị dành cho đội ngũ điều phối (đặc biệt tiện trên Mobile) */}
-        <footer className="pt-2 border-t border-[#E8E2D9] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#52606D]">
-          <p>Góc Thợ Quanh Ta · Dự án cộng đồng tại TP.HCM</p>
-          <button
-            type="button"
-            onClick={onOpenAdmin}
-            className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#E5DFD5] text-[#52606D] hover:text-[#1F2933] hover:border-[#D96B38]/50 font-semibold transition-colors"
-          >
-            {currentAdmin ? (
-              <>
-                <ShieldCheck className="w-4 h-4 text-[#3A6B5C]" />
-                <span>Vào Khu Quản Trị ({currentAdmin.role})</span>
-              </>
-            ) : (
-              <>
-                <Lock className="w-3.5 h-3.5" />
-                <span>Quản trị</span>
-              </>
+        {/* Tài khoản đang đăng nhập & thao tác nhanh (đặc biệt tiện trên Mobile) */}
+        <footer className="pt-4 border-t border-[#E8E2D9] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#52606D]">
+          <div className="space-y-0.5">
+            <p className="font-bold text-[#1F2933]">
+              {currentUser.displayName}{' '}
+              <span className="font-semibold text-[#3A6B5C]">
+                · {getRoleDisplayLabel(currentUser.role)}
+              </span>
+            </p>
+            <p>Góc Thợ Quanh Ta · Dự án cộng đồng tại TP.HCM</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenSaved}
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E5DFD5] text-[#1F2933] hover:border-[#D96B38] font-semibold transition-colors"
+            >
+              <Bookmark className="w-3.5 h-3.5 text-[#D96B38]" />
+              <span>Đã lưu ({favoritesCount})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenContributions}
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E5DFD5] text-[#1F2933] hover:border-[#3A6B5C] font-semibold transition-colors"
+            >
+              <History className="w-3.5 h-3.5 text-[#3A6B5C]" />
+              <span>Đóng góp ({contributionsCount})</span>
+            </button>
+
+            {canManage && (
+              <button
+                type="button"
+                onClick={onOpenAdmin}
+                className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3A6B5C]/10 border border-[#3A6B5C]/30 text-[#3A6B5C] hover:bg-[#3A6B5C]/15 font-semibold transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Trang Quản trị</span>
+              </button>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={onLogout}
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 text-[#C84B31] hover:bg-[#C84B31]/15 font-semibold transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Đăng xuất</span>
+            </button>
+          </div>
         </footer>
       </div>
     </div>

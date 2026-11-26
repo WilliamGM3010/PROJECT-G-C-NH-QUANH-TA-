@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Flag,
   Footprints,
+  Heart,
   Loader2,
   MapPin,
   Navigation,
@@ -48,8 +49,11 @@ interface ArtisanDetailProps {
   travelMode: TravelMode;
   userKudosKeys: KudosKey[];
   approvedThankYouNotes: ThankYouNote[];
+  isFavorite?: boolean;
+  currentUserDisplayName: string;
   onBack: () => void;
   onShare: (artisan: Artisan) => void;
+  onToggleFavorite: (artisanId: string) => void;
   onMarkRevived: (artisan: Artisan) => void;
   onSubmitThankYou: (
     artisan: Artisan,
@@ -79,8 +83,11 @@ export function ArtisanDetail({
   travelMode,
   userKudosKeys,
   approvedThankYouNotes,
+  isFavorite = false,
+  currentUserDisplayName,
   onBack,
   onShare,
+  onToggleFavorite,
   onMarkRevived,
   onSubmitThankYou,
   onDrawRoute,
@@ -111,12 +118,34 @@ export function ArtisanDetail({
           <span className="whitespace-nowrap">Quay lại danh sách</span>
         </button>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span
             className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusInfo.bgClass} ${statusInfo.textClass} whitespace-nowrap`}
           >
             {statusInfo.label}
           </span>
+
+          <button
+            type="button"
+            onClick={() => onToggleFavorite(artisan.id)}
+            aria-pressed={isFavorite}
+            title={isFavorite ? 'Đã lưu góc thợ yêu thích' : 'Lưu góc thợ này'}
+            aria-label={
+              isFavorite
+                ? `Bỏ lưu ${artisan.name}`
+                : `Lưu góc thợ ${artisan.name}`
+            }
+            className={`min-h-[40px] min-w-[40px] px-2.5 rounded-xl border inline-flex items-center justify-center gap-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+              isFavorite
+                ? 'bg-[#D96B38]/12 border-[#D96B38]/40 text-[#D96B38]'
+                : 'border-[#E5DFD5] bg-[#FAF8F5] hover:border-[#D96B38] hover:text-[#D96B38] text-[#1F2933]'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+            <span className="hidden sm:inline">
+              {isFavorite ? 'Đã lưu' : 'Lưu'}
+            </span>
+          </button>
 
           <button
             type="button"
@@ -374,6 +403,7 @@ export function ArtisanDetail({
           <PraiseCorner
             artisan={artisan}
             userKudosKeys={userKudosKeys}
+            currentUserDisplayName={currentUserDisplayName}
             onToggleKudos={onToggleKudos}
             onAddPraise={onAddPraise}
           />
@@ -382,6 +412,7 @@ export function ArtisanDetail({
           <WallOfThanksSection
             artisan={artisan}
             approvedNotes={approvedThankYouNotes}
+            currentUserDisplayName={currentUserDisplayName}
             onSubmitThankYou={onSubmitThankYou}
           />
         </div>
