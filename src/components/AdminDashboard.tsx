@@ -14,6 +14,7 @@ import {
   Flag,
   Heart,
   History,
+  Loader2,
   LogOut,
   MapPin,
   Plus,
@@ -24,11 +25,13 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Sparkles,
   Trash2,
   Upload,
   UserCheck,
   UserPlus,
   Users,
+  WifiOff,
   Wrench,
   X,
 } from 'lucide-react';
@@ -106,6 +109,14 @@ interface AdminDashboardProps {
   ) => void;
   onDeleteAdminAccount: (accountId: string) => void;
   onNotify: (message: string) => void;
+  isSupabaseMode?: boolean;
+  supabaseWarning?: string | null;
+  isLoadingAdminData?: boolean;
+  isSeedingDb?: boolean;
+  isDbArtisansEmpty?: boolean;
+  dbError?: string | null;
+  onRefreshAdminData?: () => void;
+  onSeedInitialArtisans?: () => void;
 }
 
 const REPORT_STATUS_LABEL: Record<
@@ -168,6 +179,14 @@ export function AdminDashboard({
   onBulkCreateAdminAccounts,
   onDeleteAdminAccount,
   onNotify,
+  isSupabaseMode = false,
+  supabaseWarning = null,
+  isLoadingAdminData = false,
+  isSeedingDb = false,
+  isDbArtisansEmpty = false,
+  dbError = null,
+  onRefreshAdminData,
+  onSeedInitialArtisans,
 }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<AdminTabId>('overview');
 
@@ -504,6 +523,21 @@ export function AdminDashboard({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {isSupabaseMode && onRefreshAdminData && (
+            <button
+              type="button"
+              onClick={onRefreshAdminData}
+              disabled={isLoadingAdminData}
+              title="Đồng bộ lại dữ liệu mới nhất từ Supabase"
+              className="min-h-[40px] px-3 py-2 rounded-xl border border-[#3A6B5C]/25 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 disabled:opacity-60 text-xs font-semibold text-[#3A6B5C] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isLoadingAdminData ? 'animate-spin' : ''}`}
+              />
+              <span className="hidden md:inline">Đồng bộ</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onExitToMap}
@@ -605,9 +639,15 @@ export function AdminDashboard({
           </nav>
 
           <div className="rounded-2xl bg-[#FAF8F5] border border-[#EBE5DC] p-3.5 text-xs text-[#52606D] space-y-1">
-            <p className="font-bold text-[#3A6B5C]">Lưu trữ &amp; Nhật ký tự động</p>
+            <p className="font-bold text-[#3A6B5C]">
+              {isSupabaseMode
+                ? 'Đồng bộ Supabase trực tuyến'
+                : 'Chế độ dữ liệu mẫu cục bộ'}
+            </p>
             <p className="leading-relaxed">
-              Mọi thao tác quản trị được lưu vào bộ nhớ trình duyệt và ghi nhận đầy đủ vào Nhật ký hoạt động.
+              {isSupabaseMode
+                ? 'Hồ sơ cô chú thợ, đề xuất chờ duyệt, báo cáo tình trạng và tài khoản Admin được đồng bộ giữa mọi thiết bị.'
+                : 'Thêm VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY để đồng bộ dữ liệu trực tuyến trên mọi thiết bị.'}
             </p>
           </div>
         </aside>
@@ -615,6 +655,83 @@ export function AdminDashboard({
         {/* Nội dung từng Tab */}
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto space-y-6">
+            {/* Cảnh báo cấu hình thiếu biến môi trường Supabase */}
+            {supabaseWarning && (
+              <div className="rounded-2xl bg-[#FFF8E6] border border-[#E9A825]/60 px-4 py-3 flex items-start gap-2.5 text-xs text-[#8A5A00]">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[#C48200]" />
+                <p className="leading-relaxed">{supabaseWarning}</p>
+              </div>
+            )}
+
+            {/* Trạng thái Loading nhẹ khi đang đồng bộ từ Supabase */}
+            {isLoadingAdminData && (
+              <div className="rounded-2xl bg-white border border-[#EBE5DC] px-4 py-3 flex items-center gap-2.5 text-xs font-semibold text-[#3A6B5C] shadow-xs">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>Đang tải dữ liệu mới nhất từ Supabase...</span>
+              </div>
+            )}
+
+            {/* Thông báo lỗi mạng / cơ sở dữ liệu rõ ràng kèm nút Thử lại */}
+            {dbError && (
+              <div
+                role="alert"
+                className="rounded-2xl bg-[#C84B31]/10 border border-[#C84B31]/30 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-[#A3361F]"
+              >
+                <div className="flex items-start gap-2.5">
+                  <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p className="font-medium leading-relaxed">{dbError}</p>
+                </div>
+                {onRefreshAdminData && (
+                  <button
+                    type="button"
+                    onClick={onRefreshAdminData}
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] text-white font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Thử lại</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Nút nạp 6 dữ liệu mẫu khi bảng artisans trên Supabase đang trống */}
+            {isSupabaseMode &&
+              isDbArtisansEmpty &&
+              !isLoadingAdminData &&
+              onSeedInitialArtisans && (
+                <div className="rounded-2xl bg-[#3A6B5C]/8 border border-[#3A6B5C]/30 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <Sparkles className="w-5 h-5 text-[#3A6B5C] shrink-0 mt-0.5" />
+                    <div className="text-xs sm:text-sm">
+                      <p className="font-bold text-[#1F2933]">
+                        Bảng dữ liệu cô chú thợ trên Supabase đang trống
+                      </p>
+                      <p className="text-[#52606D]">
+                        Bạn có thể bấm 1 lần để đẩy sẵn 6 cô chú thợ mẫu khu vực Bình Thạnh, Quận 1, Quận 3 lên Database.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isSeedingDb}
+                    onClick={onSeedInitialArtisans}
+                    className="min-h-[42px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-xs font-semibold shadow-sm inline-flex items-center gap-2 whitespace-nowrap transition-colors"
+                  >
+                    {isSeedingDb ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang nạp dữ liệu...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Database className="w-3.5 h-3.5" />
+                        <span>Nạp 6 dữ liệu mẫu vào Database</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
             {/* =====================================================
                 TAB 1: TỔNG QUAN (DASHBOARD + CSV/JSON DATA TOOLS)
                ===================================================== */}
@@ -1171,8 +1288,29 @@ export function AdminDashboard({
 
                 {/* Danh sách quản lý */}
                 {filteredArtisans.length === 0 ? (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-8 text-center text-xs text-[#52606D]">
-                    Không tìm thấy hồ sơ cô chú thợ phù hợp với bộ lọc hiện tại.
+                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-8 text-center space-y-3">
+                    <p className="text-xs text-[#52606D]">
+                      {artisans.length === 0 && isSupabaseMode
+                        ? 'Chưa có hồ sơ cô chú thợ nào trên Supabase.'
+                        : 'Không tìm thấy hồ sơ cô chú thợ phù hợp với bộ lọc hiện tại.'}
+                    </p>
+                    {isSupabaseMode &&
+                      isDbArtisansEmpty &&
+                      onSeedInitialArtisans && (
+                        <button
+                          type="button"
+                          disabled={isSeedingDb}
+                          onClick={onSeedInitialArtisans}
+                          className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                        >
+                          {isSeedingDb ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Database className="w-3.5 h-3.5" />
+                          )}
+                          <span>Nạp 6 dữ liệu mẫu vào Database</span>
+                        </button>
+                      )}
                   </div>
                 ) : (
                   <div className="space-y-3">

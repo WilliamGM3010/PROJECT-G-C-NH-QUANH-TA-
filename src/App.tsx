@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   ExternalLink,
   List,
@@ -8,9 +9,11 @@ import {
   MapPin,
   Navigation,
   Recycle,
+  RefreshCw,
   RotateCcw,
   Search,
   SlidersHorizontal,
+  WifiOff,
   X,
 } from 'lucide-react';
 import {
@@ -62,6 +65,25 @@ import {
   STORAGE_KEYS,
   toIsoDate,
 } from './utils/storage';
+import {
+  authenticateAdminDb,
+  bulkInsertAdminAccountsDb,
+  bulkUpsertArtisansDb,
+  deleteAdminAccountDb,
+  deleteArtisanDb,
+  fetchAdminAccountsDb,
+  fetchAllArtisansForAdmin,
+  fetchApprovedArtisans,
+  fetchStatusReportsDb,
+  formatSupabaseError,
+  insertAdminAccountDb,
+  insertPendingArtisanDb,
+  insertStatusReportDb,
+  resolveStatusReportDb,
+  updateArtisanFieldsDb,
+  upsertApprovedArtisanDb,
+} from './services/supabaseService';
+import { isSupabaseConfigured, supabaseConfigWarning } from './supabaseClient';
 import { AboutView } from './components/AboutView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { AdminLoginModal } from './components/AdminLoginModal';
@@ -94,40 +116,34 @@ function copyTextFallback(text: string): boolean {
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('explore');
 
-  // Dữ liệu chính lưu bền vững trong localStorage
-  const [artisans, setArtisans] = useState<Artisan[]>(() => {
-    const stored = loadFromStorage<Artisan[]>(
-      STORAGE_KEYS.ARTISANS,
-      INITIAL_ARTISANS
-    );
-    // Bổ sung các trường mới (PIC, lastVerifiedDate) nếu đang tải từ phiên cũ
-    return stored.map((item) => {
-      const seed = INITIAL_ARTISANS.find((s) => s.id === item.id);
-      return {
-        ...item,
-        lastVerifiedDate: item.lastVerifiedDate ?? seed?.lastVerifiedDate,
-        pic: item.pic ?? seed?.pic,
-        internalNotes: item.internalNotes ?? seed?.internalNotes,
-      };
-    });
-  });
-
+  // 3 bảng cốt lõi đồng bộ với Supabase (fallback dữ liệu mẫu trong bộ nhớ nếu chưa cấu hình biến môi trường)
+  const [artisans, setArtisans] = useState<Artisan[]>(() =>
+    isSupabaseConfigured ? [] : INITIAL_ARTISANS
+  );
   const [pendingSuggestions, setPendingSuggestions] = useState<
     PendingSuggestion[]
-  >(() =>
-    loadFromStorage<PendingSuggestion[]>(
-      STORAGE_KEYS.PENDING,
-      INITIAL_PENDING_SUGGESTIONS
-    )
-  );
-
+  >(() => (isSupabaseConfigured ? [] : INITIAL_PENDING_SUGGESTIONS));
   const [statusReports, setStatusReports] = useState<StatusReport[]>(() =>
-    loadFromStorage<StatusReport[]>(
-      STORAGE_KEYS.REPORTS,
-      INITIAL_STATUS_REPORTS
-    )
+    isSupabaseConfigured ? [] : INITIAL_STATUS_REPORTS
+  );
+  const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() =>
+    isSupabaseConfigured ? [] : INITIAL_ADMIN_ACCOUNTS
   );
 
+  // Trạng thái tải dữ liệu, lỗi mạng & cấu hình Supabase
+  const [isLoadingPublicData, setIsLoadingPublicData] = useState<boolean>(
+    isSupabaseConfigured
+  );
+  const [publicDbError, setPublicDbError] = useState<string | null>(null);
+  const [isLoadingAdminData, setIsLoadingAdminData] = useState(false);
+  const [adminDbError, setAdminDbError] = useState<string | null>(null);
+  const [isSeedingDb, setIsSeedingDb] = useState(false);
+  const [dbTotalArtisansCount, setDbTotalArtisansCount] = useState<
+    number | null
+  >(null);
+  const [dismissedConfigWarning, setDismissedConfigWarning] = useState(false);
+
+  // Dữ liệu cộng đồng phụ trợ & tùy chọn cá nhân trên thiết bị
   const [thankYouNotes, setThankYouNotes] = useState<ThankYouNote[]>(() =>
     loadFromStorage<ThankYouNote[]>(
       STORAGE_KEYS.THANK_YOU_NOTES,
@@ -140,22 +156,6 @@ export default function App() {
       STORAGE_KEYS.AUDIT_LOGS,
       INITIAL_AUDIT_LOGS
     )
-  );
-
-  const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() => {
-    const stored = loadFromStorage<AdminAccount[]>(
-      STORAGE_KEYS.ADMINS,
-      INITIAL_ADMIN_ACCOUNTS
-    );
-    return stored.map((acc) =>
-      acc.id === 'admin-super-1' && acc.name === 'Minh Thư (Điều phối dự án)'
-        ? { ...acc, name: 'William Gia Minh (Điều phối dự án)' }
-        : acc
-    );
-  });
-
-  const [currentAdminId, setCurrentAdminId] = useState<string | null>(() =>
-    loadFromStorage<string | null>(STORAGE_KEYS.CURRENT_ADMIN, null)
   );
 
   const [revivedCount, setRevivedCount] = useState<number>(() =>
@@ -179,19 +179,7 @@ export default function App() {
       )
     );
 
-  // Đồng bộ tự động vào localStorage
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.ARTISANS, artisans);
-  }, [artisans]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.PENDING, pendingSuggestions);
-  }, [pendingSuggestions]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.REPORTS, statusReports);
-  }, [statusReports]);
-
+  // Lưu các trạng thái phụ trợ & tùy chọn cá nhân của trình duyệt
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.THANK_YOU_NOTES, thankYouNotes);
   }, [thankYouNotes]);
@@ -199,14 +187,6 @@ export default function App() {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.AUDIT_LOGS, auditLogs);
   }, [auditLogs]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.ADMINS, adminAccounts);
-  }, [adminAccounts]);
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.CURRENT_ADMIN, currentAdminId);
-  }, [currentAdminId]);
 
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.REVIVED_COUNT, revivedCount);
@@ -220,13 +200,8 @@ export default function App() {
     saveToStorage(STORAGE_KEYS.USER_CONTRIBUTION, userContribution);
   }, [userContribution]);
 
-  // Phiên quản trị hiện tại
-  const currentAdmin = useMemo(
-    () =>
-      adminAccounts.find((acc) => acc.id === currentAdminId && acc.active) ??
-      null,
-    [adminAccounts, currentAdminId]
-  );
+  // Phiên đăng nhập quản trị giữ trong bộ nhớ ứng dụng (không lưu mật khẩu/phiên xuống localStorage)
+  const [currentAdmin, setCurrentAdmin] = useState<AdminAccount | null>(null);
   const [isAdminView, setIsAdminView] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [badgeModalOpen, setBadgeModalOpen] = useState(false);
@@ -330,6 +305,72 @@ export default function App() {
     [userContribution, showToast]
   );
 
+  // Tải danh sách cô chú thợ đã duyệt (approval_status = 'approved') cho trang bản đồ công khai
+  const loadPublicArtisans = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    setIsLoadingPublicData(true);
+    setPublicDbError(null);
+    try {
+      const approved = await fetchApprovedArtisans();
+      setArtisans(approved);
+      const dbRevivedSum = approved.reduce(
+        (sum, item) => sum + (item.revivedCount ?? 0),
+        0
+      );
+      if (dbRevivedSum > 0) {
+        setRevivedCount(dbRevivedSum);
+      }
+    } catch (err) {
+      setPublicDbError(formatSupabaseError(err));
+    } finally {
+      setIsLoadingPublicData(false);
+    }
+  }, []);
+
+  // Tải toàn bộ 3 bảng từ Supabase cho Khu Quản Trị
+  const loadAdminData = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    setIsLoadingAdminData(true);
+    setAdminDbError(null);
+    try {
+      const [artisanBundle, reports, accounts] = await Promise.all([
+        fetchAllArtisansForAdmin(),
+        fetchStatusReportsDb(),
+        fetchAdminAccountsDb(),
+      ]);
+      setArtisans(artisanBundle.approved);
+      setPendingSuggestions(artisanBundle.pending);
+      setDbTotalArtisansCount(artisanBundle.totalCount);
+      setStatusReports(reports);
+      setAdminAccounts(accounts);
+      const dbRevivedSum = artisanBundle.approved.reduce(
+        (sum, item) => sum + (item.revivedCount ?? 0),
+        0
+      );
+      if (dbRevivedSum > 0) {
+        setRevivedCount(dbRevivedSum);
+      }
+    } catch (err) {
+      setAdminDbError(formatSupabaseError(err));
+    } finally {
+      setIsLoadingAdminData(false);
+    }
+  }, []);
+
+  // Tự động tải dữ liệu công khai khi mở ứng dụng
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      void loadPublicArtisans();
+    }
+  }, [loadPublicArtisans]);
+
+  // Khi mở Khu Quản Trị -> tải đầy đủ 3 bảng từ Supabase
+  useEffect(() => {
+    if (isAdminView && currentAdmin && isSupabaseConfigured) {
+      void loadAdminData();
+    }
+  }, [isAdminView, currentAdmin, loadAdminData]);
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
@@ -343,14 +384,19 @@ export default function App() {
     [artisans]
   );
 
-  // Deep Linking (?tho=ID)
+  // Deep Linking (?tho=ID) - chờ dữ liệu từ Supabase tải xong rồi mới khớp ID
   useEffect(() => {
-    if (deepLinkHandledRef.current) return;
-    deepLinkHandledRef.current = true;
+    if (deepLinkHandledRef.current || isLoadingPublicData) return;
 
     const params = new URLSearchParams(window.location.search);
     const sharedId = params.get('tho');
-    if (!sharedId) return;
+    if (!sharedId) {
+      deepLinkHandledRef.current = true;
+      return;
+    }
+
+    if (publicArtisans.length === 0) return;
+    deepLinkHandledRef.current = true;
 
     const matched = publicArtisans.find((a) => a.id === sharedId);
     if (matched) {
@@ -359,7 +405,7 @@ export default function App() {
       setMobileViewMode('map');
       setMobileDetailOpen(true);
     }
-  }, [publicArtisans]);
+  }, [publicArtisans, isLoadingPublicData]);
 
   // Lọc & sắp xếp danh sách người thợ công khai
   const filteredArtisans = useMemo(() => {
@@ -672,23 +718,33 @@ export default function App() {
     [showToast]
   );
 
-  // Bộ đếm "Món đồ được hồi sinh" + tích điểm Huy hiệu
+  // Bộ đếm "Món đồ được hồi sinh" + đồng bộ Supabase + tích điểm Huy hiệu
   const handleMarkRevived = useCallback(
-    (artisan: Artisan) => {
+    async (artisan: Artisan) => {
+      const nextArtisanRevived = (artisan.revivedCount ?? 0) + 1;
       setRevivedCount((c) => c + 1);
       setArtisans((prev) =>
         prev.map((a) =>
-          a.id === artisan.id
-            ? { ...a, revivedCount: (a.revivedCount ?? 0) + 1 }
-            : a
+          a.id === artisan.id ? { ...a, revivedCount: nextArtisanRevived } : a
         )
       );
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArtisanFieldsDb(artisan.id, {
+            revived_count: nextArtisanRevived,
+          });
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+        }
+      }
+
       recordUserContribution(
         'revivedCount',
         'Cảm ơn bạn đã chọn sửa chữa thay vì vứt bỏ! Bạn vừa giúp hồi sinh thêm 1 món đồ.'
       );
     },
-    [recordUserContribution]
+    [recordUserContribution, showToast]
   );
 
   // Sổ lưu bút cảm ơn: người dùng gửi lời cảm ơn -> chờ duyệt + tích điểm Huy hiệu
@@ -712,11 +768,21 @@ export default function App() {
     [recordUserContribution]
   );
 
-  // Quick Kudos 1 chạm
+  // Quick Kudos 1 chạm + đồng bộ Supabase
   const handleToggleKudos = useCallback(
-    (artisanId: string, kudosKey: KudosKey) => {
+    async (artisanId: string, kudosKey: KudosKey) => {
       const currentList = kudosReactedMap[artisanId] ?? [];
       const alreadyActive = currentList.includes(kudosKey);
+      const target = artisans.find((a) => a.id === artisanId);
+      if (!target) return;
+
+      const nextKudos = {
+        ...target.kudos,
+        [kudosKey]: Math.max(
+          0,
+          target.kudos[kudosKey] + (alreadyActive ? -1 : 1)
+        ),
+      };
 
       setKudosReactedMap((prev) => ({
         ...prev,
@@ -726,32 +792,28 @@ export default function App() {
       }));
 
       setArtisans((prev) =>
-        prev.map((a) => {
-          if (a.id !== artisanId) return a;
-          const nextVal = Math.max(
-            0,
-            a.kudos[kudosKey] + (alreadyActive ? -1 : 1)
-          );
-          return {
-            ...a,
-            kudos: {
-              ...a.kudos,
-              [kudosKey]: nextVal,
-            },
-          };
-        })
+        prev.map((a) => (a.id === artisanId ? { ...a, kudos: nextKudos } : a))
       );
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArtisanFieldsDb(artisanId, { kudos: nextKudos });
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
 
       if (!alreadyActive) {
         showToast('Cảm ơn lời khen ấm áp bạn vừa gửi tới cô chú!');
       }
     },
-    [kudosReactedMap, showToast]
+    [artisans, kudosReactedMap, showToast]
   );
 
-  // Bình luận trải nghiệm mới
+  // Bình luận trải nghiệm mới + đồng bộ Supabase
   const handleAddPraise = useCallback(
-    (
+    async (
       artisanId: string,
       payload: {
         author: string;
@@ -759,36 +821,52 @@ export default function App() {
         comment: string;
       }
     ) => {
+      const target = artisans.find((a) => a.id === artisanId);
+      if (!target) return;
+
+      const nextKudos = {
+        ...target.kudos,
+        [payload.kudosKey]: target.kudos[payload.kudosKey] + 1,
+      };
+      const nextPraises = [
+        {
+          id: `praise-${Date.now()}`,
+          author: payload.author,
+          kudosKey: payload.kudosKey,
+          comment: payload.comment,
+          createdAt: formatVietnamDate(),
+        },
+        ...target.praises,
+      ];
+
       setArtisans((prev) =>
-        prev.map((a) => {
-          if (a.id !== artisanId) return a;
-          return {
-            ...a,
-            kudos: {
-              ...a.kudos,
-              [payload.kudosKey]: a.kudos[payload.kudosKey] + 1,
-            },
-            praises: [
-              {
-                id: `praise-${Date.now()}`,
-                author: payload.author,
-                kudosKey: payload.kudosKey,
-                comment: payload.comment,
-                createdAt: 'Vừa xong',
-              },
-              ...a.praises,
-            ],
-          };
-        })
+        prev.map((a) =>
+          a.id === artisanId
+            ? { ...a, kudos: nextKudos, praises: nextPraises }
+            : a
+        )
       );
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArtisanFieldsDb(artisanId, {
+            kudos: nextKudos,
+            praises: nextPraises,
+          });
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       showToast('Đã đăng lời khen của bạn vào Cộng đồng khen ngợi!');
     },
-    [showToast]
+    [artisans, showToast]
   );
 
-  // Báo tình trạng 1 chạm -> Gửi về Admin + tích điểm Huy hiệu
+  // Báo tình trạng 1 chạm -> Insert vào bảng status_reports trên Supabase + tích điểm Huy hiệu
   const handleSubmitStatusReport = useCallback(
-    (artisanId: string, status: ArtisanStatus, note: string) => {
+    async (artisanId: string, status: ArtisanStatus, note: string) => {
       const target = artisans.find((a) => a.id === artisanId);
       const newReport: StatusReport = {
         id: `rep-${Date.now()}`,
@@ -799,29 +877,57 @@ export default function App() {
         createdAt: formatVietnamTimestamp(),
         resolved: false,
       };
-      setStatusReports((prev) => [newReport, ...prev]);
+
+      if (isSupabaseConfigured) {
+        try {
+          const saved = await insertStatusReportDb(newReport);
+          setStatusReports((prev) => [saved, ...prev]);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      } else {
+        setStatusReports((prev) => [newReport, ...prev]);
+      }
+
       recordUserContribution(
         'reportsCount',
         'Cảm ơn bạn! Báo cáo tình trạng đã được gửi về mục Quản trị để kiểm duyệt.'
       );
     },
-    [artisans, recordUserContribution]
+    [artisans, recordUserContribution, showToast]
   );
 
-  // Gợi ý thợ mới -> Gửi vào Chờ duyệt + tích điểm Huy hiệu
+  // Gợi ý thợ mới -> Insert vào bảng artisans với approval_status = 'pending'
   const handleSubmitPendingSuggestion = useCallback(
-    (suggestion: PendingSuggestion) => {
-      setPendingSuggestions((prev) => [suggestion, ...prev]);
+    async (
+      suggestion: PendingSuggestion
+    ): Promise<{ ok: boolean; error?: string }> => {
+      if (isSupabaseConfigured) {
+        try {
+          const saved = await insertPendingArtisanDb(suggestion);
+          setPendingSuggestions((prev) => [saved, ...prev]);
+          setDbTotalArtisansCount((c) => (typeof c === 'number' ? c + 1 : c));
+        } catch (err) {
+          const msg = formatSupabaseError(err);
+          showToast(msg);
+          return { ok: false, error: msg };
+        }
+      } else {
+        setPendingSuggestions((prev) => [suggestion, ...prev]);
+      }
+
       recordUserContribution(
         'suggestionsCount',
         'Đã gửi đề xuất vào mục Chờ duyệt của đội ngũ quản trị!'
       );
+      return { ok: true };
     },
-    [recordUserContribution]
+    [recordUserContribution, showToast]
   );
 
   // =======================================================
-  // HANDLERS CHO KHU QUẢN TRỊ (ADMIN DASHBOARD + AUDIT LOG)
+  // HANDLERS CHO KHU QUẢN TRỊ (SUPABASE + AUDIT LOG)
   // =======================================================
   const handleOpenAdmin = useCallback(() => {
     if (currentAdmin) {
@@ -831,9 +937,38 @@ export default function App() {
     }
   }, [currentAdmin]);
 
+  // Kiểm tra đăng nhập Admin trên bảng admin_accounts của Supabase
+  const handleAuthenticateAdmin = useCallback(
+    async (
+      identifier: string,
+      password: string
+    ): Promise<{ account: AdminAccount | null; error?: string }> => {
+      if (isSupabaseConfigured) {
+        try {
+          const matched = await authenticateAdminDb(identifier, password);
+          return { account: matched };
+        } catch (err) {
+          return { account: null, error: formatSupabaseError(err) };
+        }
+      }
+
+      const cleaned = identifier.trim().toLowerCase();
+      const matched =
+        adminAccounts.find(
+          (acc) =>
+            acc.active &&
+            (acc.email.toLowerCase() === cleaned ||
+              acc.name.toLowerCase() === cleaned) &&
+            acc.password === password
+        ) ?? null;
+      return { account: matched };
+    },
+    [adminAccounts]
+  );
+
   const handleLoginSuccess = useCallback(
     (account: AdminAccount) => {
-      setCurrentAdminId(account.id);
+      setCurrentAdmin(account);
       setLoginModalOpen(false);
       setIsAdminView(true);
       showToast(`Chào mừng ${account.name} đến Khu Quản Trị!`);
@@ -842,18 +977,63 @@ export default function App() {
   );
 
   const handleLogoutAdmin = useCallback(() => {
-    setCurrentAdminId(null);
+    setCurrentAdmin(null);
     setIsAdminView(false);
     showToast('Đã đăng xuất khỏi Khu Quản Trị.');
-  }, [showToast]);
+    if (isSupabaseConfigured) {
+      void loadPublicArtisans();
+    }
+  }, [showToast, loadPublicArtisans]);
 
+  const handleExitAdminToMap = useCallback(() => {
+    setIsAdminView(false);
+    if (isSupabaseConfigured) {
+      void loadPublicArtisans();
+    }
+  }, [loadPublicArtisans]);
+
+  // Nút "Nạp 6 dữ liệu mẫu vào Database" khi bảng artisans trên Supabase đang trống
+  const handleSeedInitialArtisans = useCallback(async () => {
+    if (!isSupabaseConfigured || isSeedingDb) return;
+    setIsSeedingDb(true);
+    setAdminDbError(null);
+    try {
+      const inserted = await bulkUpsertArtisansDb(INITIAL_ARTISANS);
+      setArtisans(inserted);
+      setDbTotalArtisansCount(inserted.length + pendingSuggestions.length);
+      appendAuditLog(
+        `Đã nạp ${inserted.length} hồ sơ cô chú thợ mẫu vào cơ sở dữ liệu Supabase`,
+        'data'
+      );
+      showToast('Đã nạp thành công 6 cô chú thợ mẫu vào Database Supabase!');
+    } catch (err) {
+      const msg = formatSupabaseError(err);
+      setAdminDbError(msg);
+      showToast(msg);
+    } finally {
+      setIsSeedingDb(false);
+    }
+  }, [isSeedingDb, pendingSuggestions.length, appendAuditLog, showToast]);
+
+  // Thêm, sửa hoặc duyệt đề xuất (chuyển approval_status = 'approved' trên Supabase)
   const handleSaveArtisan = useCallback(
-    (saved: Artisan, approvedPendingId?: string) => {
+    async (saved: Artisan, approvedPendingId?: string) => {
       const isExisting = artisans.some((a) => a.id === saved.id);
+      let persisted = saved;
+
+      if (isSupabaseConfigured) {
+        try {
+          persisted = await upsertApprovedArtisanDb(saved, approvedPendingId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setArtisans((prev) =>
-        isExisting
-          ? prev.map((a) => (a.id === saved.id ? saved : a))
-          : [saved, ...prev]
+        isExisting || prev.some((a) => a.id === persisted.id)
+          ? prev.map((a) => (a.id === persisted.id ? persisted : a))
+          : [persisted, ...prev]
       );
 
       if (approvedPendingId) {
@@ -861,18 +1041,23 @@ export default function App() {
           prev.filter((p) => p.id !== approvedPendingId)
         );
         appendAuditLog(
-          `Đã duyệt đề xuất và đưa hồ sơ ${saved.name} lên bản đồ`,
+          `Đã duyệt đề xuất và đưa hồ sơ ${persisted.name} lên bản đồ`,
           'pending'
         );
-        showToast(`Đã duyệt "${saved.name}" và đưa lên bản đồ công khai!`);
+        showToast(
+          `Đã duyệt "${persisted.name}" và đưa lên bản đồ công khai!`
+        );
       } else {
+        if (!isExisting) {
+          setDbTotalArtisansCount((c) => (typeof c === 'number' ? c + 1 : 1));
+        }
         appendAuditLog(
           isExisting
-            ? `Đã chỉnh sửa hồ sơ ${saved.name}`
-            : `Đã thêm mới hồ sơ ${saved.name}`,
+            ? `Đã chỉnh sửa hồ sơ ${persisted.name}`
+            : `Đã thêm mới hồ sơ ${persisted.name}`,
           'artisan'
         );
-        showToast(`Đã lưu thông tin "${saved.name}".`);
+        showToast(`Đã lưu thông tin "${persisted.name}".`);
       }
     },
     [artisans, appendAuditLog, showToast]
@@ -880,10 +1065,22 @@ export default function App() {
 
   // Nút 1 chạm "✓ Xác nhận lại hôm nay" (Verification Reminder)
   const handleVerifyArtisanToday = useCallback(
-    (artisanId: string) => {
+    async (artisanId: string) => {
       const target = artisans.find((a) => a.id === artisanId);
       const todayVn = formatVietnamDate();
       const todayIso = toIsoDate();
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArtisanFieldsDb(artisanId, {
+            verified_date: todayVn,
+            last_verified_date: todayIso,
+          });
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
 
       setArtisans((prev) =>
         prev.map((a) =>
@@ -905,33 +1102,56 @@ export default function App() {
   );
 
   const handleToggleArtisanVisibility = useCallback(
-    (artisanId: string) => {
+    async (artisanId: string) => {
       const target = artisans.find((a) => a.id === artisanId);
+      if (!target) return;
+      const nextHidden = !target.isHidden;
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArtisanFieldsDb(artisanId, { is_hidden: nextHidden });
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setArtisans((prev) =>
         prev.map((a) =>
-          a.id === artisanId ? { ...a, isHidden: !a.isHidden } : a
+          a.id === artisanId ? { ...a, isHidden: nextHidden } : a
         )
       );
       if (selectedArtisanId === artisanId) {
         setSelectedArtisanId(null);
       }
-      if (target) {
-        appendAuditLog(
-          target.isHidden
-            ? `Đã cho hiển thị lại ${target.name} trên bản đồ`
-            : `Đã tạm ẩn ${target.name} khỏi bản đồ công khai`,
-          'artisan'
-        );
-      }
+      appendAuditLog(
+        target.isHidden
+          ? `Đã cho hiển thị lại ${target.name} trên bản đồ`
+          : `Đã tạm ẩn ${target.name} khỏi bản đồ công khai`,
+        'artisan'
+      );
       showToast('Đã cập nhật trạng thái hiển thị trên bản đồ.');
     },
     [artisans, selectedArtisanId, appendAuditLog, showToast]
   );
 
   const handleDeleteArtisan = useCallback(
-    (artisanId: string) => {
+    async (artisanId: string) => {
       const target = artisans.find((a) => a.id === artisanId);
+
+      if (isSupabaseConfigured) {
+        try {
+          await deleteArtisanDb(artisanId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setArtisans((prev) => prev.filter((a) => a.id !== artisanId));
+      setDbTotalArtisansCount((c) =>
+        typeof c === 'number' ? Math.max(0, c - 1) : c
+      );
       if (selectedArtisanId === artisanId) {
         setSelectedArtisanId(null);
       }
@@ -944,9 +1164,22 @@ export default function App() {
   );
 
   const handleRejectPending = useCallback(
-    (pendingId: string) => {
+    async (pendingId: string) => {
       const target = pendingSuggestions.find((p) => p.id === pendingId);
+
+      if (isSupabaseConfigured) {
+        try {
+          await deleteArtisanDb(pendingId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setPendingSuggestions((prev) => prev.filter((p) => p.id !== pendingId));
+      setDbTotalArtisansCount((c) =>
+        typeof c === 'number' ? Math.max(0, c - 1) : c
+      );
       if (target) {
         appendAuditLog(`Đã từ chối đề xuất "${target.name}"`, 'pending');
       }
@@ -955,8 +1188,23 @@ export default function App() {
     [pendingSuggestions, appendAuditLog, showToast]
   );
 
+  // Áp dụng trạng thái từ báo cáo -> cập nhật cả artisans.status & status_reports.is_resolved = true
   const handleApplyReportStatus = useCallback(
-    (report: StatusReport) => {
+    async (report: StatusReport) => {
+      if (isSupabaseConfigured) {
+        try {
+          await Promise.all([
+            updateArtisanFieldsDb(report.artisanId, {
+              status: report.reportedStatus,
+            }),
+            resolveStatusReportDb(report.id),
+          ]);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setArtisans((prev) =>
         prev.map((a) =>
           a.id === report.artisanId
@@ -977,8 +1225,18 @@ export default function App() {
   );
 
   const handleResolveReport = useCallback(
-    (reportId: string) => {
+    async (reportId: string) => {
       const target = statusReports.find((r) => r.id === reportId);
+
+      if (isSupabaseConfigured) {
+        try {
+          await resolveStatusReportDb(reportId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setStatusReports((prev) =>
         prev.map((r) => (r.id === reportId ? { ...r, resolved: true } : r))
       );
@@ -1034,18 +1292,31 @@ export default function App() {
     showToast('Đã xóa toàn bộ Nhật ký hoạt động.');
   }, [currentAdmin, showToast]);
 
-  // Nhập hàng loạt cô chú thợ từ CSV
+  // Nhập hàng loạt cô chú thợ từ CSV -> đồng bộ lên bảng artisans
   const handleImportArtisansCsv = useCallback(
-    (imported: Artisan[], skipped: number) => {
-      setArtisans((prev) => [...imported, ...prev]);
+    async (imported: Artisan[], skipped: number) => {
+      let persisted = imported;
+      if (isSupabaseConfigured) {
+        try {
+          persisted = await bulkUpsertArtisansDb(imported);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setArtisans((prev) => [...persisted, ...prev]);
+      setDbTotalArtisansCount((c) =>
+        typeof c === 'number' ? c + persisted.length : persisted.length
+      );
       appendAuditLog(
-        `Đã nhập hàng loạt ${imported.length} hồ sơ cô chú thợ từ file CSV`,
+        `Đã nhập hàng loạt ${persisted.length} hồ sơ cô chú thợ từ file CSV`,
         'data'
       );
       showToast(
         skipped > 0
-          ? `Đã nhập ${imported.length} cô chú thợ từ CSV (bỏ qua ${skipped} dòng thiếu thông tin).`
-          : `Đã nhập thành công ${imported.length} cô chú thợ từ file CSV!`
+          ? `Đã nhập ${persisted.length} cô chú thợ từ CSV (bỏ qua ${skipped} dòng thiếu thông tin).`
+          : `Đã nhập thành công ${persisted.length} cô chú thợ từ file CSV!`
       );
     },
     [appendAuditLog, showToast]
@@ -1053,12 +1324,28 @@ export default function App() {
 
   // Khôi phục toàn bộ dữ liệu từ file JSON Backup
   const handleRestoreBackupJson = useCallback(
-    (backup: AppBackupPayload) => {
-      setArtisans(backup.artisans);
-      setPendingSuggestions(backup.pendingSuggestions);
-      setStatusReports(backup.statusReports);
+    async (backup: AppBackupPayload) => {
+      if (isSupabaseConfigured) {
+        try {
+          if (backup.artisans.length > 0) {
+            await bulkUpsertArtisansDb(backup.artisans);
+          }
+          if (backup.adminAccounts.length > 0) {
+            await bulkInsertAdminAccountsDb(backup.adminAccounts);
+          }
+          await loadAdminData();
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      } else {
+        setArtisans(backup.artisans);
+        setPendingSuggestions(backup.pendingSuggestions);
+        setStatusReports(backup.statusReports);
+        setAdminAccounts(backup.adminAccounts);
+      }
+
       setThankYouNotes(backup.thankYouNotes);
-      setAdminAccounts(backup.adminAccounts);
       setRevivedCount(backup.revivedCount);
 
       const restoreLog: AuditLogEntry = {
@@ -1074,11 +1361,11 @@ export default function App() {
         `Đã khôi phục thành công ${backup.artisans.length} hồ sơ thợ và toàn bộ dữ liệu hệ thống!`
       );
     },
-    [currentAdmin, showToast]
+    [currentAdmin, loadAdminData, showToast]
   );
 
   const handleCreateAdminAccount = useCallback(
-    (payload: Omit<AdminAccount, 'id' | 'createdAt' | 'active'>) => {
+    async (payload: Omit<AdminAccount, 'id' | 'createdAt' | 'active'>) => {
       if (currentAdmin?.role !== 'Super Admin') return;
       const newAcc: AdminAccount = {
         id: `admin-${Date.now()}`,
@@ -1086,23 +1373,54 @@ export default function App() {
         active: true,
         createdAt: formatVietnamDate(),
       };
-      setAdminAccounts((prev) => [...prev, newAcc]);
+
+      let persisted = newAcc;
+      if (isSupabaseConfigured) {
+        try {
+          persisted = await insertAdminAccountDb(newAcc);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setAdminAccounts((prev) => [...prev, persisted]);
       appendAuditLog(
-        `Đã tạo tài khoản ${newAcc.role} cho ${newAcc.name} (${newAcc.email})`,
+        `Đã tạo tài khoản ${persisted.role} cho ${persisted.name} (${persisted.email})`,
         'account'
       );
-      showToast(`Đã tạo tài khoản ${newAcc.role} cho ${newAcc.name}.`);
+      showToast(`Đã tạo tài khoản ${persisted.role} cho ${persisted.name}.`);
     },
     [currentAdmin, appendAuditLog, showToast]
   );
 
-  // Import hàng loạt tài khoản Admin từ CSV (chỉ Super Admin)
+  // Import hàng loạt tài khoản Admin từ CSV (chỉ Super Admin) -> đồng bộ bảng admin_accounts
   const handleBulkCreateAdminAccounts = useCallback(
-    (newAccounts: AdminAccount[], skipped: number, duplicates: number) => {
+    async (newAccounts: AdminAccount[], skipped: number, duplicates: number) => {
       if (currentAdmin?.role !== 'Super Admin') return;
-      setAdminAccounts((prev) => [...prev, ...newAccounts]);
+      let persisted = newAccounts;
+
+      if (isSupabaseConfigured) {
+        try {
+          persisted = await bulkInsertAdminAccountsDb(newAccounts);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setAdminAccounts((prev) => {
+        const existingIds = new Set(prev.map((a) => a.id));
+        const merged = [...prev];
+        for (const item of persisted) {
+          if (!existingIds.has(item.id)) {
+            merged.push(item);
+          }
+        }
+        return merged;
+      });
       appendAuditLog(
-        `Đã nhập hàng loạt ${newAccounts.length} tài khoản quản trị từ file CSV`,
+        `Đã nhập hàng loạt ${persisted.length} tài khoản quản trị từ file CSV`,
         'account'
       );
       const extra: string[] = [];
@@ -1110,19 +1428,29 @@ export default function App() {
       if (skipped > 0) extra.push(`${skipped} dòng chưa hợp lệ`);
       showToast(
         extra.length > 0
-          ? `Đã tạo ${newAccounts.length} tài khoản Admin từ CSV (${extra.join(', ')}).`
-          : `Đã tạo thành công ${newAccounts.length} tài khoản Admin từ file CSV!`
+          ? `Đã tạo ${persisted.length} tài khoản Admin từ CSV (${extra.join(', ')}).`
+          : `Đã tạo thành công ${persisted.length} tài khoản Admin từ file CSV!`
       );
     },
     [currentAdmin, appendAuditLog, showToast]
   );
 
   const handleDeleteAdminAccount = useCallback(
-    (accountId: string) => {
+    async (accountId: string) => {
       if (currentAdmin?.role !== 'Super Admin' || accountId === currentAdmin.id) {
         return;
       }
       const target = adminAccounts.find((a) => a.id === accountId);
+
+      if (isSupabaseConfigured) {
+        try {
+          await deleteAdminAccountDb(accountId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
       setAdminAccounts((prev) => prev.filter((a) => a.id !== accountId));
       if (target) {
         appendAuditLog(
@@ -1139,6 +1467,14 @@ export default function App() {
   // RENDER KHU QUẢN TRỊ NẾU ĐANG MỞ ADMIN DASHBOARD
   // =======================================================
   if (isAdminView && currentAdmin) {
+    const isDbArtisansEmpty =
+      isSupabaseConfigured &&
+      (dbTotalArtisansCount === 0 ||
+        (dbTotalArtisansCount === null &&
+          !isLoadingAdminData &&
+          artisans.length === 0 &&
+          pendingSuggestions.length === 0));
+
     return (
       <>
         <AdminDashboard
@@ -1150,23 +1486,55 @@ export default function App() {
           auditLogs={auditLogs}
           adminAccounts={adminAccounts}
           revivedCount={revivedCount}
-          onExitToMap={() => setIsAdminView(false)}
+          isSupabaseMode={isSupabaseConfigured}
+          supabaseWarning={supabaseConfigWarning}
+          isLoadingAdminData={isLoadingAdminData}
+          isSeedingDb={isSeedingDb}
+          isDbArtisansEmpty={isDbArtisansEmpty}
+          dbError={adminDbError}
+          onRefreshAdminData={() => void loadAdminData()}
+          onSeedInitialArtisans={() => void handleSeedInitialArtisans()}
+          onExitToMap={handleExitAdminToMap}
           onLogout={handleLogoutAdmin}
-          onSaveArtisan={handleSaveArtisan}
-          onVerifyArtisanToday={handleVerifyArtisanToday}
-          onToggleArtisanVisibility={handleToggleArtisanVisibility}
-          onDeleteArtisan={handleDeleteArtisan}
-          onRejectPending={handleRejectPending}
-          onApplyReportStatus={handleApplyReportStatus}
-          onResolveReport={handleResolveReport}
+          onSaveArtisan={(artisan, pendingId) => {
+            void handleSaveArtisan(artisan, pendingId);
+          }}
+          onVerifyArtisanToday={(id) => {
+            void handleVerifyArtisanToday(id);
+          }}
+          onToggleArtisanVisibility={(id) => {
+            void handleToggleArtisanVisibility(id);
+          }}
+          onDeleteArtisan={(id) => {
+            void handleDeleteArtisan(id);
+          }}
+          onRejectPending={(id) => {
+            void handleRejectPending(id);
+          }}
+          onApplyReportStatus={(report) => {
+            void handleApplyReportStatus(report);
+          }}
+          onResolveReport={(id) => {
+            void handleResolveReport(id);
+          }}
           onApproveThankYou={handleApproveThankYou}
           onDeleteThankYou={handleDeleteThankYou}
           onClearAuditLogs={handleClearAuditLogs}
-          onImportArtisansCsv={handleImportArtisansCsv}
-          onRestoreBackupJson={handleRestoreBackupJson}
-          onCreateAdminAccount={handleCreateAdminAccount}
-          onBulkCreateAdminAccounts={handleBulkCreateAdminAccounts}
-          onDeleteAdminAccount={handleDeleteAdminAccount}
+          onImportArtisansCsv={(imported, skipped) => {
+            void handleImportArtisansCsv(imported, skipped);
+          }}
+          onRestoreBackupJson={(backup) => {
+            void handleRestoreBackupJson(backup);
+          }}
+          onCreateAdminAccount={(payload) => {
+            void handleCreateAdminAccount(payload);
+          }}
+          onBulkCreateAdminAccounts={(accounts, skipped, duplicates) => {
+            void handleBulkCreateAdminAccounts(accounts, skipped, duplicates);
+          }}
+          onDeleteAdminAccount={(id) => {
+            void handleDeleteAdminAccount(id);
+          }}
           onNotify={showToast}
         />
 
@@ -1212,6 +1580,26 @@ export default function App() {
         onOpenBadge={() => setBadgeModalOpen(true)}
         onOpenAdmin={handleOpenAdmin}
       />
+
+      {/* Cảnh báo nhỏ khi chưa cấu hình biến môi trường Supabase (tránh trắng trang) */}
+      {supabaseConfigWarning && !dismissedConfigWarning && (
+        <div className="bg-[#FFF8E6] border-b border-[#E9A825]/45 px-3.5 py-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs text-[#8A5A00] shrink-0 z-30">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#C48200] shrink-0" />
+            <p className="truncate sm:whitespace-normal">
+              {supabaseConfigWarning}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDismissedConfigWarning(true)}
+            aria-label="Đóng thông báo cấu hình Supabase"
+            className="w-6 h-6 rounded-lg hover:bg-[#E9A825]/20 flex items-center justify-center shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Nội dung chính */}
       <main className="flex-1 min-h-0 relative overflow-hidden">
@@ -1368,25 +1756,64 @@ export default function App() {
 
                 {/* Danh sách thẻ người thợ cuộn dọc */}
                 <div className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
-                  {filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3 mt-4">
-                      <MapPin className="w-8 h-8 text-[#D96B38]/60 mx-auto" />
+                  {isLoadingPublicData ? (
+                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-2.5 mt-4">
+                      <Loader2 className="w-6 h-6 text-[#D96B38] animate-spin mx-auto" />
+                      <p className="text-sm font-semibold text-[#1F2933]">
+                        Đang tải danh sách cô chú thợ...
+                      </p>
+                      <p className="text-xs text-[#52606D]">
+                        Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu Supabase.
+                      </p>
+                    </div>
+                  ) : publicDbError ? (
+                    <div
+                      role="alert"
+                      className="rounded-2xl bg-[#C84B31]/8 border border-[#C84B31]/25 p-5 text-center space-y-3 mt-4"
+                    >
+                      <WifiOff className="w-7 h-7 text-[#C84B31] mx-auto" />
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-[#1F2933]">
-                          Chưa tìm thấy góc thợ phù hợp
+                        <p className="text-sm font-bold text-[#A3361F]">
+                          Không thể tải dữ liệu
                         </p>
-                        <p className="text-xs text-[#52606D] leading-relaxed">
-                          Thử xóa bớt bộ lọc hoặc tìm từ khóa ngắn hơn như &ldquo;giày&rdquo;, &ldquo;quần&rdquo;, &ldquo;khóa&rdquo; nhé.
+                        <p className="text-xs text-[#7A2B1B] leading-relaxed">
+                          {publicDbError}
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={handleResetFilters}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold transition-colors"
+                        onClick={() => void loadPublicArtisans()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] text-white text-xs font-semibold transition-colors"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Đặt lại bộ lọc</span>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Thử tải lại</span>
                       </button>
+                    </div>
+                  ) : filteredArtisans.length === 0 ? (
+                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3 mt-4">
+                      <MapPin className="w-8 h-8 text-[#D96B38]/60 mx-auto" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-[#1F2933]">
+                          {publicArtisans.length === 0 && isSupabaseConfigured
+                            ? 'Chưa có cô chú thợ nào trên bản đồ'
+                            : 'Chưa tìm thấy góc thợ phù hợp'}
+                        </p>
+                        <p className="text-xs text-[#52606D] leading-relaxed">
+                          {publicArtisans.length === 0 && isSupabaseConfigured
+                            ? 'Quản trị viên có thể vào mục Quản trị để nạp 6 dữ liệu mẫu vào Database.'
+                            : 'Thử xóa bớt bộ lọc hoặc tìm từ khóa ngắn hơn như “giày”, “quần”, “khóa” nhé.'}
+                        </p>
+                      </div>
+                      {hasActiveFilters && (
+                        <button
+                          type="button"
+                          onClick={handleResetFilters}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold transition-colors"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Đặt lại bộ lọc</span>
+                        </button>
+                      )}
                     </div>
                   ) : (
                     filteredArtisans.map((artisan) => (
@@ -1597,6 +2024,35 @@ export default function App() {
                     );
                   })}
                 </div>
+
+                {/* Trạng thái Loading nhẹ & Lỗi mạng trên Mobile */}
+                {isLoadingPublicData && (
+                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-sm text-xs font-semibold text-[#3A6B5C]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                    <span>Đang tải dữ liệu từ Supabase...</span>
+                  </div>
+                )}
+
+                {publicDbError && (
+                  <div
+                    role="alert"
+                    className="pointer-events-auto rounded-2xl bg-white/95 backdrop-blur-md border border-[#C84B31]/35 shadow-md px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#A3361F]"
+                  >
+                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                      <WifiOff className="w-4 h-4 shrink-0" />
+                      <span className="line-clamp-2 font-medium">
+                        {publicDbError}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void loadPublicArtisans()}
+                      className="min-h-[34px] px-3 py-1 rounded-xl bg-[#C84B31] text-white font-semibold whitespace-nowrap shrink-0"
+                    >
+                      Thử lại
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Bản đồ tương tác Leaflet + OpenStreetMap */}
@@ -1643,18 +2099,44 @@ export default function App() {
                     )}
                   </div>
 
-                  {filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3">
-                      <p className="text-sm font-bold text-[#1F2933]">
-                        Chưa tìm thấy góc thợ phù hợp
+                  {isLoadingPublicData ? (
+                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-2">
+                      <Loader2 className="w-6 h-6 text-[#D96B38] animate-spin mx-auto" />
+                      <p className="text-sm font-semibold text-[#1F2933]">
+                        Đang tải dữ liệu từ Supabase...
+                      </p>
+                    </div>
+                  ) : publicDbError ? (
+                    <div className="rounded-2xl bg-[#C84B31]/8 border border-[#C84B31]/25 p-5 text-center space-y-3">
+                      <WifiOff className="w-6 h-6 text-[#C84B31] mx-auto" />
+                      <p className="text-xs text-[#7A2B1B] font-medium">
+                        {publicDbError}
                       </p>
                       <button
                         type="button"
-                        onClick={handleResetFilters}
-                        className="min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold"
+                        onClick={() => void loadPublicArtisans()}
+                        className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] text-white text-xs font-semibold inline-flex items-center gap-1.5"
                       >
-                        Đặt lại bộ lọc
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Thử tải lại</span>
                       </button>
+                    </div>
+                  ) : filteredArtisans.length === 0 ? (
+                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3">
+                      <p className="text-sm font-bold text-[#1F2933]">
+                        {publicArtisans.length === 0 && isSupabaseConfigured
+                          ? 'Chưa có cô chú thợ nào trên bản đồ'
+                          : 'Chưa tìm thấy góc thợ phù hợp'}
+                      </p>
+                      {hasActiveFilters && (
+                        <button
+                          type="button"
+                          onClick={handleResetFilters}
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold"
+                        >
+                          Đặt lại bộ lọc
+                        </button>
+                      )}
                     </div>
                   ) : (
                     filteredArtisans.map((artisan) => (
@@ -1862,7 +2344,7 @@ export default function App() {
 
       {loginModalOpen && (
         <AdminLoginModal
-          accounts={adminAccounts}
+          onAuthenticate={handleAuthenticateAdmin}
           onClose={() => setLoginModalOpen(false)}
           onLoginSuccess={handleLoginSuccess}
         />

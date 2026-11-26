@@ -1,42 +1,58 @@
 import { useState, type FormEvent } from 'react';
-import { Eye, EyeOff, KeyRound, Lock, Mail, X } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Loader2, Lock, Mail, X } from 'lucide-react';
+import { isSupabaseConfigured } from '../supabaseClient';
 import type { AdminAccount } from '../types/artisan';
 
 interface AdminLoginModalProps {
-  accounts: AdminAccount[];
   onClose: () => void;
+  onAuthenticate: (
+    identifier: string,
+    password: string
+  ) => Promise<{ account: AdminAccount | null; error?: string }>;
   onLoginSuccess: (account: AdminAccount) => void;
 }
 
 export function AdminLoginModal({
-  accounts,
   onClose,
+  onAuthenticate,
   onLoginSuccess,
 }: AdminLoginModalProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const cleanedId = identifier.trim().toLowerCase();
-    const matched = accounts.find(
-      (acc) =>
-        acc.active &&
-        (acc.email.toLowerCase() === cleanedId ||
-          acc.name.toLowerCase() === cleanedId) &&
-        acc.password === password
-    );
+    if (isSubmitting) return;
 
-    if (!matched) {
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    try {
+      const result = await onAuthenticate(identifier.trim(), password);
+      if (result.error) {
+        setErrorMsg(result.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!result.account) {
+        setErrorMsg(
+          'Email hoặc mật khẩu chưa đúng (hoặc tài khoản đang tạm khóa).'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      onLoginSuccess(result.account);
+    } catch {
       setErrorMsg(
-        'Email/tên đăng nhập hoặc mật khẩu chưa đúng (hoặc tài khoản đang tạm khóa).'
+        'Không thể kiểm tra đăng nhập lúc này. Vui lòng kiểm tra kết nối mạng và thử lại.'
       );
-      return;
+      setIsSubmitting(false);
     }
-
-    onLoginSuccess(matched);
   };
 
   return (
@@ -64,7 +80,9 @@ export function AdminLoginModal({
                 Đăng nhập Khu Quản Trị
               </h2>
               <p className="text-[11px] text-[#52606D]">
-                Góc Thợ Quanh Ta · Dành cho điều phối & cộng tác viên
+                {isSupabaseConfigured
+                  ? 'Xác thực qua bảng admin_accounts trên Supabase'
+                  : 'Góc Thợ Quanh Ta · Chế độ dùng thử cục bộ'}
               </p>
             </div>
           </div>
@@ -85,7 +103,7 @@ export function AdminLoginModal({
               htmlFor="admin-email"
               className="block text-xs font-semibold text-[#1F2933] mb-1.5"
             >
-              Email hoặc Tên đăng nhập
+              Email đăng nhập
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -152,12 +170,20 @@ export function AdminLoginModal({
 
           <button
             type="submit"
-            className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm transition-colors"
+            disabled={isSubmitting}
+            className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors"
           >
-            Đăng nhập
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Đang xác thực...</span>
+              </>
+            ) : (
+              <span>Đăng nhập</span>
+            )}
           </button>
 
-          {/* Gợi ý nhỏ tài khoản mặc định để test */}
+          {/* Gợi ý tài khoản dùng thử */}
           <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-3 text-[11px] text-[#52606D] space-y-1.5">
             <p className="font-semibold text-[#1F2933]">
               Tài khoản dùng thử nhanh:

@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   Compass,
+  Loader2,
   MapPin,
   PlusCircle,
   ShieldCheck,
@@ -21,7 +22,9 @@ import type {
 import { formatVietnamTimestamp } from '../utils/storage';
 
 interface SuggestArtisanViewProps {
-  onSubmitPendingSuggestion: (suggestion: PendingSuggestion) => void;
+  onSubmitPendingSuggestion: (
+    suggestion: PendingSuggestion
+  ) => Promise<{ ok: boolean; error?: string }> | { ok: boolean; error?: string } | void;
   onBackToExplore: () => void;
 }
 
@@ -47,6 +50,7 @@ export function SuggestArtisanView({
     undefined
   );
   const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedSuggestion, setSubmittedSuggestion] =
     useState<PendingSuggestion | null>(null);
 
@@ -73,8 +77,9 @@ export function SuggestArtisanView({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (name.trim().length < 2) {
       setErrorMsg('Bạn vui lòng nhập tên hoặc cách gọi thân mật của cô chú nhé.');
@@ -126,15 +131,29 @@ export function SuggestArtisanView({
       submittedAt: formatVietnamTimestamp(),
     };
 
-    onSubmitPendingSuggestion(newSuggestion);
-    setSubmittedSuggestion(newSuggestion);
-    setName('');
-    setLandmark('');
-    setProblemsText('');
-    setStory('');
-    setSubmittedBy('');
-    setPhotoPreview(undefined);
+    setIsSubmitting(true);
     setErrorMsg('');
+    try {
+      const result = await onSubmitPendingSuggestion(newSuggestion);
+      if (result && result.ok === false) {
+        setErrorMsg(
+          result.error ??
+            'Không thể gửi đề xuất lên máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.'
+        );
+        return;
+      }
+
+      setSubmittedSuggestion(newSuggestion);
+      setName('');
+      setLandmark('');
+      setProblemsText('');
+      setStory('');
+      setSubmittedBy('');
+      setPhotoPreview(undefined);
+      setErrorMsg('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -496,10 +515,20 @@ export function SuggestArtisanView({
 
               <button
                 type="submit"
-                className="min-h-[46px] px-6 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors whitespace-nowrap shrink-0"
+                disabled={isSubmitting}
+                className="min-h-[46px] px-6 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors whitespace-nowrap shrink-0"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>Gửi đề xuất chờ duyệt</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang gửi đề xuất...</span>
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Gửi đề xuất chờ duyệt</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
