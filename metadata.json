@@ -1,0 +1,6 @@
+{
+  "name": "Góc Thợ Quanh Ta",
+  "description": "Bản đồ số cộng đồng kết nối người trẻ TP.HCM với các cô chú thợ thủ công sửa chữa nhỏ lẻ trên vỉa hè, góc phố — Hỏng đâu tìm đó, gần nhau hơn mỗi ngày!",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
