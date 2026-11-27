@@ -294,6 +294,8 @@ export function AdminArtisanFormModal({
       },
       praises: initialArtisan?.praises ?? [],
       revivedCount: initialArtisan?.revivedCount ?? 0,
+      submittedBy: initialArtisan?.submittedBy ?? pendingSuggestion?.submittedBy,
+      submittedAt: initialArtisan?.submittedAt ?? pendingSuggestion?.submittedAt,
       pic: pic.trim() || undefined,
       internalNotes: internalNotes.trim() || undefined,
     };

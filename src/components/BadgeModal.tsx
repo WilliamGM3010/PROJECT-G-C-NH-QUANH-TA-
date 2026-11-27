@@ -22,11 +22,15 @@ export interface BadgeTier {
   unlocked: boolean;
 }
 
-export function evaluateUserBadges(stats: UserContributionStats): {
+export function evaluateUserBadges(
+  stats: UserContributionStats,
+  syncedBadgeIds: string[] = []
+): {
   totalActions: number;
   tiers: BadgeTier[];
   highestUnlocked: BadgeTier | null;
 } {
+  const syncedSet = new Set(syncedBadgeIds);
   const totalActions =
     stats.suggestionsCount +
     stats.reportsCount +
@@ -43,7 +47,7 @@ export function evaluateUserBadges(stats: UserContributionStats): {
       accentBg: '#3A6B5C',
       accentPrimary: '#3A6B5C',
       accentSecondary: '#D96B38',
-      unlocked: totalActions >= 1,
+      unlocked: totalActions >= 1 || syncedSet.has('friend'),
     },
     {
       id: 'local_guide',
@@ -54,7 +58,10 @@ export function evaluateUserBadges(stats: UserContributionStats): {
       accentBg: '#D96B38',
       accentPrimary: '#D96B38',
       accentSecondary: '#3A6B5C',
-      unlocked: stats.suggestionsCount >= 1 || totalActions >= 3,
+      unlocked:
+        stats.suggestionsCount >= 1 ||
+        totalActions >= 3 ||
+        syncedSet.has('local_guide'),
     },
     {
       id: 'green_ambassador',
@@ -65,7 +72,7 @@ export function evaluateUserBadges(stats: UserContributionStats): {
       accentBg: '#B85427',
       accentPrimary: '#D96B38',
       accentSecondary: '#2F594C',
-      unlocked: totalActions >= 5,
+      unlocked: totalActions >= 5 || syncedSet.has('green_ambassador'),
     },
   ];
 
@@ -274,18 +281,20 @@ function downloadStoryBadgePng(
 
 interface BadgeModalProps {
   stats: UserContributionStats;
+  syncedBadgeIds?: string[];
   onUpdateDisplayName: (nextName: string) => void;
   onClose: () => void;
 }
 
 export function BadgeModal({
   stats,
+  syncedBadgeIds = [],
   onUpdateDisplayName,
   onClose,
 }: BadgeModalProps) {
   const { totalActions, tiers, highestUnlocked } = useMemo(
-    () => evaluateUserBadges(stats),
-    [stats]
+    () => evaluateUserBadges(stats, syncedBadgeIds),
+    [stats, syncedBadgeIds]
   );
 
   const [selectedTierId, setSelectedTierId] = useState<BadgeTier['id']>(

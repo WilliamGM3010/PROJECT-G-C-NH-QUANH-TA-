@@ -471,7 +471,7 @@ function accountToDbRow(account: AdminAccount): Record<string, unknown> {
     username: normalizedUsername,
     email: (account.email || normalizedUsername).trim().toLowerCase(),
     password: account.password,
-    role: account.role,
+    role: normalizeAccountRole(account.role),
     active: account.active,
     revived_count: account.revivedCount ?? 0,
     badges: account.badges ?? [],
@@ -1014,7 +1014,7 @@ export async function updateAccountByAdminDb(
     display_name: cleanedDisplayName,
     username: cleanedUsername,
     email: cleanedUsername,
-    role: payload.role,
+    role: normalizeAccountRole(payload.role),
   };
 
   const { data, error } = await supabase

@@ -106,7 +106,7 @@ export interface StatusReport {
   resolved: boolean;
 }
 
-export type AdminRole = 'super_admin' | 'collaborator' | 'user';
+export type AdminRole = 'Super Admin' | 'Cộng tác viên' | 'user';
 
 export interface AdminAccount {
   id: string;

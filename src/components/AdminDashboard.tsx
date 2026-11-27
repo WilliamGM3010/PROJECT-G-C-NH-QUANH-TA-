@@ -14,6 +14,7 @@ import {
   Flag,
   Heart,
   History,
+  KeyRound,
   Loader2,
   LogOut,
   MapPin,
@@ -50,13 +51,18 @@ import type {
 } from '../types/artisan';
 import { findPotentialDuplicates } from '../utils/geo';
 import {
+  canAccessAdminDashboard,
   downloadAdminAccountsCsvTemplate,
   downloadArtisansCsvTemplate,
   exportArtisansToCsv,
   exportBackupJson,
   formatVietnamTimestamp,
   getDaysSinceVerified,
+  getRoleDisplayLabel,
+  isSuperAdminRole,
+  isValidUsername,
   isVerificationStale,
+  normalizeAccountRole,
   parseAdminAccountsFromCsv,
   parseArtisansFromCsv,
   parseBackupJson,
@@ -99,15 +105,30 @@ interface AdminDashboardProps {
   onClearAuditLogs: () => void;
   onImportArtisansCsv: (imported: Artisan[], skipped: number) => void;
   onRestoreBackupJson: (backup: AppBackupPayload) => void;
-  onCreateAdminAccount: (
-    account: Omit<AdminAccount, 'id' | 'createdAt' | 'active'>
-  ) => void;
+  onCreateAdminAccount: (payload: {
+    displayName: string;
+    username: string;
+    password: string;
+    role: AdminRole;
+  }) => Promise<{ ok: boolean; error?: string }> | void;
+  onUpdateAdminAccount: (
+    accountId: string,
+    payload: {
+      displayName: string;
+      username: string;
+      role: AdminRole;
+    }
+  ) => Promise<{ ok: boolean; error?: string }> | void;
+  onResetAccountPassword: (
+    accountId: string,
+    newPassword: string
+  ) => Promise<{ ok: boolean; error?: string }> | void;
   onBulkCreateAdminAccounts: (
     accounts: AdminAccount[],
     skipped: number,
     duplicates: number
   ) => void;
-  onDeleteAdminAccount: (accountId: string) => void;
+  onDeleteAdminAccount: (accountId: string) => Promise<void> | void;
   onNotify: (message: string) => void;
   isSupabaseMode?: boolean;
   supabaseWarning?: string | null;
@@ -176,6 +197,8 @@ export function AdminDashboard({
   onImportArtisansCsv,
   onRestoreBackupJson,
   onCreateAdminAccount,
+  onUpdateAdminAccount,
+  onResetAccountPassword,
   onBulkCreateAdminAccounts,
   onDeleteAdminAccount,
   onNotify,
@@ -213,19 +236,77 @@ export function AdminDashboard({
   );
   const [quickViewArtisan, setQuickViewArtisan] = useState<Artisan | null>(null);
 
-  // Form tạo tài khoản Admin mới
+  // Bộ lọc & tìm kiếm Quản lý tài khoản
+  const [accountRoleFilter, setAccountRoleFilter] = useState<'all' | AdminRole>(
+    'all'
+  );
+  const [accountSearch, setAccountSearch] = useState('');
+
+  // Form tạo tài khoản mới (Super Admin)
   const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminUsername, setNewAdminUsername] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<AdminRole>('Cộng tác viên');
   const [adminFormError, setAdminFormError] = useState('');
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+
+  // Modals Quản lý tài khoản: Chỉnh sửa, Đổi mật khẩu, Xác nhận xóa
+  const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editRole, setEditRole] = useState<AdminRole>('user');
+  const [editAccountError, setEditAccountError] = useState('');
+  const [isSavingAccountEdit, setIsSavingAccountEdit] = useState(false);
+
+  const [resetPwdAccount, setResetPwdAccount] = useState<AdminAccount | null>(
+    null
+  );
+  const [nextResetPassword, setNextResetPassword] = useState('');
+  const [resetPwdError, setResetPwdError] = useState('');
+  const [isResettingPwd, setIsResettingPwd] = useState(false);
+
+  const [deletingAccount, setDeletingAccount] = useState<AdminAccount | null>(
+    null
+  );
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // File input refs cho CSV & JSON
   const csvArtisanInputRef = useRef<HTMLInputElement | null>(null);
   const jsonBackupInputRef = useRef<HTMLInputElement | null>(null);
   const csvAdminInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isSuperAdmin = currentAdmin.role === 'Super Admin';
+  const currentNormalizedRole = normalizeAccountRole(currentAdmin.role);
+  const isSuperAdmin = isSuperAdminRole(currentNormalizedRole);
+  const hasAdminAccess = canAccessAdminDashboard(currentNormalizedRole);
+
+  const accountCounts = useMemo(() => {
+    let superAdmins = 0;
+    let collaborators = 0;
+    let users = 0;
+    for (const acc of adminAccounts) {
+      const r = normalizeAccountRole(acc.role);
+      if (r === 'Super Admin') superAdmins += 1;
+      else if (r === 'Cộng tác viên') collaborators += 1;
+      else users += 1;
+    }
+    return { superAdmins, collaborators, users };
+  }, [adminAccounts]);
+
+  const filteredAccounts = useMemo(() => {
+    const q = accountSearch.trim().toLowerCase();
+    return adminAccounts.filter((acc) => {
+      const roleNorm = normalizeAccountRole(acc.role);
+      if (accountRoleFilter !== 'all' && roleNorm !== accountRoleFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        (acc.displayName || acc.name).toLowerCase().includes(q) ||
+        (acc.username || '').toLowerCase().includes(q) ||
+        (acc.email || '').toLowerCase().includes(q)
+      );
+    });
+  }, [adminAccounts, accountRoleFilter, accountSearch]);
   const visibleArtisans = useMemo(
     () => artisans.filter((a) => !a.isHidden),
     [artisans]
@@ -369,7 +450,7 @@ export function AdminDashboard({
     reader.readAsText(file, 'utf-8');
   };
 
-  // Xử lý Import CSV tạo hàng loạt tài khoản Admin (chỉ Super Admin)
+  // Xử lý Import CSV tạo hàng loạt tài khoản (chỉ Super Admin)
   const handleAdminCsvFile = (e: ChangeEvent<HTMLInputElement>) => {
     if (!isSuperAdmin) return;
     const file = e.target.files?.[0];
@@ -379,58 +460,180 @@ export function AdminDashboard({
     reader.onload = () => {
       try {
         const text = typeof reader.result === 'string' ? reader.result : '';
-        const existingEmails = adminAccounts.map((a) => a.email);
+        const existingIdentifiers = adminAccounts.flatMap((a) =>
+          [a.username, a.email].filter(Boolean)
+        );
         const { accounts, skipped, duplicates } = parseAdminAccountsFromCsv(
           text,
-          existingEmails
+          existingIdentifiers
         );
         if (accounts.length === 0) {
           onNotify(
             duplicates > 0
-              ? `Tất cả ${duplicates} email trong file đều đã tồn tại trong hệ thống.`
-              : 'Không tìm thấy tài khoản hợp lệ trong file CSV (cần đủ Họ tên, Email, Mật khẩu >= 4 ký tự).'
+              ? `Tất cả ${duplicates} tài khoản trong file đều đã tồn tại trong hệ thống.`
+              : 'Không tìm thấy tài khoản hợp lệ trong file CSV (cần đủ Tên hiển thị, Tên đăng nhập/Email, Mật khẩu >= 4 ký tự).'
           );
           return;
         }
         onBulkCreateAdminAccounts(accounts, skipped, duplicates);
       } catch {
-        onNotify('Lỗi khi đọc file CSV tài khoản quản trị.');
+        onNotify('Lỗi khi đọc file CSV tài khoản.');
       }
     };
     reader.readAsText(file, 'utf-8');
   };
 
-  const handleCreateAdminSubmit = (e: FormEvent) => {
+  const handleCreateAdminSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!isSuperAdmin) return;
+    if (!isSuperAdmin || isCreatingAccount) return;
 
     const cleanName = newAdminName.trim();
-    const cleanEmail = newAdminEmail.trim().toLowerCase();
-    if (cleanName.length < 2 || !cleanEmail.includes('@')) {
-      setAdminFormError('Vui lòng nhập đầy đủ họ tên và email hợp lệ.');
+    const cleanUsername = newAdminUsername.trim().toLowerCase();
+    if (cleanName.length < 2) {
+      setAdminFormError('Vui lòng nhập tên hiển thị tối thiểu 2 ký tự.');
+      return;
+    }
+    if (!isValidUsername(cleanUsername)) {
+      setAdminFormError(
+        'Tên đăng nhập từ 3–64 ký tự, không khoảng trắng (hỗ trợ chữ, số, ., _, -, @).'
+      );
       return;
     }
     if (newAdminPassword.length < 4) {
       setAdminFormError('Mật khẩu cần tối thiểu 4 ký tự.');
       return;
     }
-    if (adminAccounts.some((a) => a.email.toLowerCase() === cleanEmail)) {
-      setAdminFormError('Email này đã tồn tại trong danh sách quản trị.');
+    if (
+      adminAccounts.some(
+        (a) =>
+          a.username.toLowerCase() === cleanUsername ||
+          a.email.toLowerCase() === cleanUsername
+      )
+    ) {
+      setAdminFormError('Tên đăng nhập / email này đã tồn tại trên hệ thống.');
       return;
     }
 
-    onCreateAdminAccount({
-      name: cleanName,
-      email: cleanEmail,
-      password: newAdminPassword,
-      role: newAdminRole,
-    });
-
-    setNewAdminName('');
-    setNewAdminEmail('');
-    setNewAdminPassword('');
-    setNewAdminRole('Cộng tác viên');
+    setIsCreatingAccount(true);
     setAdminFormError('');
+    try {
+      const res = await onCreateAdminAccount({
+        displayName: cleanName,
+        username: cleanUsername,
+        password: newAdminPassword,
+        role: normalizeAccountRole(newAdminRole),
+      });
+      if (res && !res.ok) {
+        setAdminFormError(res.error ?? 'Không thể tạo tài khoản mới.');
+        return;
+      }
+      setNewAdminName('');
+      setNewAdminUsername('');
+      setNewAdminPassword('');
+      setNewAdminRole('Cộng tác viên');
+    } finally {
+      setIsCreatingAccount(false);
+    }
+  };
+
+  const openEditAccountModal = (acc: AdminAccount) => {
+    if (!isSuperAdmin) return;
+    setEditingAccount(acc);
+    setEditDisplayName(acc.displayName || acc.name);
+    setEditUsername(acc.username || acc.email);
+    setEditRole(normalizeAccountRole(acc.role));
+    setEditAccountError('');
+  };
+
+  const handleSaveAccountEdit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!isSuperAdmin || !editingAccount || isSavingAccountEdit) return;
+
+    const cleanName = editDisplayName.trim();
+    const cleanUsername = editUsername.trim().toLowerCase();
+    if (cleanName.length < 2) {
+      setEditAccountError('Tên hiển thị cần tối thiểu 2 ký tự.');
+      return;
+    }
+    if (!isValidUsername(cleanUsername)) {
+      setEditAccountError(
+        'Tên đăng nhập không hợp lệ (3–64 ký tự, không chứa khoảng trắng).'
+      );
+      return;
+    }
+    const isSelf = editingAccount.id === currentAdmin.id;
+    const finalRole: AdminRole = isSelf
+      ? 'Super Admin'
+      : normalizeAccountRole(editRole);
+
+    setIsSavingAccountEdit(true);
+    setEditAccountError('');
+    try {
+      const res = await onUpdateAdminAccount(editingAccount.id, {
+        displayName: cleanName,
+        username: cleanUsername,
+        role: finalRole,
+      });
+      if (res && !res.ok) {
+        setEditAccountError(res.error ?? 'Không thể cập nhật tài khoản.');
+        return;
+      }
+      setEditingAccount(null);
+    } finally {
+      setIsSavingAccountEdit(false);
+    }
+  };
+
+  const openResetPwdModal = (acc: AdminAccount) => {
+    if (!isSuperAdmin) return;
+    setResetPwdAccount(acc);
+    setNextResetPassword('');
+    setResetPwdError('');
+  };
+
+  const handleConfirmResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!isSuperAdmin || !resetPwdAccount || isResettingPwd) return;
+
+    if (nextResetPassword.length < 4) {
+      setResetPwdError('Mật khẩu mới cần tối thiểu 4 ký tự.');
+      return;
+    }
+
+    setIsResettingPwd(true);
+    setResetPwdError('');
+    try {
+      const res = await onResetAccountPassword(
+        resetPwdAccount.id,
+        nextResetPassword
+      );
+      if (res && !res.ok) {
+        setResetPwdError(res.error ?? 'Không thể đặt lại mật khẩu.');
+        return;
+      }
+      setResetPwdAccount(null);
+      setNextResetPassword('');
+    } finally {
+      setIsResettingPwd(false);
+    }
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    if (
+      !isSuperAdmin ||
+      !deletingAccount ||
+      deletingAccount.id === currentAdmin.id ||
+      isDeletingAccount
+    ) {
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      await onDeleteAdminAccount(deletingAccount.id);
+      setDeletingAccount(null);
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const navItems: {
@@ -475,8 +678,41 @@ export function AdminDashboard({
       Icon: History,
       badge: auditLogs.length,
     },
-    { id: 'accounts', label: 'Tài khoản Admin', Icon: Users },
+    {
+      id: 'accounts',
+      label: 'Quản lý tài khoản',
+      Icon: Users,
+      badge: adminAccounts.length,
+    },
   ];
+
+  if (!hasAdminAccess) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#FAF8F5] p-6">
+        <div className="max-w-md w-full rounded-3xl bg-white border border-[#EBE5DC] shadow-lg p-7 text-center space-y-4">
+          <span className="w-12 h-12 rounded-2xl bg-[#C84B31]/10 text-[#C84B31] flex items-center justify-center mx-auto">
+            <Shield className="w-6 h-6" />
+          </span>
+          <div className="space-y-1.5">
+            <h1 className="text-lg font-bold text-[#1F2933]">
+              Khu vực chỉ dành cho quản trị viên
+            </h1>
+            <p className="text-xs text-[#52606D] leading-relaxed">
+              Chỉ tài khoản có vai trò <strong>Super Admin</strong> hoặc{' '}
+              <strong>Cộng tác viên</strong> mới có quyền truy cập Khu Quản Trị.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onExitToMap}
+            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold"
+          >
+            Quay về bản đồ Góc Thợ
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-[#FAF8F5] text-[#1F2933]">
@@ -514,9 +750,9 @@ export function AdminDashboard({
               Khu Quản Trị · Góc Thợ Quanh Ta
             </p>
             <p className="text-[11px] text-[#52606D] truncate">
-              {currentAdmin.name} ·{' '}
+              {currentAdmin.displayName || currentAdmin.name} ·{' '}
               <span className="font-semibold text-[#3A6B5C]">
-                {currentAdmin.role}
+                {getRoleDisplayLabel(currentNormalizedRole)}
               </span>
             </p>
           </div>
@@ -857,19 +1093,22 @@ export function AdminDashboard({
                     </p>
                   </button>
 
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('accounts')}
+                    className="rounded-2xl bg-white border border-[#EBE5DC] hover:border-[#3A6B5C]/40 shadow-sm p-4 space-y-2 text-left transition-colors"
+                  >
                     <div className="flex items-center justify-between text-xs text-[#52606D]">
-                      <span className="font-medium">Tài khoản Admin</span>
+                      <span className="font-medium">Tài khoản hệ thống</span>
                       <Users className="w-4 h-4 text-[#52606D]" />
                     </div>
                     <p className="text-3xl font-bold text-[#1F2933] tabular-nums">
                       {adminAccounts.length}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">
-                      {adminAccounts.filter((a) => a.role === 'Super Admin').length}{' '}
-                      Super Admin
+                    <p className="text-[11px] text-[#52606D] tabular-nums">
+                      {accountCounts.superAdmins} Admin · {accountCounts.collaborators} CTV · {accountCounts.users} TV
                     </p>
-                  </div>
+                  </button>
 
                   <div className="rounded-2xl bg-[#3A6B5C] text-white shadow-sm p-4 space-y-2">
                     <div className="flex items-center justify-between text-xs text-white/85">
@@ -1819,68 +2058,166 @@ export function AdminDashboard({
             )}
 
             {/* =====================================================
-                TAB 7: QUẢN LÝ TÀI KHOẢN ADMIN (+ IMPORT CSV HÀNG LOẠT)
+                TAB 7: QUẢN LÝ TÀI KHOẢN (TOÀN BỘ TÀI KHOẢN TRÊN SUPABASE)
                ===================================================== */}
             {activeTab === 'accounts' && (
               <div className="space-y-6">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
-                    Quản lý Tài khoản Admin ({adminAccounts.length})
-                  </h1>
-                  <p className="text-xs sm:text-sm text-[#52606D]">
-                    Phân quyền đội ngũ điều phối (Super Admin) và Cộng tác viên xác minh thực địa; hỗ trợ tạo lẻ hoặc nhập hàng loạt từ CSV.
-                  </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                      Quản lý tài khoản ({adminAccounts.length})
+                    </h1>
+                    <p className="text-xs sm:text-sm text-[#52606D]">
+                      Quản lý toàn bộ tài khoản Super Admin, Cộng tác viên và Người dùng trên bảng{' '}
+                      <code className="font-semibold text-[#3A6B5C]">admin_accounts</code>.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bộ lọc theo vai trò & Ô tìm kiếm */}
+                <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-xs p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                    {(
+                      [
+                        { id: 'all', label: `Tất cả (${adminAccounts.length})` },
+                        {
+                          id: 'Super Admin',
+                          label: `Super Admin (${accountCounts.superAdmins})`,
+                        },
+                        {
+                          id: 'Cộng tác viên',
+                          label: `Cộng tác viên (${accountCounts.collaborators})`,
+                        },
+                        {
+                          id: 'user',
+                          label: `Người dùng (${accountCounts.users})`,
+                        },
+                      ] as const
+                    ).map((tab) => {
+                      const active = accountRoleFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setAccountRoleFilter(tab.id)}
+                          className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
+                            active
+                              ? 'bg-[#D96B38] text-white shadow-xs'
+                              : 'bg-[#FAF8F5] border border-[#E5DFD5] text-[#52606D] hover:text-[#1F2933]'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="relative w-full md:w-64 shrink-0">
+                    <Search className="w-4 h-4 text-[#7B8794] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="search"
+                      value={accountSearch}
+                      onChange={(e) => setAccountSearch(e.target.value)}
+                      placeholder="Tìm theo tên, username, email..."
+                      className="w-full h-9 pl-9 pr-3 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs text-[#1F2933] focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   {/* Danh sách tài khoản */}
                   <div className="lg:col-span-7 space-y-3">
-                    {adminAccounts.map((acc) => {
-                      const isSelf = acc.id === currentAdmin.id;
-                      return (
-                        <div
-                          key={acc.id}
-                          className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 flex items-center justify-between gap-3"
-                        >
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-bold text-[#1F2933] truncate">
-                                {acc.name}
-                              </p>
-                              <span
-                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                                  acc.role === 'Super Admin'
-                                    ? 'bg-[#D96B38]/12 text-[#D96B38]'
-                                    : 'bg-[#3A6B5C]/12 text-[#3A6B5C]'
-                                }`}
-                              >
-                                {acc.role}
-                              </span>
-                              {isSelf && (
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1F2933] text-white">
-                                  Đang đăng nhập
+                    {filteredAccounts.length === 0 ? (
+                      <div className="rounded-2xl bg-white border border-[#EBE5DC] p-8 text-center space-y-1.5">
+                        <Users className="w-8 h-8 text-[#7B8794]/50 mx-auto" />
+                        <p className="text-sm font-bold text-[#1F2933]">
+                          Không tìm thấy tài khoản phù hợp
+                        </p>
+                        <p className="text-xs text-[#52606D]">
+                          Thử đổi bộ lọc vai trò hoặc từ khóa tìm kiếm khác.
+                        </p>
+                      </div>
+                    ) : (
+                      filteredAccounts.map((acc) => {
+                        const isSelf = acc.id === currentAdmin.id;
+                        const roleNorm = normalizeAccountRole(acc.role);
+                        const displayName = acc.displayName || acc.name;
+                        const handle = acc.username || acc.email;
+                        return (
+                          <div
+                            key={acc.id}
+                            className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-bold text-[#1F2933] truncate">
+                                  {displayName}
+                                </p>
+                                <span
+                                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                    roleNorm === 'Super Admin'
+                                      ? 'bg-[#D96B38]/12 text-[#D96B38]'
+                                      : roleNorm === 'Cộng tác viên'
+                                        ? 'bg-[#3A6B5C]/12 text-[#3A6B5C]'
+                                        : 'bg-[#EBE5DC] text-[#52606D]'
+                                  }`}
+                                >
+                                  {getRoleDisplayLabel(roleNorm)}
                                 </span>
-                              )}
+                                {isSelf && (
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1F2933] text-white">
+                                    Đang đăng nhập
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#52606D] truncate">
+                                @{handle} · Tạo ngày {acc.createdAt}
+                              </p>
+                              <p className="text-[11px] text-[#7B8794] tabular-nums">
+                                ♻️ {acc.revivedCount ?? 0} lần sửa đồ · ❤️{' '}
+                                {acc.favoriteArtisanIds?.length ?? 0} góc thợ đã lưu
+                              </p>
                             </div>
-                            <p className="text-xs text-[#52606D] truncate">
-                              {acc.email} · Tạo ngày {acc.createdAt}
-                            </p>
-                          </div>
 
-                          {isSuperAdmin && !isSelf && (
-                            <button
-                              type="button"
-                              onClick={() => onDeleteAdminAccount(acc.id)}
-                              aria-label={`Xóa tài khoản ${acc.name}`}
-                              className="min-h-[38px] px-2.5 py-1.5 rounded-xl border border-[#C84B31]/20 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1 shrink-0"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              <span>Xóa</span>
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                            {isSuperAdmin && (
+                              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditAccountModal(acc)}
+                                  title="Chỉnh sửa tên hiển thị, tên đăng nhập & vai trò"
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:border-[#D96B38] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-[#D96B38]" />
+                                  <span>Sửa</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => openResetPwdModal(acc)}
+                                  title="Đặt lại mật khẩu mới cho tài khoản này"
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#3A6B5C]/25 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 text-[#3A6B5C] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                  <span>Đổi MK</span>
+                                </button>
+
+                                {!isSelf && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeletingAccount(acc)}
+                                    aria-label={`Xóa tài khoản ${displayName}`}
+                                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#C84B31]/20 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Xóa</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
 
                   {/* Cột phải: Tạo mới 1 tài khoản + Nhập hàng loạt từ CSV */}
@@ -1895,19 +2232,22 @@ export function AdminDashboard({
                           <div className="flex items-center gap-2">
                             <UserPlus className="w-4 h-4 text-[#D96B38]" />
                             <h2 className="text-sm font-bold text-[#1F2933]">
-                              Tạo tài khoản Admin mới
+                              Tạo tài khoản mới
                             </h2>
                           </div>
 
                           <div>
                             <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                              Họ tên hiển thị
+                              Tên hiển thị
                             </label>
                             <input
                               type="text"
                               required
                               value={newAdminName}
-                              onChange={(e) => setNewAdminName(e.target.value)}
+                              onChange={(e) => {
+                                setNewAdminName(e.target.value);
+                                if (adminFormError) setAdminFormError('');
+                              }}
                               placeholder="VD: Minh Anh (CTV Bình Thạnh)"
                               className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
                             />
@@ -1915,14 +2255,19 @@ export function AdminDashboard({
 
                           <div>
                             <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                              Email đăng nhập
+                              Tên đăng nhập hoặc Email (không khoảng trắng)
                             </label>
                             <input
-                              type="email"
+                              type="text"
                               required
-                              value={newAdminEmail}
-                              onChange={(e) => setNewAdminEmail(e.target.value)}
-                              placeholder="ctv2@goctho.vn"
+                              value={newAdminUsername}
+                              onChange={(e) => {
+                                setNewAdminUsername(
+                                  e.target.value.replace(/\s+/g, '')
+                                );
+                                if (adminFormError) setAdminFormError('');
+                              }}
+                              placeholder="VD: ctv2@goctho.vn hoặc minhanh"
                               className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
                             />
                           </div>
@@ -1935,9 +2280,10 @@ export function AdminDashboard({
                               type="text"
                               required
                               value={newAdminPassword}
-                              onChange={(e) =>
-                                setNewAdminPassword(e.target.value)
-                              }
+                              onChange={(e) => {
+                                setNewAdminPassword(e.target.value);
+                                if (adminFormError) setAdminFormError('');
+                              }}
                               placeholder="Tối thiểu 4 ký tự"
                               className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
                             />
@@ -1960,6 +2306,9 @@ export function AdminDashboard({
                               <option value="Super Admin">
                                 Super Admin (Toàn quyền quản trị)
                               </option>
+                              <option value="user">
+                                Người dùng (Thành viên bản đồ)
+                              </option>
                             </select>
                           </div>
 
@@ -1971,13 +2320,17 @@ export function AdminDashboard({
 
                           <button
                             type="submit"
-                            className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm"
+                            disabled={isCreatingAccount}
+                            className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2"
                           >
-                            Tạo tài khoản
+                            {isCreatingAccount && (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            )}
+                            <span>Tạo tài khoản</span>
                           </button>
                         </form>
 
-                        {/* Nhập danh sách tạo tài khoản Admin hàng loạt từ CSV */}
+                        {/* Nhập danh sách tạo tài khoản hàng loạt từ CSV */}
                         <div className="rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] p-5 space-y-3">
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="w-4 h-4 text-[#3A6B5C]" />
@@ -1986,7 +2339,10 @@ export function AdminDashboard({
                             </h3>
                           </div>
                           <p className="text-xs text-[#52606D] leading-relaxed">
-                            Tải file CSV mẫu (gồm các cột: <strong>Họ tên, Email, Mật khẩu, Vai trò</strong>) để tạo nhanh nhiều tài khoản Cộng tác viên hoặc Super Admin cùng lúc. Email trùng sẽ tự động bỏ qua.
+                            Tải file CSV mẫu (gồm các cột:{' '}
+                            <strong>Tên hiển thị, Tên đăng nhập / Email, Mật khẩu, Vai trò</strong>) để tạo nhanh nhiều tài khoản{' '}
+                            <strong>Super Admin</strong>, <strong>Cộng tác viên</strong> hoặc{' '}
+                            <strong>user</strong> cùng lúc.
                           </p>
                           <div className="flex flex-wrap items-center gap-2">
                             <button
@@ -2015,7 +2371,7 @@ export function AdminDashboard({
                           <span>Giới hạn phân quyền Cộng tác viên</span>
                         </div>
                         <p className="leading-relaxed">
-                          Tài khoản vai trò <strong>Cộng tác viên</strong> có thể duyệt đề xuất, cập nhật hồ sơ thợ, duyệt lưu bút và xử lý báo cáo tình trạng, nhưng không có quyền tạo/nhập hoặc xóa tài khoản Admin khác.
+                          Tài khoản vai trò <strong>Cộng tác viên</strong> có thể duyệt đề xuất, cập nhật hồ sơ cô chú thợ, duyệt lưu bút và xử lý báo cáo tình trạng, nhưng không có quyền tạo mới, chỉnh sửa vai trò, đặt lại mật khẩu hay xóa tài khoản người khác.
                         </p>
                       </div>
                     )}
@@ -2129,6 +2485,280 @@ export function AdminDashboard({
                   className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold"
                 >
                   Đã đối chiếu xong
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chỉnh sửa tài khoản (Super Admin) */}
+      {isSuperAdmin && editingAccount && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-account-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          onClick={() => setEditingAccount(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+              <h3
+                id="edit-account-title"
+                className="text-sm font-bold text-[#1F2933]"
+              >
+                Chỉnh sửa tài khoản
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingAccount(null)}
+                aria-label="Đóng"
+                className="w-8 h-8 rounded-lg text-[#52606D] hover:bg-white flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveAccountEdit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                  Tên hiển thị
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editDisplayName}
+                  onChange={(e) => {
+                    setEditDisplayName(e.target.value);
+                    if (editAccountError) setEditAccountError('');
+                  }}
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                  Tên đăng nhập / Email
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editUsername}
+                  onChange={(e) => {
+                    setEditUsername(e.target.value.replace(/\s+/g, ''));
+                    if (editAccountError) setEditAccountError('');
+                  }}
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                  Vai trò phân quyền
+                </label>
+                <select
+                  value={editRole}
+                  disabled={editingAccount.id === currentAdmin.id}
+                  onChange={(e) => setEditRole(e.target.value as AdminRole)}
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm disabled:opacity-60 focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                >
+                  <option value="user">Người dùng (Thành viên bản đồ)</option>
+                  <option value="Cộng tác viên">
+                    Cộng tác viên (Duyệt &amp; cập nhật thợ)
+                  </option>
+                  <option value="Super Admin">
+                    Super Admin (Toàn quyền quản trị)
+                  </option>
+                </select>
+                {editingAccount.id === currentAdmin.id && (
+                  <p className="text-[11px] text-[#7B8794] mt-1">
+                    Không thể hạ quyền của chính tài khoản Super Admin đang đăng nhập.
+                  </p>
+                )}
+              </div>
+
+              {editAccountError && (
+                <p
+                  role="alert"
+                  className="text-xs font-semibold text-[#C84B31]"
+                >
+                  {editAccountError}
+                </p>
+              )}
+
+              <div className="pt-1 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingAccount(null)}
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingAccountEdit}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  {isSavingAccountEdit && (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  <span>Lưu thay đổi</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Đặt lại mật khẩu (Super Admin) */}
+      {isSuperAdmin && resetPwdAccount && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-pwd-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          onClick={() => setResetPwdAccount(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+              <h3
+                id="reset-pwd-title"
+                className="text-sm font-bold text-[#1F2933] inline-flex items-center gap-2"
+              >
+                <KeyRound className="w-4 h-4 text-[#3A6B5C]" />
+                <span>Đặt lại mật khẩu</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setResetPwdAccount(null)}
+                aria-label="Đóng"
+                className="w-8 h-8 rounded-lg text-[#52606D] hover:bg-white flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form
+              onSubmit={handleConfirmResetPassword}
+              className="p-5 space-y-4"
+            >
+              <p className="text-xs text-[#52606D] leading-relaxed">
+                Đặt mật khẩu mới cho tài khoản{' '}
+                <strong className="text-[#1F2933]">
+                  {resetPwdAccount.displayName || resetPwdAccount.name}
+                </strong>{' '}
+                (@{resetPwdAccount.username || resetPwdAccount.email}).
+              </p>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                  Mật khẩu mới
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={nextResetPassword}
+                  onChange={(e) => {
+                    setNextResetPassword(e.target.value);
+                    if (resetPwdError) setResetPwdError('');
+                  }}
+                  placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#3A6B5C]"
+                />
+              </div>
+
+              {resetPwdError && (
+                <p
+                  role="alert"
+                  className="text-xs font-semibold text-[#C84B31]"
+                >
+                  {resetPwdError}
+                </p>
+              )}
+
+              <div className="pt-1 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetPwdAccount(null)}
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResettingPwd}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  {isResettingPwd && (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  <span>Cập nhật mật khẩu</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xác nhận xóa tài khoản (Super Admin — không cho xóa tài khoản đang đăng nhập) */}
+      {isSuperAdmin && deletingAccount && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-account-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          onClick={() => setDeletingAccount(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="w-10 h-10 rounded-xl bg-[#C84B31]/12 text-[#C84B31] flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </span>
+                <div className="space-y-1">
+                  <h3
+                    id="delete-account-title"
+                    className="text-sm font-bold text-[#1F2933]"
+                  >
+                    Xác nhận xóa tài khoản?
+                  </h3>
+                  <p className="text-xs text-[#52606D] leading-relaxed">
+                    Bạn sắp xóa vĩnh viễn tài khoản{' '}
+                    <strong className="text-[#1F2933]">
+                      {deletingAccount.displayName || deletingAccount.name}
+                    </strong>{' '}
+                    (@{deletingAccount.username || deletingAccount.email} ·{' '}
+                    {getRoleDisplayLabel(deletingAccount.role)}). Thao tác này không thể hoàn tác.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-1 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingAccount(null)}
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingAccount}
+                  onClick={() => void handleConfirmDeleteAccount()}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  {isDeletingAccount && (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  )}
+                  <span>Xóa vĩnh viễn</span>
                 </button>
               </div>
             </div>

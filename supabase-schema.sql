@@ -89,6 +89,6 @@ create unique index if not exists idx_admin_accounts_username_unique
 -- Chỉ thêm tài khoản mặc định nếu chưa tồn tại (KHÔNG ghi đè tài khoản cũ)
 insert into public.admin_accounts (id, name, display_name, email, username, password, role, active, revived_count, badges, favorite_artisan_ids, created_at)
 values
-  ('admin-super-1', 'William Gia Minh (Điều phối dự án)', 'William Gia Minh (Điều phối dự án)', 'admin@goctho.vn', 'admin@goctho.vn', 'admin123', 'super_admin', true, 0, '[]'::jsonb, '[]'::jsonb, '01/11/2026'),
-  ('admin-ctv-1', 'Quang Huy (Cộng tác viên Q.1)', 'Quang Huy (Cộng tác viên Q.1)', 'ctv@goctho.vn', 'ctv@goctho.vn', 'ctv123', 'collaborator', true, 0, '[]'::jsonb, '[]'::jsonb, '12/11/2026')
+  ('admin-super-1', 'William Gia Minh (Điều phối dự án)', 'William Gia Minh (Điều phối dự án)', 'admin@goctho.vn', 'admin@goctho.vn', 'admin123', 'Super Admin', true, 0, '[]'::jsonb, '[]'::jsonb, '01/11/2026'),
+  ('admin-ctv-1', 'Quang Huy (Cộng tác viên Q.1)', 'Quang Huy (Cộng tác viên Q.1)', 'ctv@goctho.vn', 'ctv@goctho.vn', 'ctv123', 'Cộng tác viên', true, 0, '[]'::jsonb, '[]'::jsonb, '12/11/2026')
 on conflict (email) do nothing;

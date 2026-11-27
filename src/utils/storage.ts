@@ -28,33 +28,42 @@ export const STORAGE_KEYS = {
 
 export function normalizeAccountRole(raw: unknown): AdminRole {
   const str = String(raw ?? '').trim().toLowerCase();
-  if (str === 'super_admin' || str === 'super admin' || str.includes('super')) {
-    return 'super_admin';
+  if (str === 'super admin' || str === 'super_admin' || str.includes('super')) {
+    return 'Super Admin';
   }
   if (
-    str === 'collaborator' ||
     str === 'cộng tác viên' ||
     str === 'cong tac vien' ||
+    str === 'collaborator' ||
     str === 'ctv'
   ) {
-    return 'collaborator';
+    return 'Cộng tác viên';
   }
   return 'user';
 }
 
-export function getRoleDisplayLabel(role: AdminRole): string {
-  switch (role) {
-    case 'super_admin':
+export function isSuperAdminRole(role: unknown): boolean {
+  return normalizeAccountRole(role) === 'Super Admin';
+}
+
+export function isCollaboratorRole(role: unknown): boolean {
+  return normalizeAccountRole(role) === 'Cộng tác viên';
+}
+
+export function getRoleDisplayLabel(role: AdminRole | string): string {
+  switch (normalizeAccountRole(role)) {
+    case 'Super Admin':
       return 'Super Admin';
-    case 'collaborator':
+    case 'Cộng tác viên':
       return 'Cộng tác viên';
     case 'user':
       return 'Người dùng';
   }
 }
 
-export function canAccessAdminDashboard(role: AdminRole): boolean {
-  return role === 'super_admin' || role === 'collaborator';
+export function canAccessAdminDashboard(role: AdminRole | string): boolean {
+  const normalized = normalizeAccountRole(role);
+  return normalized === 'Super Admin' || normalized === 'Cộng tác viên';
 }
 
 export function isValidUsername(username: string): boolean {
@@ -535,9 +544,9 @@ export function parseBackupJson(jsonText: string): AppBackupPayload {
 export function downloadAdminAccountsCsvTemplate(): void {
   const headers = ['Tên hiển thị', 'Tên đăng nhập / Email', 'Mật khẩu', 'Vai trò'];
   const sampleRows = [
-    ['Lan Phương (CTV Bình Thạnh)', 'lanphuong@goctho.vn', 'ctv2026', 'collaborator'],
-    ['Đức Anh (CTV Quận 3)', 'ducanh@goctho.vn', 'ctv2026', 'collaborator'],
-    ['Hoàng Nam (Điều phối)', 'hoangnam@goctho.vn', 'admin2026', 'super_admin'],
+    ['Lan Phương (CTV Bình Thạnh)', 'lanphuong@goctho.vn', 'ctv2026', 'Cộng tác viên'],
+    ['Đức Anh (CTV Quận 3)', 'ducanh@goctho.vn', 'ctv2026', 'Cộng tác viên'],
+    ['Hoàng Nam (Điều phối)', 'hoangnam@goctho.vn', 'admin2026', 'Super Admin'],
     ['Thanh Trúc (Thành viên)', 'thanhtruc', 'user2026', 'user'],
   ];
   const csvContent = `\uFEFF${headers.map(escapeCsvField).join(',')}\n${sampleRows

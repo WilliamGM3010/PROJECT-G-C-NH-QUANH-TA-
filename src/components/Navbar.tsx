@@ -16,6 +16,7 @@ import type { AdminAccount, AppTab } from '../types/artisan';
 import {
   canAccessAdminDashboard,
   getRoleDisplayLabel,
+  normalizeAccountRole,
 } from '../utils/storage';
 
 interface AccountMenuProps {
@@ -37,7 +38,7 @@ interface AccountMenuProps {
  * - Hồ sơ & Huy hiệu của tôi
  * - Góc thợ đã lưu
  * - Lịch sử đóng góp
- * - Trang Quản trị (CHỈ hiển thị nếu role là super_admin hoặc collaborator)
+ * - Trang Quản trị (CHỈ hiển thị nếu role là 'Super Admin' hoặc 'Cộng tác viên')
  * - Đăng xuất
  */
 export function AccountMenuDropdown({
@@ -55,7 +56,8 @@ export function AccountMenuDropdown({
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canManage = canAccessAdminDashboard(currentUser.role);
+  const normalizedRole = normalizeAccountRole(currentUser.role);
+  const canManage = canAccessAdminDashboard(normalizedRole);
   const displayName = currentUser.displayName || currentUser.name;
   const initial = displayName.trim().charAt(0).toUpperCase() || 'U';
 
@@ -135,14 +137,14 @@ export function AccountMenuDropdown({
               </span>
               <span
                 className={`px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${
-                  currentUser.role === 'super_admin'
+                  normalizedRole === 'Super Admin'
                     ? 'bg-[#D96B38]/12 text-[#D96B38]'
-                    : currentUser.role === 'collaborator'
+                    : normalizedRole === 'Cộng tác viên'
                       ? 'bg-[#3A6B5C]/12 text-[#3A6B5C]'
                       : 'bg-[#EBE5DC] text-[#52606D]'
                 }`}
               >
-                {getRoleDisplayLabel(currentUser.role)}
+                {getRoleDisplayLabel(normalizedRole)}
               </span>
             </div>
           </div>
@@ -203,7 +205,7 @@ export function AccountMenuDropdown({
               </span>
             </button>
 
-            {/* CHỈ hiển thị Trang Quản trị nếu là super_admin hoặc collaborator */}
+            {/* CHỈ hiển thị Trang Quản trị nếu là 'Super Admin' hoặc 'Cộng tác viên' */}
             {canManage && (
               <>
                 <div className="my-1 border-t border-[#F0EAE1]" />
