@@ -6,7 +6,6 @@ import {
   ExternalLink,
   List,
   Loader2,
-  LogIn,
   Map as MapIcon,
   MapPin,
   Navigation,
@@ -126,6 +125,7 @@ import {
   MobileTopHeader,
 } from './components/Navbar';
 import { NewsView } from './components/NewsView';
+import { SiteFooter } from './components/SiteFooter';
 import { SuggestArtisanView } from './components/SuggestArtisanView';
 import {
   ContributionHistoryModal,
@@ -2707,6 +2707,7 @@ export default function App() {
           contributionsCount={userContributions.length}
           badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
           onGoHome={() => setActiveTab('home')}
+          onSuggestArtisan={() => handleNavigateTab('suggest')}
           onOpenAuth={() => openAuthModal()}
           onOpenBadge={handleOpenBadgeModal}
           onOpenSaved={() => setSavedModalOpen(true)}
@@ -2742,22 +2743,30 @@ export default function App() {
       {/* Nội dung chính */}
       <main className="flex-1 min-h-0 relative overflow-hidden">
         {activeTab === 'home' && (
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <HomeDiscoveryView
-              artisans={publicArtisans}
-              isLoading={isLoadingPublicData}
-              dbError={publicDbError}
-              gpsStatus={gpsStatus}
-              userLocation={userLocation}
-              selectedDistrict={selectedDistrict}
-              searchQuery={searchQuery}
-              onSearchQueryChange={setSearchQuery}
-              onSelectedDistrictChange={setSelectedDistrict}
-              onRequestGps={() => requestAutoGps(true)}
-              onRetryLoad={() => void loadPublicArtisans()}
-              onSelectArtisanOnMap={handleSelectArtisanFromHome}
-              onOpenFullMap={handleOpenFullMap}
-              onRequestSuggest={() => handleNavigateTab('suggest')}
+          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+            <div className="flex-1">
+              <HomeDiscoveryView
+                artisans={publicArtisans}
+                isLoading={isLoadingPublicData}
+                dbError={publicDbError}
+                gpsStatus={gpsStatus}
+                userLocation={userLocation}
+                selectedDistrict={selectedDistrict}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                onSelectedDistrictChange={setSelectedDistrict}
+                onRequestGps={() => requestAutoGps(true)}
+                onRetryLoad={() => void loadPublicArtisans()}
+                onSelectArtisanOnMap={handleSelectArtisanFromHome}
+                onOpenFullMap={handleOpenFullMap}
+                onRequestSuggest={() => handleNavigateTab('suggest')}
+              />
+            </div>
+            <SiteFooter
+              currentUser={currentUser}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
             />
           </div>
         )}
@@ -3069,6 +3078,7 @@ export default function App() {
                           setContributionsModalOpen(true);
                           void loadUserContributions(currentUser);
                         }}
+                        onSuggestArtisan={() => handleNavigateTab('suggest')}
                         onOpenAdmin={handleOpenAdmin}
                         onLogout={handleLogout}
                       />
@@ -3076,10 +3086,9 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => openAuthModal()}
-                        className="h-9 px-3 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1F2933] text-[#1F2933] hover:text-white border border-stone-300 shadow-sm text-xs font-medium whitespace-nowrap transition-colors"
                       >
-                        <LogIn className="w-3.5 h-3.5" />
-                        <span>Đăng nhập / Đăng ký</span>
+                        Đăng nhập
                       </button>
                     )}
                   </div>
@@ -3506,53 +3515,72 @@ export default function App() {
         )}
 
         {activeTab === 'news' && (
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <NewsView
-              articles={articles}
-              artisans={publicArtisans}
-              isLoading={isLoadingArticles}
-              error={articlesDbError}
-              onRefresh={() => void loadPublicArticles()}
-              onOpenArtisanOnMap={(artisanId) => {
-                setActiveTab('explore');
-                setSelectedArtisanId(artisanId);
-                setMobileViewMode('map');
-                setMobileDetailOpen(true);
-              }}
+          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+            <div className="flex-1">
+              <NewsView
+                articles={articles}
+                artisans={publicArtisans}
+                isLoading={isLoadingArticles}
+                error={articlesDbError}
+                onRefresh={() => void loadPublicArticles()}
+                onOpenArtisanOnMap={(artisanId) => {
+                  setActiveTab('explore');
+                  setSelectedArtisanId(artisanId);
+                  setMobileViewMode('map');
+                  setMobileDetailOpen(true);
+                }}
+              />
+            </div>
+            <SiteFooter
+              currentUser={currentUser}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
             />
           </div>
         )}
 
         {activeTab === 'suggest' && (
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <SuggestArtisanView
+          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+            <div className="flex-1">
+              <SuggestArtisanView
+                currentUser={currentUser}
+                onRequestAuth={(prompt) => openAuthModal(prompt)}
+                onSubmitPendingSuggestion={handleSubmitPendingSuggestion}
+                onBackToExplore={() => setActiveTab('explore')}
+              />
+            </div>
+            <SiteFooter
               currentUser={currentUser}
-              onRequestAuth={(prompt) => openAuthModal(prompt)}
-              onSubmitPendingSuggestion={handleSubmitPendingSuggestion}
-              onBackToExplore={() => setActiveTab('explore')}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
             />
           </div>
         )}
 
         {activeTab === 'about' && (
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <AboutView
-              totalArtisans={publicArtisans.length}
-              revivedCount={revivedCount}
+          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+            <div className="flex-1">
+              <AboutView
+                totalArtisans={publicArtisans.length}
+                revivedCount={revivedCount}
+                totalArticles={
+                  articles.filter((a) => a.status === 'published').length
+                }
+                districtsCount={
+                  new Set(
+                    publicArtisans.map((a) => a.district).filter(Boolean)
+                  ).size
+                }
+                onNavigate={handleNavigateTab}
+              />
+            </div>
+            <SiteFooter
               currentUser={currentUser}
-              favoritesCount={savedArtisans.length}
-              contributionsCount={userContributions.length}
-              badgeTitle={badgeSummary.highestUnlocked?.title ?? null}
               onNavigate={handleNavigateTab}
               onOpenAuth={() => openAuthModal()}
-              onOpenBadge={handleOpenBadgeModal}
-              onOpenSaved={() => setSavedModalOpen(true)}
-              onOpenContributions={() => {
-                setContributionsModalOpen(true);
-                void loadUserContributions(currentUser);
-              }}
               onOpenAdmin={handleOpenAdmin}
-              onLogout={handleLogout}
             />
           </div>
         )}

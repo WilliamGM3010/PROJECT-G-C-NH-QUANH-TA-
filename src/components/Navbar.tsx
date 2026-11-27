@@ -6,7 +6,6 @@ import {
   Compass,
   History,
   Info,
-  LogIn,
   LogOut,
   MapPin,
   Newspaper,
@@ -32,16 +31,18 @@ interface AccountMenuProps {
   onOpenBadge: () => void;
   onOpenSaved: () => void;
   onOpenContributions: () => void;
+  onSuggestArtisan?: () => void;
   onOpenAdmin: () => void;
   onLogout: () => void;
 }
 
 /**
- * Nút tài khoản hợp nhất kèm menu xổ xuống:
- * - Hồ sơ & Huy hiệu của tôi
+ * Menu tài khoản gọn cho thành viên đã đăng nhập:
+ * - Hồ sơ & Huy hiệu
  * - Góc thợ đã lưu
  * - Lịch sử đóng góp
- * - Trang Quản trị (CHỈ hiển thị nếu role là 'Super Admin' hoặc 'Cộng tác viên')
+ * - Gợi ý thợ mới
+ * - Trang Quản trị (CHỈ hiển thị với 'Super Admin' hoặc 'Cộng tác viên')
  * - Đăng xuất
  */
 export function AccountMenuDropdown({
@@ -54,6 +55,7 @@ export function AccountMenuDropdown({
   onOpenBadge,
   onOpenSaved,
   onOpenContributions,
+  onSuggestArtisan,
   onOpenAdmin,
   onLogout,
 }: AccountMenuProps) {
@@ -92,30 +94,30 @@ export function AccountMenuDropdown({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`inline-flex items-center gap-2 rounded-xl border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] ${
+        className={`inline-flex items-center gap-2 rounded-full border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A6B5C] ${
           compact
-            ? 'h-9 px-2.5 bg-white/95 backdrop-blur-md border-[#E5DFD5] shadow-sm text-xs'
-            : 'h-10 px-2.5 pr-3 bg-[#FAF8F5] hover:bg-[#F3ECE2] border-[#E5DFD5] text-sm'
+            ? 'h-9 pl-1.5 pr-2.5 bg-white/95 backdrop-blur-md border-stone-200 shadow-xs text-xs'
+            : 'h-9 pl-1.5 pr-3 bg-white hover:bg-[#FAF8F5] border-stone-200 text-sm'
         }`}
       >
         <span
-          className={`rounded-lg flex items-center justify-center font-bold text-white shrink-0 ${
-            compact ? 'w-6 h-6 text-[11px]' : 'w-7 h-7 text-xs'
+          className={`rounded-full flex items-center justify-center font-bold text-white shrink-0 ${
+            compact ? 'w-6 h-6 text-[11px]' : 'w-6.5 h-6.5 text-xs'
           } ${canManage ? 'bg-[#3A6B5C]' : 'bg-[#D96B38]'}`}
         >
           {initial}
         </span>
 
         <span
-          className={`font-semibold text-[#1F2933] truncate ${
-            compact ? 'max-w-[96px]' : 'max-w-[150px]'
+          className={`font-medium text-[#1F2933] truncate ${
+            compact ? 'max-w-[92px]' : 'max-w-[140px]'
           }`}
         >
           {displayName}
         </span>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#52606D] shrink-0 transition-transform ${
+          className={`w-3.5 h-3.5 text-[#7B8794] shrink-0 transition-transform ${
             open ? 'rotate-180' : ''
           }`}
         />
@@ -124,9 +126,9 @@ export function AccountMenuDropdown({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-[#E8E2D9] shadow-xl py-2 z-[60] overflow-hidden"
+          className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-stone-200 shadow-xl py-2 z-[60] overflow-hidden"
         >
-          {/* Thông tin tài khoản đầu menu */}
+          {/* Thông tin tài khoản */}
           <div className="px-4 py-2.5 border-b border-[#F0EAE1] bg-[#FAF8F5]/70 space-y-1">
             <div className="flex items-center gap-2">
               <User className="w-3.5 h-3.5 text-[#D96B38] shrink-0" />
@@ -161,7 +163,7 @@ export function AccountMenuDropdown({
                 setOpen(false);
                 onOpenBadge();
               }}
-              className="w-full min-h-[42px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
+              className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
             >
               <span className="inline-flex items-center gap-2.5">
                 <Award className="w-4 h-4 text-[#D96B38]" />
@@ -179,7 +181,7 @@ export function AccountMenuDropdown({
                 setOpen(false);
                 onOpenSaved();
               }}
-              className="w-full min-h-[42px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
+              className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
             >
               <span className="inline-flex items-center gap-2.5">
                 <Bookmark className="w-4 h-4 text-[#D96B38]" />
@@ -197,7 +199,7 @@ export function AccountMenuDropdown({
                 setOpen(false);
                 onOpenContributions();
               }}
-              className="w-full min-h-[42px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
+              className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center justify-between gap-2 transition-colors"
             >
               <span className="inline-flex items-center gap-2.5">
                 <History className="w-4 h-4 text-[#3A6B5C]" />
@@ -207,6 +209,21 @@ export function AccountMenuDropdown({
                 {contributionsCount}
               </span>
             </button>
+
+            {onSuggestArtisan && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onSuggestArtisan();
+                }}
+                className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#1F2933] hover:bg-[#FAF8F5] flex items-center gap-2.5 transition-colors"
+              >
+                <PlusCircle className="w-4 h-4 text-[#D96B38]" />
+                <span>Gợi ý cô chú thợ mới</span>
+              </button>
+            )}
 
             {/* CHỈ hiển thị Trang Quản trị nếu là 'Super Admin' hoặc 'Cộng tác viên' */}
             {canManage && (
@@ -219,7 +236,7 @@ export function AccountMenuDropdown({
                     setOpen(false);
                     onOpenAdmin();
                   }}
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl text-left text-xs font-bold text-[#3A6B5C] bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 flex items-center justify-between gap-2 transition-colors"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold text-[#3A6B5C] bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 flex items-center justify-between gap-2 transition-colors"
                 >
                   <span className="inline-flex items-center gap-2.5">
                     <ShieldCheck className="w-4 h-4" />
@@ -243,7 +260,7 @@ export function AccountMenuDropdown({
                 setOpen(false);
                 onLogout();
               }}
-              className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#C84B31] hover:bg-[#C84B31]/8 flex items-center gap-2.5 transition-colors"
+              className="w-full min-h-[38px] px-3 py-2 rounded-xl text-left text-xs font-semibold text-[#C84B31] hover:bg-[#C84B31]/8 flex items-center gap-2.5 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span>Đăng xuất</span>
@@ -272,9 +289,10 @@ interface NavbarProps {
 }
 
 /**
- * Top Navbar cố định trên Desktop (h-16):
- * - Khách chưa đăng nhập thấy ngay nút "Đăng nhập / Đăng ký" rõ ràng ở góc phải.
- * - Thành viên đã đăng nhập thấy AccountMenuDropdown (tên, huy hiệu, Trang Quản trị nếu có quyền, Đăng xuất).
+ * Header tối giản trên Desktop:
+ * - Trái: Logo GÓC THỢ QUANH TA (bấm về màn hình mở đầu)
+ * - Giữa: Bản đồ · Bản tin · Về dự án
+ * - Phải: Nút tròn viền mảnh "Đăng nhập" (hoặc menu tài khoản gọn khi đã đăng nhập)
  */
 export function DesktopNavbar({
   activeTab,
@@ -292,30 +310,29 @@ export function DesktopNavbar({
   onLogout,
 }: NavbarProps) {
   const navItems: { id: AppTab; label: string }[] = [
-    { id: 'home', label: 'Tìm thợ' },
     { id: 'explore', label: 'Bản đồ' },
     { id: 'news', label: 'Bản tin' },
     { id: 'about', label: 'Về dự án' },
   ];
 
   return (
-    <header className="hidden lg:flex items-center justify-between gap-6 h-16 px-6 bg-white border-b border-[#E8E2D9] sticky top-0 z-40 shrink-0">
-      {/* Vùng 1: Brand Wordmark */}
+    <header className="hidden lg:flex items-center justify-between gap-6 h-16 px-8 bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200/75 sticky top-0 z-40 shrink-0">
+      {/* Trái: Logo */}
       <button
         type="button"
         onClick={() => onChangeTab('home')}
-        className="flex items-center gap-2.5 text-left whitespace-nowrap shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded-lg px-1 py-1"
+        className="flex items-center gap-2.5 text-left whitespace-nowrap shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A6B5C] rounded-lg px-1 py-1"
       >
-        <span className="w-9 h-9 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-sm transition-transform duration-150 group-hover:scale-105">
-          <MapPin className="w-5 h-5" strokeWidth={2.3} />
+        <span className="w-8 h-8 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-2xs transition-transform duration-150 group-hover:scale-105">
+          <MapPin className="w-4 h-4" strokeWidth={2.3} />
         </span>
-        <span className="text-lg font-bold tracking-tight text-[#1F2933]">
+        <span className="text-[15px] font-bold tracking-tight text-[#1F2933]">
           GÓC THỢ QUANH TA
         </span>
       </button>
 
-      {/* Vùng 2: Nav Links */}
-      <nav aria-label="Điều hướng chính" className="flex items-center gap-7">
+      {/* Giữa: 3 liên kết gọn gàng */}
+      <nav aria-label="Điều hướng chính" className="flex items-center gap-8">
         {navItems.map(({ id, label }) => {
           const isActive = activeTab === id;
           return (
@@ -323,36 +340,23 @@ export function DesktopNavbar({
               key={id}
               type="button"
               onClick={() => onChangeTab(id)}
-              className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A6B5C] rounded ${
                 isActive
-                  ? 'text-[#D96B38] font-semibold'
-                  : 'text-[#52606D] hover:text-[#1F2933]'
+                  ? 'text-[#1F2933] font-semibold'
+                  : 'text-[#616E7C] hover:text-[#1F2933] font-medium'
               }`}
             >
               {label}
               {isActive && (
-                <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
+                <span className="absolute left-0 right-0 -bottom-[19px] h-[2px] rounded-full bg-[#3A6B5C]" />
               )}
             </button>
           );
         })}
       </nav>
 
-      {/* Vùng 3: Gợi ý thợ + Đăng nhập / Đăng ký hoặc Menu tài khoản */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        <button
-          type="button"
-          onClick={() => onChangeTab('suggest')}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D96B38] ${
-            activeTab === 'suggest'
-              ? 'bg-[#3A6B5C] text-white shadow-sm'
-              : 'bg-[#FAF8F5] hover:bg-[#F3ECE2] text-[#1F2933] border border-[#E5DFD5]'
-          }`}
-        >
-          <PlusCircle className="w-4 h-4 text-[#D96B38]" />
-          <span>Gợi ý thợ</span>
-        </button>
-
+      {/* Phải: Nút Đăng nhập tối giản hoặc Avatar/Menu tài khoản */}
+      <div className="flex items-center justify-end min-w-[160px] shrink-0">
         {currentUser ? (
           <AccountMenuDropdown
             currentUser={currentUser}
@@ -363,6 +367,7 @@ export function DesktopNavbar({
             onOpenBadge={onOpenBadge}
             onOpenSaved={onOpenSaved}
             onOpenContributions={onOpenContributions}
+            onSuggestArtisan={() => onChangeTab('suggest')}
             onOpenAdmin={onOpenAdmin}
             onLogout={onLogout}
           />
@@ -370,10 +375,9 @@ export function DesktopNavbar({
           <button
             type="button"
             onClick={onOpenAuth}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D96B38]"
+            className="h-9 px-4 rounded-full bg-white hover:bg-[#1F2933] text-[#1F2933] hover:text-white border border-stone-300 hover:border-[#1F2933] text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3A6B5C]"
           >
-            <LogIn className="w-4 h-4" />
-            <span>Đăng nhập / Đăng ký</span>
+            Đăng nhập
           </button>
         )}
       </div>
@@ -382,8 +386,7 @@ export function DesktopNavbar({
 }
 
 /**
- * Header gọn cho Mobile trên các trang Tìm thợ, Bản tin, Gợi ý, Về dự án
- * (đảm bảo nút Đăng nhập / Đăng ký hoặc Menu tài khoản luôn hiển thị rõ góc trên bên phải).
+ * Header tối giản trên Mobile (khi không ở chế độ Bản đồ toàn màn hình)
  */
 export function MobileTopHeader({
   currentUser,
@@ -392,21 +395,25 @@ export function MobileTopHeader({
   contributionsCount,
   badgeEmoji,
   onGoHome,
+  onSuggestArtisan,
   onOpenAuth,
   onOpenBadge,
   onOpenSaved,
   onOpenContributions,
   onOpenAdmin,
   onLogout,
-}: Omit<NavbarProps, 'activeTab' | 'onChangeTab'> & { onGoHome: () => void }) {
+}: Omit<NavbarProps, 'activeTab' | 'onChangeTab'> & {
+  onGoHome: () => void;
+  onSuggestArtisan: () => void;
+}) {
   return (
-    <header className="lg:hidden flex items-center justify-between gap-2 h-14 px-3.5 bg-white/95 backdrop-blur-md border-b border-[#E8E2D9] sticky top-0 z-40 shrink-0">
+    <header className="lg:hidden flex items-center justify-between gap-2 h-14 px-4 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-stone-200/75 sticky top-0 z-40 shrink-0">
       <button
         type="button"
         onClick={onGoHome}
-        className="flex items-center gap-2 text-left min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded-lg py-1"
+        className="flex items-center gap-2 text-left min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3A6B5C] rounded-lg py-1"
       >
-        <span className="w-8 h-8 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-xs shrink-0">
+        <span className="w-7.5 h-7.5 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-2xs shrink-0">
           <MapPin className="w-4 h-4" strokeWidth={2.3} />
         </span>
         <span className="text-sm font-bold tracking-tight text-[#1F2933] truncate">
@@ -426,6 +433,7 @@ export function MobileTopHeader({
             onOpenBadge={onOpenBadge}
             onOpenSaved={onOpenSaved}
             onOpenContributions={onOpenContributions}
+            onSuggestArtisan={onSuggestArtisan}
             onOpenAdmin={onOpenAdmin}
             onLogout={onLogout}
           />
@@ -433,10 +441,9 @@ export function MobileTopHeader({
           <button
             type="button"
             onClick={onOpenAuth}
-            className="h-9 px-3 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap transition-colors"
+            className="h-9 px-3.5 rounded-full bg-white hover:bg-[#1F2933] text-[#1F2933] hover:text-white border border-stone-300 text-xs font-medium whitespace-nowrap transition-colors"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>Đăng nhập / Đăng ký</span>
+            Đăng nhập
           </button>
         )}
       </div>
@@ -459,7 +466,7 @@ export function MobileBottomNav({
   return (
     <nav
       aria-label="Điều hướng di động"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D9] shadow-[0_-4px_16px_rgba(31,41,51,0.06)]"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-[0_-4px_16px_rgba(31,41,51,0.05)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="grid grid-cols-5 h-16">
@@ -470,11 +477,11 @@ export function MobileBottomNav({
               key={id}
               type="button"
               onClick={() => onChangeTab(id)}
-              className={`min-h-[44px] flex flex-col items-center justify-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D96B38] ${
-                isActive ? 'text-[#D96B38]' : 'text-[#52606D]'
+              className={`min-h-[44px] flex flex-col items-center justify-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3A6B5C] ${
+                isActive ? 'text-[#3A6B5C]' : 'text-[#616E7C]'
               }`}
             >
-              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.4 : 1.9} />
+              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.4 : 1.8} />
               <span
                 className={`text-[10.5px] leading-none whitespace-nowrap ${
                   isActive ? 'font-semibold' : 'font-medium'

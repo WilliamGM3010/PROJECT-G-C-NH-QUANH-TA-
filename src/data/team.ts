@@ -1,0 +1,134 @@
+export type TeamDepartment =
+  | 'Điều hành'
+  | 'Nội dung & Phát triển'
+  | 'Truyền thông'
+  | 'Nhân sự & Vận hành';
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  departments: TeamDepartment[];
+  quote: string;
+  facebookUrl: string;
+  /** Để trống để hiển thị avatar chữ cái tối giản; điền URL ảnh chân dung 500x500px để thay ảnh thật */
+  avatarUrl?: string;
+  accentTone: 'forest' | 'terracotta' | 'stone';
+}
+
+export const FTU_LOGO_SRC = '/assets/aistudio/FTU_logo_2020.svg_da31367b.png';
+
+export const TEAM_WHO_PHOTO_SRC =
+  '/assets/aistudio/1795609449385_6329416613398058595_g4896312124801558342_6d307affad66bf5bdfb21abb15a34ca3_49b15997.jpg';
+
+export const PROJECT_CONTACT_EMAIL = 'gocnhoquanhta.hcmc.ftu@gmail.com';
+
+export const TEAM_DEPARTMENTS: readonly TeamDepartment[] = [
+  'Điều hành',
+  'Nội dung & Phát triển',
+  'Truyền thông',
+  'Nhân sự & Vận hành',
+] as const;
+
+export const TEAM_WHO_MEMBERS: TeamMember[] = [
+  {
+    id: 'tran-diem-quynh',
+    name: 'Trần Diễm Quỳnh',
+    initials: 'DQ',
+    role: 'Project Leader',
+    departments: ['Điều hành'],
+    quote:
+      'Mỗi món đồ được giữ lại là thêm một câu chuyện tử tế được nối dài giữa thành phố.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'terracotta',
+  },
+  {
+    id: 'bui-gia-minh',
+    name: 'Bùi Gia Minh',
+    initials: 'GM',
+    role: 'Trưởng ban Nội dung & PT',
+    departments: ['Nội dung & Phát triển'],
+    quote:
+      'Công nghệ đẹp nhất là khi giúp những người lao động thầm lặng được nhìn thấy nhiều hơn.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'forest',
+  },
+  {
+    id: 'le-nguyen-tam-nhu',
+    name: 'Lê Nguyễn Tâm Như',
+    initials: 'TN',
+    role: 'Trưởng ban Truyền thông',
+    departments: ['Truyền thông'],
+    quote:
+      'Chúng mình không kể chuyện để gây thương hại, mà để lan tỏa niềm tự hào về tay nghề cô chú.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'terracotta',
+  },
+  {
+    id: 'le-dang-khang',
+    name: 'Lê Đăng Khang',
+    initials: 'ĐK',
+    role: 'Trưởng ban Nhân sự & VH',
+    departments: ['Nhân sự & Vận hành'],
+    quote:
+      'Đi thực địa dưới nắng mới thấy nụ cười của cô chú thợ đáng giá hơn mọi giờ chạy deadline.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'forest',
+  },
+  {
+    id: 'duong-duy-khanh',
+    name: 'Dương Duy Khánh',
+    initials: 'DK',
+    role: 'Thành viên',
+    departments: ['Nội dung & Phát triển', 'Nhân sự & Vận hành'],
+    quote:
+      'Sửa một món đồ cũ không chỉ tiết kiệm cho sinh viên, mà còn là cách sống chậm và xanh hơn.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'stone',
+  },
+  {
+    id: 'chau-quoc-anh',
+    name: 'Châu Quốc Anh',
+    initials: 'QA',
+    role: 'Thành viên',
+    departments: ['Nội dung & Phát triển', 'Truyền thông'],
+    quote:
+      "Hy vọng góc web nhỏ này sẽ là nơi đầu tiên mọi người nhớ đến mỗi khi đồ đạc 'dở chứng'.",
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'stone',
+  },
+  {
+    id: 'tran-ngoc-ha',
+    name: 'Trần Ngọc Hà',
+    initials: 'NH',
+    role: 'Thành viên',
+    departments: ['Nội dung & Phát triển', 'Nhân sự & Vận hành'],
+    quote:
+      'Đằng sau mỗi chấm nhỏ trên bản đồ là cả một cuộc mưu sinh bền bỉ đáng được trân trọng.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'terracotta',
+  },
+  {
+    id: 'tran-thanh-nhan',
+    name: 'Trần Thành Nhân',
+    initials: 'TN',
+    role: 'Thành viên',
+    departments: ['Nhân sự & Vận hành'],
+    quote:
+      'Một địa chỉ chuẩn xác, một mức giá rõ ràng — đôi khi sự tiện lợi nhỏ lại tạo nên kết nối lớn.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'forest',
+  },
+  {
+    id: 'trinh-dang-linh',
+    name: 'Trịnh Đăng Linh',
+    initials: 'ĐL',
+    role: 'Thành viên',
+    departments: ['Truyền thông'],
+    quote:
+      'Mong những góc thợ bình dị trong hẻm nhỏ sẽ không còn bị bỏ quên giữa nhịp sống vội vã.',
+    facebookUrl: 'https://facebook.com',
+    accentTone: 'stone',
+  },
+];

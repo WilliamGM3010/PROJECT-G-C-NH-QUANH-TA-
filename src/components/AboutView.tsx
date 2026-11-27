@@ -1,295 +1,852 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Bookmark,
-  Compass,
+  ArrowRight,
   EyeOff,
-  Handshake,
   Heart,
-  History,
-  Leaf,
-  LogIn,
-  LogOut,
+  Mail,
   PlusCircle,
-  ShieldCheck,
-  Wrench,
+  Scale,
 } from 'lucide-react';
-import type { AdminAccount, AppTab } from '../types/artisan';
+import cobblerHeroImg from '../assets/images/news_cobbler_story_1795758945711.jpg';
 import {
-  canAccessAdminDashboard,
-  getRoleDisplayLabel,
-} from '../utils/storage';
+  FTU_LOGO_SRC,
+  PROJECT_CONTACT_EMAIL,
+  TEAM_DEPARTMENTS,
+  TEAM_WHO_MEMBERS,
+  TEAM_WHO_PHOTO_SRC,
+  type TeamDepartment,
+  type TeamMember,
+} from '../data/team';
+import type { AppTab } from '../types/artisan';
 
 interface AboutViewProps {
   totalArtisans: number;
   revivedCount: number;
-  currentUser: AdminAccount | null;
-  favoritesCount: number;
-  contributionsCount: number;
-  badgeTitle?: string | null;
+  totalArticles: number;
+  districtsCount: number;
   onNavigate: (tab: AppTab) => void;
-  onOpenAuth: () => void;
-  onOpenBadge: () => void;
-  onOpenSaved: () => void;
-  onOpenContributions: () => void;
-  onOpenAdmin: () => void;
-  onLogout: () => void;
+}
+
+type ChapterId = 've-du-an' | 've-chung-minh' | 'dong-hanh';
+
+const CORE_VALUES = [
+  {
+    number: '01',
+    title: 'Kết nối thực tế',
+    description:
+      'Chiếc cầu nối giữa người làm nghề sửa chữa nhỏ lẻ với cộng đồng người dùng trẻ, giúp dễ dàng tìm đúng thợ gần nhà.',
+  },
+  {
+    number: '02',
+    title: 'Trao nhau giá trị',
+    description:
+      'Mối quan hệ win-win bền vững — cô chú thợ và tiệm nhỏ có thêm khách hàng, còn sinh viên sửa được đồ tiện lợi với chi phí hợp lý.',
+  },
+  {
+    number: '03',
+    title: 'Sống xanh bền vững',
+    description:
+      'Kéo dài vòng đời của từng món đồ quen thuộc, hạn chế rác thải và chung tay bảo vệ môi trường.',
+  },
+] as const;
+
+const TIMELINE_MILESTONES = [
+  {
+    date: '10/2026',
+    title: 'Khởi sinh ý tưởng',
+    description:
+      'Nhận diện khoảng trống giữa nhu cầu sửa đồ giá mềm của sinh viên và sự "vô hình" của các góc thợ nhỏ trên bản đồ số.',
+    status: 'done' as const,
+  },
+  {
+    date: '11/2026',
+    title: 'Khảo sát thực địa',
+    description:
+      'Đi từng con hẻm tại TP.HCM, trò chuyện, xin phép và ghi nhận mốc địa chỉ, bảng giá thật từ cô chú thợ.',
+    status: 'done' as const,
+  },
+  {
+    date: '11/2026',
+    title: 'Ra mắt nền tảng web',
+    description:
+      'Hoàn thiện Góc Thợ Quanh Ta với tìm kiếm theo lỗi, định vị GPS, bản đồ tương tác và chuyên trang Bản tin.',
+    status: 'current' as const,
+  },
+  {
+    date: 'Sắp tới',
+    title: 'Mở rộng cộng đồng',
+    description:
+      'Phủ dày thêm nhiều khu vực quanh các cụm trường đại học và kết nối mạng lưới cộng tác viên góp điểm.',
+    status: 'upcoming' as const,
+  },
+] as const;
+
+const ETHICS_COMMITMENTS = [
+  {
+    title: 'Hoàn toàn phi lợi nhuận',
+    description:
+      'Cam kết không thu bất kỳ chi phí nào từ cô chú thợ cũng như người dùng web.',
+    Icon: Heart,
+  },
+  {
+    title: 'Tôn trọng quyền riêng tư',
+    description:
+      'Luôn xin phép rõ ràng trước khi đăng tải, sẵn sàng ẩn hình ảnh chân dung và thông tin cá nhân khi cô chú yêu cầu.',
+    Icon: EyeOff,
+  },
+  {
+    title: 'Trung thực & Minh bạch',
+    description:
+      'Mọi thông tin địa chỉ, bảng giá và trạng thái đều được kiểm chứng khách quan, cập nhật thường xuyên.',
+    Icon: Scale,
+  },
+] as const;
+
+function useRevealOnScroll(threshold = 0.14) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold, rootMargin: '0px 0px -36px 0px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, visible };
+}
+
+function useCountUp(target: number, active: boolean, duration = 1050): number {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    const safeTarget = Math.max(0, Math.round(target));
+    if (safeTarget === 0) {
+      setDisplayValue(0);
+      return;
+    }
+
+    let rafId = 0;
+    const startTime = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(eased * safeTarget));
+      if (progress < 1) {
+        rafId = window.requestAnimationFrame(step);
+      } else {
+        setDisplayValue(safeTarget);
+      }
+    };
+
+    rafId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [target, active, duration]);
+
+  return displayValue;
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M13.5 21v-7.6h2.55l.38-2.96H13.5V8.55c0-.86.24-1.44 1.47-1.44h1.57V4.46c-.27-.04-1.2-.12-2.28-.12-2.26 0-3.81 1.38-3.81 3.91v2.19H7.88v2.96h2.57V21h3.05Z" />
+    </svg>
+  );
+}
+
+function getAvatarToneClasses(tone: TeamMember['accentTone']): string {
+  switch (tone) {
+    case 'terracotta':
+      return 'bg-[#D96B38]/12 text-[#B85427] ring-[#D96B38]/20';
+    case 'forest':
+      return 'bg-[#3A6B5C]/12 text-[#2E5A4C] ring-[#3A6B5C]/20';
+    default:
+      return 'bg-[#EFE9DF] text-[#52606D] ring-stone-200';
+  }
 }
 
 export function AboutView({
   totalArtisans,
   revivedCount,
-  currentUser,
-  favoritesCount,
-  contributionsCount,
-  badgeTitle,
+  totalArticles,
+  districtsCount,
   onNavigate,
-  onOpenAuth,
-  onOpenBadge,
-  onOpenSaved,
-  onOpenContributions,
-  onOpenAdmin,
-  onLogout,
 }: AboutViewProps) {
-  const canManage = currentUser
-    ? canAccessAdminDashboard(currentUser.role)
-    : false;
-  const values = [
-    {
-      title: 'Kết nối sinh kế bền vững',
-      description:
-        'Giúp những đôi tay lành nghề nơi góc phố dễ dàng được thế hệ trẻ tìm thấy hơn trên bản đồ số, mang lại nguồn khách đều đặn và sự trân trọng xứng đáng với công sức lao động.',
-      Icon: Handshake,
-      iconTone: 'bg-[#D96B38]/12 text-[#D96B38]',
-    },
-    {
-      title: 'Tiêu dùng có trách nhiệm (Sống xanh)',
-      description:
-        'Một đôi giày bung keo, chiếc balo đứt khóa hay chiếc quần hơi dài đều có thể sửa gọn trong vài chục nghìn đồng — kéo dài vòng đời đồ dùng và giảm rác thải thời trang đô thị.',
-      Icon: Leaf,
-      iconTone: 'bg-[#3A6B5C]/12 text-[#3A6B5C]',
-    },
-    {
-      title: 'Gìn giữ nghề thủ công đô thị',
-      description:
-        'Lưu giữ những góc sửa giày, máy may đạp chân và tủ khóa nhỏ thân quen — một phần ký ức sống động, ấm áp và tử tế của nhịp sống vỉa hè Sài Gòn.',
-      Icon: Wrench,
-      iconTone: 'bg-[#E9A825]/18 text-[#9A6807]',
-    },
+  const [activeChapter, setActiveChapter] = useState<ChapterId>('ve-du-an');
+  const [selectedDepartment, setSelectedDepartment] = useState<
+    TeamDepartment | 'Tất cả'
+  >('Tất cả');
+
+  const chapterProjectRef = useRef<HTMLElement | null>(null);
+  const chapterTeamRef = useRef<HTMLElement | null>(null);
+  const chapterJoinRef = useRef<HTMLElement | null>(null);
+
+  const heroReveal = useRevealOnScroll(0.05);
+  const valuesReveal = useRevealOnScroll(0.14);
+  const statsReveal = useRevealOnScroll(0.2);
+  const timelineReveal = useRevealOnScroll(0.15);
+  const ethicsReveal = useRevealOnScroll(0.15);
+  const teamHeaderReveal = useRevealOnScroll(0.12);
+  const teamGridReveal = useRevealOnScroll(0.08);
+  const ctaReveal = useRevealOnScroll(0.15);
+
+  // Tự động highlight mục đang xem trong thanh Sticky Mini-Pill
+  useEffect(() => {
+    const sections: { id: ChapterId; el: HTMLElement | null }[] = [
+      { id: 've-du-an', el: chapterProjectRef.current },
+      { id: 've-chung-minh', el: chapterTeamRef.current },
+      { id: 'dong-hanh', el: chapterJoinRef.current },
+    ];
+
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visibleEntries.length > 0) {
+          const matchedId = visibleEntries[0].target.getAttribute(
+            'data-chapter'
+          ) as ChapterId | null;
+          if (matchedId) {
+            setActiveChapter(matchedId);
+          }
+        }
+      },
+      {
+        threshold: [0.15, 0.35, 0.6],
+        rootMargin: '-18% 0px -55% 0px',
+      }
+    );
+
+    for (const s of sections) {
+      if (s.el) observer.observe(s.el);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToChapter = (id: ChapterId) => {
+    setActiveChapter(id);
+    const target =
+      id === 've-du-an'
+        ? chapterProjectRef.current
+        : id === 've-chung-minh'
+          ? chapterTeamRef.current
+          : chapterJoinRef.current;
+
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Số liệu Count-Up mượt từ 0 khi cuộn vào khung nhìn
+  const animatedArtisans = useCountUp(totalArtisans, statsReveal.visible, 1000);
+  const animatedRevived = useCountUp(revivedCount, statsReveal.visible, 1200);
+  const animatedArticles = useCountUp(totalArticles, statsReveal.visible, 900);
+  const animatedTeam = useCountUp(TEAM_WHO_MEMBERS.length, statsReveal.visible, 800);
+
+  const filteredMembers = useMemo(() => {
+    if (selectedDepartment === 'Tất cả') return TEAM_WHO_MEMBERS;
+    return TEAM_WHO_MEMBERS.filter((m) =>
+      m.departments.includes(selectedDepartment)
+    );
+  }, [selectedDepartment]);
+
+  const navChapters: { id: ChapterId; label: string }[] = [
+    { id: 've-du-an', label: 'Về dự án' },
+    { id: 've-chung-minh', label: 'Về chúng mình' },
+    { id: 'dong-hanh', label: 'Đồng hành' },
   ];
 
   return (
-    <div className="min-h-full bg-[#FAF8F5] py-8 px-4 sm:px-6 lg:py-12 pb-24 lg:pb-16">
-      <div className="max-w-5xl mx-auto space-y-10">
-        {/* Hero thông điệp cốt lõi */}
-        <section className="rounded-3xl bg-white border border-[#EBE5DC] shadow-sm p-6 sm:p-10 lg:p-12 space-y-6">
-          <div className="space-y-3 max-w-3xl">
-            <p className="text-xs sm:text-sm font-semibold text-[#D96B38]">
-              Hỏng đâu tìm đó – Gần nhau hơn mỗi ngày!
-            </p>
-            <h1
-              className="text-2xl sm:text-4xl font-bold text-[#1F2933] leading-tight tracking-tight"
-              style={{ textWrap: 'balance' }}
-            >
-              Mỗi góc phố đều có một người thợ, mỗi món đồ cũ đều có cơ hội được tiếp tục đồng hành.
-            </h1>
-            <p className="text-sm sm:text-base text-[#52606D] leading-relaxed">
-              <strong className="text-[#1F2933]">Góc Thợ Quanh Ta</strong> là bản đồ cộng đồng phi lợi nhuận dành cho người trẻ tại TP.HCM. Chúng mình tin rằng sự kết nối giữa công nghệ số và nghề thủ công truyền thống không nằm ở sự thương hại, mà ở sự tin cậy, tiện lợi và tôn trọng tay nghề đích thực.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-[#3A6B5C] font-semibold tabular-nums">
-            <span>{totalArtisans} góc thợ đang hiển thị</span>
-            <span className="text-[#CBD2D9]" aria-hidden="true">
-              ·
-            </span>
-            <span>♻️ {revivedCount} món đồ đã được hồi sinh cùng cộng đồng</span>
-          </div>
-
-          <div className="pt-1 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => onNavigate('explore')}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm inline-flex items-center gap-2 transition-colors"
-            >
-              <Compass className="w-4 h-4" />
-              <span>Khám phá {totalArtisans} góc thợ quanh đây</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('suggest')}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:bg-[#F2ECE2] text-[#1F2933] text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-            >
-              <PlusCircle className="w-4 h-4 text-[#D96B38]" />
-              <span>Gợi ý thêm cô chú thợ</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenBadge}
-              className="min-h-[44px] px-5 py-2.5 rounded-xl border border-[#D96B38]/35 bg-[#FFFBF2] hover:border-[#D96B38] text-[#1F2933] text-sm font-semibold inline-flex items-center gap-2 transition-colors"
-            >
-              <span aria-hidden="true">🏅</span>
-              <span>
-                {badgeTitle ? `Huy hiệu: ${badgeTitle}` : 'Huy hiệu của tôi'}
-              </span>
-            </button>
-          </div>
-        </section>
-
-        {/* 3 Thẻ giá trị cốt lõi */}
-        <section aria-labelledby="values-heading" className="space-y-4">
-          <h2 id="values-heading" className="text-lg sm:text-xl font-bold text-[#1F2933]">
-            Ba điều chúng mình gìn giữ
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {values.map(({ title, description, Icon, iconTone }) => (
-              <article
-                key={title}
-                className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-6 space-y-3.5"
-              >
-                <div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center ${iconTone}`}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-[#1F2933]">{title}</h3>
-                <p className="text-sm text-[#52606D] leading-relaxed">
-                  {description}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* Khối Cam kết quyền riêng tư */}
-        <section
-          aria-labelledby="privacy-heading"
-          className="rounded-3xl bg-[#3A6B5C] text-white p-6 sm:p-8 lg:p-10 space-y-6 shadow-sm"
+    <div className="bg-[#FAF8F5] text-[#1F2933]">
+      {/* 1. THANH ĐIỀU HƯỚNG NHANH STICKY MINI-PILL */}
+      <div className="sticky top-3 z-30 flex justify-center px-4 pt-4 pointer-events-none">
+        <nav
+          aria-label="Điều hướng chương trang Về dự án"
+          className="pointer-events-auto inline-flex items-center gap-1 p-1 rounded-full bg-white/85 backdrop-blur-md border border-stone-200/90 shadow-[0_6px_22px_rgba(31,41,51,0.06)]"
         >
-          <div className="flex items-start gap-3.5">
-            <span className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6 text-white" />
-            </span>
-            <div className="space-y-1">
-              <h2 id="privacy-heading" className="text-lg sm:text-xl font-bold">
-                Cam kết quyền riêng tư & tôn trọng người thợ
-              </h2>
-              <p className="text-sm text-white/85 leading-relaxed max-w-2xl">
-                Mọi thông tin hiển thị trên bản đồ đều được xây dựng trên nguyên tắc minh bạch, văn minh và đặt sự thoải mái của cô chú lên hàng đầu.
-              </p>
-            </div>
-          </div>
+          {navChapters.map(({ id, label }) => {
+            const isActive = activeChapter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => scrollToChapter(id)}
+                className={`min-h-[34px] px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? 'bg-[#3A6B5C] text-white shadow-2xs'
+                    : 'text-[#52606D] hover:text-[#1F2933] hover:bg-stone-100/80'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-4 space-y-1.5">
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <Heart className="w-4 h-4 text-[#F6C8A8]" />
-                <span>Hoàn toàn phi lợi nhuận</span>
-              </div>
-              <p className="text-xs text-white/85 leading-relaxed">
-                Không thu phí hoa hồng, không quảng cáo làm phiền và không thương mại hóa hình ảnh của cô chú.
+      <div className="max-w-5xl mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-16 sm:pb-24 space-y-24 sm:space-y-32">
+        {/* =======================================================
+            CHƯƠNG 1 — VỀ DỰ ÁN
+           ======================================================= */}
+        <section
+          ref={chapterProjectRef}
+          id="chuong-ve-du-an"
+          data-chapter="ve-du-an"
+          className="scroll-mt-20 space-y-16 sm:space-y-24"
+        >
+          {/* Hero mở đầu tối giản */}
+          <div
+            ref={heroReveal.ref}
+            className={`space-y-8 sm:space-y-10 transition-all duration-700 ease-out ${
+              heroReveal.visible
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-5'
+            }`}
+          >
+            <header className="max-w-3xl space-y-3.5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3A6B5C]">
+                VỀ DỰ ÁN · GÓC THỢ QUANH TA
               </p>
-            </div>
+              <h1
+                className="text-3xl sm:text-5xl font-bold text-[#1F2933] tracking-tight leading-[1.14]"
+                style={{ textWrap: 'balance' }}
+              >
+                Hỏng đâu sửa liền — Thợ giỏi gần bên.
+              </h1>
+            </header>
 
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-4 space-y-1.5">
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <ShieldCheck className="w-4 h-4 text-[#F6C8A8]" />
-                <span>Chỉ đăng khi có đồng thuận</span>
-              </div>
-              <p className="text-xs text-white/85 leading-relaxed">
-                Tất cả địa điểm xác minh đều được trao đổi trực tiếp, xin phép cô chú trước khi đưa lên bản đồ và sẵn sàng gỡ bỏ ngay khi cô chú yêu cầu.
-              </p>
-            </div>
+            {/* Khung ảnh ngang 16:9 bo góc mềm + zoom nhẹ khi hover */}
+            <figure className="group relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#EDE6DC] border border-stone-200/80 shadow-[0_8px_30px_rgba(31,41,51,0.05)]">
+              <img
+                src={cobblerHeroImg}
+                alt="Góc bàn làm việc mộc mạc của cô chú thợ sửa đồ tại TP.HCM"
+                className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#1F2933]/65 via-[#1F2933]/20 to-transparent pointer-events-none" />
+              <figcaption className="absolute bottom-3.5 left-4 sm:bottom-5 sm:left-6 right-4 text-[11.5px] sm:text-xs text-white/90 font-medium">
+                Góc đồ nghề bình dị nhưng bền bỉ — nơi những món đồ quen được
+                hồi sinh mỗi ngày.
+              </figcaption>
+            </figure>
 
-            <div className="rounded-2xl bg-white/10 border border-white/15 p-4 space-y-1.5">
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <EyeOff className="w-4 h-4 text-[#F6C8A8]" />
-                <span>Cho phép ẩn danh, không lộ mặt</span>
-              </div>
-              <p className="text-xs text-white/85 leading-relaxed">
-                Khuyến khích chỉ ghi cách gọi thân mật (Chú Ba, Cô Tư…) và chụp góc đồ nghề, bàn tay làm nghề để bảo vệ tuyệt đối quyền riêng tư.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Tài khoản đang đăng nhập hoặc lời mời đăng nhập cho khách */}
-        <footer className="pt-4 border-t border-[#E8E2D9] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#52606D]">
-          {currentUser ? (
-            <>
-              <div className="space-y-0.5">
-                <p className="font-bold text-[#1F2933]">
-                  {currentUser.displayName}{' '}
-                  <span className="font-semibold text-[#3A6B5C]">
-                    · {getRoleDisplayLabel(currentUser.role)}
-                  </span>
+            {/* Khối Câu chuyện khởi nguồn (2 đoạn gọn gàng, khoảng trắng thở) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-10 pt-2">
+              <div className="lg:col-span-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#D96B38]">
+                  Câu chuyện khởi nguồn
                 </p>
-                <p>Góc Thợ Quanh Ta · Dự án cộng đồng tại TP.HCM</p>
+                <p className="mt-2 text-sm text-[#616E7C] leading-relaxed">
+                  Từ một bất tiện rất quen của đời sống sinh viên đến bản đồ số
+                  cho những đôi tay lành nghề.
+                </p>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onOpenSaved}
-                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E5DFD5] text-[#1F2933] hover:border-[#D96B38] font-semibold transition-colors"
-                >
-                  <Bookmark className="w-3.5 h-3.5 text-[#D96B38]" />
-                  <span>Đã lưu ({favoritesCount})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onOpenContributions}
-                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-[#E5DFD5] text-[#1F2933] hover:border-[#3A6B5C] font-semibold transition-colors"
-                >
-                  <History className="w-3.5 h-3.5 text-[#3A6B5C]" />
-                  <span>Đóng góp ({contributionsCount})</span>
-                </button>
-
-                {canManage && (
-                  <button
-                    type="button"
-                    onClick={onOpenAdmin}
-                    className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3A6B5C]/10 border border-[#3A6B5C]/30 text-[#3A6B5C] hover:bg-[#3A6B5C]/15 font-semibold transition-colors"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Trang Quản trị</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 text-[#C84B31] hover:bg-[#C84B31]/15 font-semibold transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Đăng xuất</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="space-y-0.5">
-                <p className="font-bold text-[#1F2933]">
-                  Bạn đang duyệt với tư cách Khách
+              <div className="lg:col-span-8 space-y-4 text-sm sm:text-[15.5px] text-[#3E4C59] leading-[1.82]">
+                <p>
+                  Nhiều người, đặc biệt là sinh viên, khi gặp sự cố hư hỏng đồ
+                  dùng như giày dép bung keo, quần áo sứt chỉ, balo gãy dây kéo,
+                  laptop hay xe cộ thường phải vứt bỏ hoặc tốn chi phí lớn chỉ
+                  vì không biết địa chỉ sửa chữa uy tín, giá mềm quanh nơi mình
+                  sống.
                 </p>
                 <p>
-                  Đăng nhập nhanh trong 5 giây để lưu cô chú thợ, gửi lời khen
-                  và tích huy hiệu hồi sinh đồ.
+                  Trong khi đó, ngay ở những góc phố và con hẻm quen lại có rất
+                  nhiều cô chú thợ lành nghề và tiệm sửa chữa nhỏ lẻ vẫn chưa
+                  hiện diện trên Google Maps.{' '}
+                  <strong className="font-semibold text-[#1F2933]">
+                    Góc Thợ Quanh Ta
+                  </strong>{' '}
+                  ra đời như một nền tảng định vị cộng đồng giúp bạn trẻ tìm
+                  đúng thợ giỏi gần nhà với giá bình dân, đồng thời tăng độ nhận
+                  diện và thu hút thêm khách hàng cho người làm nghề.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Giá trị cốt lõi (Bento Grid 3 cột, Stagger Fade-Up + Hover Lift nhẹ) */}
+          <div ref={valuesReveal.ref} className="space-y-6">
+            <div className="flex items-end justify-between gap-4 border-b border-stone-200/80 pb-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1F2933] tracking-tight">
+                Ba giá trị cốt lõi
+              </h2>
+              <span className="text-xs text-[#7B8794] hidden sm:inline">
+                Nhẹ ví tiền · Ấm tình người · Xanh thành phố
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+              {CORE_VALUES.map((item, idx) => (
+                <article
+                  key={item.number}
+                  style={{
+                    transitionDelay: valuesReveal.visible
+                      ? `${idx * 100}ms`
+                      : '0ms',
+                  }}
+                  className={`rounded-2xl bg-white border border-stone-200/85 p-6 sm:p-7 space-y-3.5 transition-all duration-700 ease-out hover:-translate-y-1 hover:border-[#3A6B5C]/45 hover:shadow-[0_12px_28px_rgba(31,41,51,0.05)] ${
+                    valuesReveal.visible
+                      ? 'opacity-100 translate-y-0'
+                      : 'opacity-0 translate-y-6'
+                  }`}
+                >
+                  <p className="text-[11px] font-bold tracking-[0.14em] text-[#D96B38] uppercase tabular-nums">
+                    {item.number} · {item.title}
+                  </p>
+                  <p className="text-sm text-[#52606D] leading-[1.75]">
+                    {item.description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          {/* Dải số liệu ấn tượng (LIVE Supabase + Count-Up mượt từ 0) */}
+          <div
+            ref={statsReveal.ref}
+            className={`rounded-3xl bg-white border border-stone-200/85 px-6 sm:px-8 py-8 sm:py-10 transition-all duration-700 ease-out ${
+              statsReveal.visible
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-5'
+            }`}
+          >
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 divide-y-0 lg:divide-x divide-stone-200/75">
+              <div className="space-y-1">
+                <p className="text-3xl sm:text-4xl font-bold text-[#1F2933] tabular-nums tracking-tight">
+                  {animatedArtisans}
+                </p>
+                <p className="text-xs sm:text-[13px] font-medium text-[#52606D]">
+                  Cô chú thợ đã xác minh
+                </p>
+                <p className="text-[11px] text-[#829AB1]">
+                  Đồng bộ trực tiếp trên bản đồ
                 </p>
               </div>
 
+              <div className="space-y-1 lg:pl-7">
+                <p className="text-3xl sm:text-4xl font-bold text-[#3A6B5C] tabular-nums tracking-tight">
+                  {animatedRevived}
+                </p>
+                <p className="text-xs sm:text-[13px] font-medium text-[#52606D]">
+                  Món đồ đã được hồi sinh
+                </p>
+                <p className="text-[11px] text-[#829AB1]">
+                  Sửa bền thay vì vứt bỏ
+                </p>
+              </div>
+
+              <div className="space-y-1 lg:pl-7">
+                <p className="text-3xl sm:text-4xl font-bold text-[#D96B38] tabular-nums tracking-tight">
+                  {animatedArticles}
+                </p>
+                <p className="text-xs sm:text-[13px] font-medium text-[#52606D]">
+                  Bài viết trên Bản tin
+                </p>
+                <p className="text-[11px] text-[#829AB1]">
+                  Chuyện nghề &amp; mẹo sống xanh
+                </p>
+              </div>
+
+              <div className="space-y-1 lg:pl-7">
+                <p className="text-3xl sm:text-4xl font-bold text-[#1F2933] tabular-nums tracking-tight">
+                  {animatedTeam}
+                </p>
+                <p className="text-xs sm:text-[13px] font-medium text-[#52606D]">
+                  Thành viên &amp; CTV thực địa
+                </p>
+                <p className="text-[11px] text-[#829AB1]">
+                  Phủ {Math.max(1, districtsCount)} khu vực tại TP.HCM
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hành trình dự án (Timeline tối giản 4 mốc + đường kẻ tiến độ sáng dần) */}
+          <div ref={timelineReveal.ref} className="space-y-8">
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#3A6B5C]">
+                Hành trình dự án
+              </p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1F2933] tracking-tight">
+                Từng bước đi từ ý tưởng đến góc phố
+              </h2>
+            </div>
+
+            <div className="relative pl-7 sm:pl-9 space-y-8">
+              {/* Đường kẻ nền */}
+              <div
+                aria-hidden="true"
+                className="absolute left-[11px] sm:left-[13px] top-2 bottom-2 w-px bg-stone-200"
+              />
+              {/* Đường kẻ tiến độ sáng dần mượt mà */}
+              <div
+                aria-hidden="true"
+                className={`absolute left-[11px] sm:left-[13px] top-2 w-px bg-[#3A6B5C] transition-all duration-1000 ease-out ${
+                  timelineReveal.visible ? 'h-[72%]' : 'h-0'
+                }`}
+              />
+
+              {TIMELINE_MILESTONES.map((milestone, idx) => (
+                <div
+                  key={milestone.title}
+                  style={{
+                    transitionDelay: timelineReveal.visible
+                      ? `${idx * 130}ms`
+                      : '0ms',
+                  }}
+                  className={`relative transition-all duration-700 ease-out ${
+                    timelineReveal.visible
+                      ? 'opacity-100 translate-y-0'
+                      : 'opacity-0 translate-y-4'
+                  }`}
+                >
+                  {/* Chấm mốc */}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -left-[22px] sm:-left-[28px] top-1.5 w-3 h-3 rounded-full ring-4 ring-[#FAF8F5] transition-colors ${
+                      milestone.status === 'current'
+                        ? 'bg-[#D96B38]'
+                        : milestone.status === 'done'
+                          ? 'bg-[#3A6B5C]'
+                          : 'bg-stone-300'
+                    }`}
+                  />
+
+                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-5">
+                    <span
+                      className={`text-xs font-bold tabular-nums uppercase tracking-wider shrink-0 sm:w-20 ${
+                        milestone.status === 'current'
+                          ? 'text-[#D96B38]'
+                          : milestone.status === 'done'
+                            ? 'text-[#3A6B5C]'
+                            : 'text-[#829AB1]'
+                      }`}
+                    >
+                      {milestone.date}
+                    </span>
+
+                    <div className="space-y-1">
+                      <h3 className="text-base font-bold text-[#1F2933]">
+                        {milestone.title}
+                      </h3>
+                      <p className="text-sm text-[#52606D] leading-relaxed max-w-2xl">
+                        {milestone.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 3 Cam kết đạo đức cộng đồng (Thẻ ngang viền mảnh, icon tối giản) */}
+          <div ref={ethicsReveal.ref} className="space-y-5">
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#D96B38]">
+                Nguyên tắc hoạt động
+              </p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1F2933] tracking-tight">
+                Ba cam kết đạo đức cộng đồng
+              </h2>
+            </div>
+
+            <div className="divide-y divide-stone-200/80 rounded-2xl bg-white border border-stone-200/85 overflow-hidden">
+              {ETHICS_COMMITMENTS.map(({ title, description, Icon }, idx) => (
+                <div
+                  key={title}
+                  style={{
+                    transitionDelay: ethicsReveal.visible
+                      ? `${idx * 90}ms`
+                      : '0ms',
+                  }}
+                  className={`p-5 sm:px-7 sm:py-6 flex items-start gap-4 transition-all duration-700 ease-out hover:bg-[#FAF8F5]/60 ${
+                    ethicsReveal.visible
+                      ? 'opacity-100 translate-y-0'
+                      : 'opacity-0 translate-y-4'
+                  }`}
+                >
+                  <span className="w-9 h-9 rounded-xl bg-[#FAF8F5] border border-stone-200/90 text-[#3A6B5C] flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="w-4 h-4" strokeWidth={2} />
+                  </span>
+                  <div className="space-y-1">
+                    <h3 className="text-sm sm:text-[15px] font-bold text-[#1F2933]">
+                      {title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#52606D] leading-relaxed">
+                      {description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Đường phân tách chương nhẹ nhàng */}
+        <div className="border-t border-stone-200/80" />
+
+        {/* =======================================================
+            CHƯƠNG 2 — VỀ CHÚNG MÌNH (TEAM WHO)
+           ======================================================= */}
+        <section
+          ref={chapterTeamRef}
+          id="chuong-ve-chung-minh"
+          data-chapter="ve-chung-minh"
+          className="scroll-mt-20 space-y-12 sm:space-y-14"
+        >
+          <div
+            ref={teamHeaderReveal.ref}
+            className={`space-y-7 sm:space-y-8 transition-all duration-700 ease-out ${
+              teamHeaderReveal.visible
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-5'
+            }`}
+          >
+            {/* Khối nhận diện nhóm tích hợp Logo FTU tròn sạch góc */}
+            <div className="space-y-5">
+              <div className="inline-flex items-center gap-3.5 px-4 py-2.5 rounded-full bg-white/90 border border-stone-200 shadow-2xs max-w-full">
+                <span className="w-10 h-10 rounded-full overflow-hidden bg-white ring-1 ring-stone-200/80 shadow-xs shrink-0">
+                  <img
+                    src={FTU_LOGO_SRC}
+                    alt="Logo Trường Đại học Ngoại thương (FTU)"
+                    className="w-full h-full object-cover scale-[1.03] transition-transform duration-300 hover:scale-[1.08]"
+                  />
+                </span>
+                <div className="min-w-0 leading-snug pr-1">
+                  <p className="text-[11px] font-bold tracking-[0.14em] text-[#1F2933] uppercase truncate">
+                    TEAM WHO · LỚP K65F
+                  </p>
+                  <p className="text-xs text-[#616E7C] truncate">
+                    Phân hiệu Trường Đại học Ngoại thương tại TP. Hồ Chí Minh
+                  </p>
+                </div>
+              </div>
+
+              <h2
+                className="text-2xl sm:text-4xl font-bold text-[#1F2933] tracking-tight leading-[1.2]"
+                style={{ textWrap: 'balance' }}
+              >
+                &ldquo;Who are we, we are who,{' '}
+                <span className="text-[#D96B38] italic font-semibold">
+                  we help other!
+                </span>
+                &rdquo;
+              </h2>
+            </div>
+
+            {/* Ảnh tập thể nhóm 16:9 */}
+            <figure className="space-y-3">
+              <div className="group aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#EAE3D8] border border-stone-200/80 shadow-[0_8px_30px_rgba(31,41,51,0.05)]">
+                <img
+                  src={TEAM_WHO_PHOTO_SRC}
+                  alt="Ảnh tập thể 9 thành viên Team WHO — Lớp K65F FTU HCMC"
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                />
+              </div>
+              <figcaption className="text-center text-xs text-[#616E7C] font-medium">
+                9 mảnh ghép của Team WHO — K65F FTU HCMC
+              </figcaption>
+            </figure>
+          </div>
+
+          {/* Bộ lọc phân ban thông minh */}
+          <div className="space-y-6">
+            <div
+              role="tablist"
+              aria-label="Lọc thành viên theo phân ban"
+              className="flex flex-wrap items-center gap-2"
+            >
               <button
                 type="button"
-                onClick={onOpenAuth}
-                className="min-h-[40px] inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white font-semibold transition-colors shrink-0"
+                role="tab"
+                aria-selected={selectedDepartment === 'Tất cả'}
+                onClick={() => setSelectedDepartment('Tất cả')}
+                className={`min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                  selectedDepartment === 'Tất cả'
+                    ? 'bg-[#3A6B5C] text-white shadow-2xs'
+                    : 'bg-white border border-stone-200 text-[#52606D] hover:border-stone-300 hover:text-[#1F2933]'
+                }`}
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Đăng nhập / Đăng ký</span>
+                Tất cả ({TEAM_WHO_MEMBERS.length})
               </button>
-            </>
-          )}
-        </footer>
+
+              {TEAM_DEPARTMENTS.map((dept) => {
+                const isActive = selectedDepartment === dept;
+                return (
+                  <button
+                    key={dept}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setSelectedDepartment(dept)}
+                    className={`min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#3A6B5C] text-white shadow-2xs'
+                        : 'bg-white border border-stone-200 text-[#52606D] hover:border-stone-300 hover:text-[#1F2933]'
+                    }`}
+                  >
+                    {dept}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Lưới 9 thẻ Thành viên (3 cột Desktop, 2 cột Tablet, 1 cột Mobile) */}
+            <div
+              ref={teamGridReveal.ref}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
+            >
+              {filteredMembers.map((member, idx) => (
+                <article
+                  key={member.id}
+                  style={{
+                    transitionDelay: teamGridReveal.visible
+                      ? `${Math.min(idx, 8) * 65}ms`
+                      : '0ms',
+                  }}
+                  className={`group rounded-2xl bg-white border border-stone-200/85 p-5 sm:p-6 flex flex-col justify-between gap-4 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-[#3A6B5C]/45 hover:shadow-[0_12px_28px_rgba(31,41,51,0.05)] ${
+                    teamGridReveal.visible
+                      ? 'opacity-100 translate-y-0'
+                      : 'opacity-0 translate-y-5'
+                  }`}
+                >
+                  <div className="space-y-4">
+                    {/* Hàng đầu: Avatar 1:1 bo tròn + Họ tên + Chức vụ ngắn + Facebook */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div
+                          className={`w-13 h-13 aspect-square rounded-full overflow-hidden ring-1 flex items-center justify-center shrink-0 font-bold text-sm tracking-tight ${getAvatarToneClasses(
+                            member.accentTone
+                          )}`}
+                        >
+                          {member.avatarUrl ? (
+                            <img
+                              src={member.avatarUrl}
+                              alt={member.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{member.initials}</span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 space-y-0.5">
+                          <h3 className="text-[15px] font-bold text-[#1F2933] leading-snug truncate">
+                            {member.name}
+                          </h3>
+                          <p className="text-xs font-semibold text-[#D96B38] whitespace-nowrap truncate">
+                            {member.role}
+                          </p>
+                        </div>
+                      </div>
+
+                      <a
+                        href={member.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Facebook của ${member.name}`}
+                        title={`Facebook của ${member.name}`}
+                        className="w-8 h-8 rounded-full text-[#829AB1] hover:text-[#3A6B5C] hover:bg-[#3A6B5C]/10 flex items-center justify-center shrink-0 transition-colors"
+                      >
+                        <FacebookIcon className="w-4 h-4" />
+                      </a>
+                    </div>
+
+                    {/* Câu quote in nghiêng gần gũi */}
+                    <p className="text-[13px] text-[#52606D] italic leading-[1.7]">
+                      &ldquo;{member.quote}&rdquo;
+                    </p>
+                  </div>
+
+                  {/* Nhãn Phân ban gọn nhẹ ở đáy thẻ */}
+                  <div className="pt-3 border-t border-stone-100 text-[11px] font-medium text-[#616E7C]">
+                    {member.departments.join(' · ')}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* =======================================================
+            CHƯƠNG 3 — KÊU GỌI ĐỒNG HÀNH (CTA CARD TỐI GIẢN)
+           ======================================================= */}
+        <section
+          ref={chapterJoinRef}
+          id="chuong-dong-hanh"
+          data-chapter="dong-hanh"
+          className="scroll-mt-20"
+        >
+          <div
+            ref={ctaReveal.ref}
+            className={`rounded-3xl bg-[#3A6B5C] text-[#FAF8F5] px-6 sm:px-10 lg:px-12 py-10 sm:py-12 transition-all duration-700 ease-out ${
+              ctaReveal.visible
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-5'
+            }`}
+          >
+            <div className="max-w-2xl space-y-6">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#F2C9A8]">
+                ĐỒNG HÀNH CÙNG CHÚNG MÌNH
+              </p>
+
+              <h2
+                className="text-2xl sm:text-3xl font-bold leading-snug tracking-tight"
+                style={{ textWrap: 'balance' }}
+              >
+                Biết một cô chú thợ lành nghề gần nhà? Cùng chúng mình nối dài
+                bản đồ nhé.
+              </h2>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('suggest')}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#FAF8F5] hover:bg-white text-[#1F2933] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-xs transition-colors"
+                >
+                  <PlusCircle className="w-4 h-4 text-[#D96B38]" />
+                  <span>Gợi ý cô chú thợ mới</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+
+                <a
+                  href={`mailto:${PROJECT_CONTACT_EMAIL}`}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/18 border border-white/25 text-[#FAF8F5] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Liên hệ hợp tác / CTV</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

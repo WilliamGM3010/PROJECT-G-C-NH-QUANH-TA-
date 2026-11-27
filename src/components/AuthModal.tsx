@@ -14,7 +14,7 @@ import type { AdminAccount } from '../types/artisan';
 import { isSupabaseConfigured } from '../supabaseClient';
 
 export const DEFAULT_SOFT_AUTH_PROMPT =
-  'Đăng nhập nhanh trong 5 giây để lưu cô chú thợ, gửi lời khen và tích huy hiệu hồi sinh đồ.';
+  'Đăng nhập nhanh để lưu thợ, gửi lời khen và tích huy hiệu.';
 
 interface AuthModalProps {
   isOpen: boolean;
