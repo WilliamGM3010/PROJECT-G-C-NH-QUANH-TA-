@@ -1304,8 +1304,96 @@ export interface MicrolinkExtractedArticle {
   externalUrl: string;
 }
 
+const ARTICLE_FETCH_TIMEOUT_MS = 12_000;
+
+async function fetchJsonWithTimeout<T>(
+  endpoint: string,
+  timeoutMs = ARTICLE_FETCH_TIMEOUT_MS
+): Promise<T | null> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    window.clearTimeout(timer);
+    if (!response.ok) return null;
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().includes('json')) {
+      return null;
+    }
+    return (await response.json()) as T;
+  } catch {
+    window.clearTimeout(timer);
+    return null;
+  }
+}
+
+function resolveSafeArticleImage(
+  rawImg: string | null | undefined,
+  pageUrl: string
+): string | undefined {
+  if (!rawImg || typeof rawImg !== 'string') return undefined;
+  const trimmed = rawImg.trim();
+  if (!trimmed) return undefined;
+  try {
+    const resolved = new URL(trimmed, pageUrl).toString();
+    return sanitizeImageSrc(resolved);
+  } catch {
+    return sanitizeImageSrc(trimmed);
+  }
+}
+
+function parseMetaFromHtmlInBrowser(
+  html: string,
+  pageUrl: string,
+  fallbackHost: string
+): MicrolinkExtractedArticle | null {
+  if (!html || !html.trim() || typeof DOMParser === 'undefined') return null;
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const getMeta = (selector: string): string =>
+    (doc.querySelector(selector)?.getAttribute('content') ?? '').trim();
+
+  const title =
+    getMeta('meta[property="og:title"]') ||
+    getMeta('meta[name="twitter:title"]') ||
+    (doc.querySelector('title')?.textContent ?? '').trim();
+
+  const description =
+    getMeta('meta[property="og:description"]') ||
+    getMeta('meta[name="description"]') ||
+    getMeta('meta[name="twitter:description"]');
+
+  const rawImg =
+    getMeta('meta[property="og:image:secure_url"]') ||
+    getMeta('meta[property="og:image"]') ||
+    getMeta('meta[name="twitter:image"]') ||
+    getMeta('meta[name="twitter:image:src"]');
+
+  const imageUrl = resolveSafeArticleImage(rawImg, pageUrl);
+  const publisher =
+    getMeta('meta[property="og:site_name"]') || fallbackHost;
+
+  if (!title && !description && !imageUrl) {
+    return null;
+  }
+
+  return {
+    title,
+    description,
+    imageUrl,
+    publisher,
+    externalUrl: pageUrl,
+  };
+}
+
 /**
- * Gọi API miễn phí Microlink để trích xuất metadata bài báo từ đường dẫn công khai.
+ * Cơ chế lấy thông tin bài báo 3 lớp ổn định:
+ * - Lớp 1: Vercel Serverless API `/api/fetch-article` (ưu tiên, nhanh & không giới hạn)
+ * - Lớp 2: Microlink API `https://api.microlink.io` (dự phòng khi chạy local preview hoặc Lớp 1 lỗi)
+ * - Lớp 3: AllOrigins `https://api.allorigins.win/get` + bóc tách thẻ OpenGraph ngay trên trình duyệt
  */
 export async function fetchMicrolinkMetadata(
   rawUrl: string
@@ -1328,71 +1416,101 @@ export async function fetchMicrolinkMetadata(
     fallbackHost = '';
   }
 
-  try {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(
-      `https://api.microlink.io?url=${encodeURIComponent(safeUrl)}`,
-      {
-        method: 'GET',
-        signal: controller.signal,
-      }
-    );
-    window.clearTimeout(timer);
+  // LỚP 1: Vercel Serverless Function `/api/fetch-article` (timeout 12 giây)
+  const layer1 = await fetchJsonWithTimeout<{
+    ok?: boolean;
+    data?: {
+      title?: string | null;
+      description?: string | null;
+      image?: string | null;
+      publisher?: string | null;
+      url?: string | null;
+    };
+  }>(`/api/fetch-article?url=${encodeURIComponent(safeUrl)}`);
 
-    if (!response.ok) {
+  if (layer1?.ok && layer1.data) {
+    const title = String(layer1.data.title ?? '').trim();
+    const description = String(layer1.data.description ?? '').trim();
+    const imageUrl = resolveSafeArticleImage(layer1.data.image, safeUrl);
+    const publisher =
+      String(layer1.data.publisher ?? '').trim() || fallbackHost;
+    const finalUrl = sanitizeExternalUrl(layer1.data.url) || safeUrl;
+
+    if (title || description || imageUrl) {
       return {
-        ok: false,
-        normalizedUrl: safeUrl,
-        error:
-          'Trang báo này đang chặn lấy dữ liệu tự động. Bạn vẫn có thể mở trình soạn thảo để dán nhanh tiêu đề, mô tả và ảnh bìa nhé.',
+        ok: true,
+        normalizedUrl: finalUrl,
+        data: {
+          title,
+          description,
+          imageUrl,
+          publisher,
+          externalUrl: finalUrl,
+        },
       };
     }
-
-    const json = (await response.json()) as {
-      status?: string;
-      data?: {
-        title?: string | null;
-        description?: string | null;
-        image?: { url?: string | null } | null;
-        logo?: { url?: string | null } | null;
-        publisher?: string | null;
-      };
-    };
-
-    const meta = json?.data;
-    const title = String(meta?.title ?? '').trim();
-    const description = String(meta?.description ?? '').trim();
-    const rawImg = meta?.image?.url ?? meta?.logo?.url ?? '';
-    const imageUrl = sanitizeImageSrc(rawImg);
-    const publisher = String(meta?.publisher ?? '').trim() || fallbackHost;
-
-    if (!title && !description && !imageUrl) {
-      return {
-        ok: false,
-        normalizedUrl: safeUrl,
-        error:
-          'Không trích xuất được tiêu đề từ trang báo này (có thể do tường chặn tự động). Bạn hãy chuyển sang nhập thủ công trong khung soạn thảo nhé.',
-      };
-    }
-
-    return {
-      ok: true,
-      normalizedUrl: safeUrl,
-      data: {
-        title,
-        description,
-        imageUrl,
-        publisher,
-        externalUrl: safeUrl,
-      },
-    };
-  } catch {
-    return {
-      ok: false,
-      normalizedUrl: safeUrl,
-      error:
-        'Không thể kết nối dịch vụ lấy tin tự động (quá thời gian hoặc bị chặn). Bạn vẫn có thể mở khung soạn thảo để tự dán tiêu đề và ảnh.',
-    };
   }
+
+  // LỚP 2: Microlink API (dự phòng khi chạy local hoặc Lớp 1 lỗi — timeout 12 giây)
+  const layer2 = await fetchJsonWithTimeout<{
+    status?: string;
+    data?: {
+      title?: string | null;
+      description?: string | null;
+      image?: { url?: string | null } | null;
+      logo?: { url?: string | null } | null;
+      publisher?: string | null;
+    };
+  }>(`https://api.microlink.io?url=${encodeURIComponent(safeUrl)}`);
+
+  if (layer2?.data) {
+    const meta = layer2.data;
+    const title = String(meta.title ?? '').trim();
+    const description = String(meta.description ?? '').trim();
+    const rawImg = meta.image?.url ?? meta.logo?.url ?? '';
+    const imageUrl = resolveSafeArticleImage(rawImg, safeUrl);
+    const publisher = String(meta.publisher ?? '').trim() || fallbackHost;
+
+    if (title || description || imageUrl) {
+      return {
+        ok: true,
+        normalizedUrl: safeUrl,
+        data: {
+          title,
+          description,
+          imageUrl,
+          publisher,
+          externalUrl: safeUrl,
+        },
+      };
+    }
+  }
+
+  // LỚP 3: AllOrigins proxy + bóc tách og:title, og:description, og:image trên trình duyệt (timeout 12 giây)
+  const layer3 = await fetchJsonWithTimeout<{
+    contents?: string | null;
+  }>(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);
+
+  if (layer3?.contents) {
+    const parsed = parseMetaFromHtmlInBrowser(
+      layer3.contents,
+      safeUrl,
+      fallbackHost
+    );
+    if (parsed) {
+      return {
+        ok: true,
+        normalizedUrl: safeUrl,
+        data: parsed,
+      };
+    }
+  }
+
+  // Chỉ thông báo lỗi khi cả 3 lớp đều thất bại
+  return {
+    ok: false,
+    normalizedUrl: safeUrl,
+    error:
+      'Không thể lấy dữ liệu tự động từ trang báo này sau khi thử đủ 3 nguồn kết nối (trang báo có thể chặn truy cập tự động). Bạn vẫn có thể mở trình soạn thảo để tự dán tiêu đề và ảnh nhé.',
+  };
 }
