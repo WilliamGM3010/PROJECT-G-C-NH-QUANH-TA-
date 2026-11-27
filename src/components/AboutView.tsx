@@ -271,18 +271,152 @@ export function AboutView({
   const animatedArticles = useCountUp(totalArticles, statsReveal.visible, 900);
   const animatedTeam = useCountUp(TEAM_WHO_MEMBERS.length, statsReveal.visible, 800);
 
-  const filteredMembers = useMemo(() => {
-    if (selectedDepartment === 'Tất cả') return TEAM_WHO_MEMBERS;
+  const projectLeader = useMemo(
+    () => TEAM_WHO_MEMBERS.find((m) => m.tier === 'pl') ?? null,
+    []
+  );
+  const departmentLeaders = useMemo(
+    () => TEAM_WHO_MEMBERS.filter((m) => m.tier === 'leader'),
+    []
+  );
+  const regularMembers = useMemo(
+    () => TEAM_WHO_MEMBERS.filter((m) => m.tier === 'member'),
+    []
+  );
+
+  const filteredDepartmentMembers = useMemo(() => {
+    if (selectedDepartment === 'Tất cả') return [];
+    const tierRank: Record<TeamMember['tier'], number> = {
+      pl: 0,
+      leader: 1,
+      member: 2,
+    };
     return TEAM_WHO_MEMBERS.filter((m) =>
       m.departments.includes(selectedDepartment)
-    );
+    ).sort((a, b) => tierRank[a.tier] - tierRank[b.tier]);
   }, [selectedDepartment]);
+
+  const departmentCounts = useMemo(() => {
+    const counts: Record<TeamDepartment, number> = {
+      'Nội dung - Phát triển': 0,
+      'Truyền thông Chiến lược': 0,
+      'Nhân sự - Vận hành': 0,
+    };
+    for (const member of TEAM_WHO_MEMBERS) {
+      for (const dept of member.departments) {
+        counts[dept] += 1;
+      }
+    }
+    return counts;
+  }, []);
 
   const navChapters: { id: ChapterId; label: string }[] = [
     { id: 've-du-an', label: 'Về dự án' },
     { id: 've-chung-minh', label: 'Về chúng mình' },
     { id: 'dong-hanh', label: 'Đồng hành' },
   ];
+
+  const renderVerticalMemberCard = (
+    member: TeamMember,
+    idx: number,
+    extraClassName = ''
+  ) => {
+    const isPl = member.tier === 'pl';
+    const isLeader = member.tier === 'leader';
+
+    return (
+      <article
+        key={member.id}
+        style={{
+          transitionDelay: teamGridReveal.visible
+            ? `${Math.min(idx, 8) * 65}ms`
+            : '0ms',
+        }}
+        className={`group rounded-2xl bg-white p-6 flex flex-col justify-between gap-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(31,41,51,0.06)] ${
+          isPl
+            ? 'border border-emerald-900/25 hover:border-emerald-900/40 shadow-xs'
+            : 'border border-stone-200/90 hover:border-emerald-900/30'
+        } ${
+          teamGridReveal.visible
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-5'
+        } ${extraClassName}`}
+      >
+        <div className="space-y-4">
+          {/* Avatar tròn w-16 h-16 + Nút Facebook góc phải */}
+          <div className="flex items-start justify-between gap-3">
+            <div
+              className={`w-16 h-16 aspect-square rounded-full overflow-hidden ring-1 flex items-center justify-center shrink-0 font-bold text-base tracking-tight ${getAvatarToneClasses(
+                member.accentTone
+              )}`}
+            >
+              {member.avatarUrl ? (
+                <img
+                  src={member.avatarUrl}
+                  alt={member.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{member.initials}</span>
+              )}
+            </div>
+
+            <a
+              href={member.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Facebook của ${member.name}`}
+              title={`Facebook của ${member.name}`}
+              className="w-8 h-8 rounded-full text-[#829AB1] hover:text-[#3A6B5C] hover:bg-[#3A6B5C]/10 flex items-center justify-center shrink-0 transition-colors"
+            >
+              <FacebookIcon className="w-4 h-4" />
+            </a>
+          </div>
+
+          {/* Nhãn chức vụ + Họ tên + Phân ban */}
+          <div className="space-y-1.5">
+            <span
+              className={`inline-block text-[11px] font-semibold tracking-wide uppercase ${
+                isPl
+                  ? 'text-[#3A6B5C]'
+                  : isLeader
+                    ? 'text-[#D96B38]'
+                    : 'text-[#7B8794]'
+              }`}
+            >
+              {member.role}
+            </span>
+
+            <h3 className="text-base font-bold text-[#1F2933] leading-snug">
+              {member.name}
+            </h3>
+
+            {isPl || isLeader ? (
+              <p className="text-xs font-medium text-[#52606D] leading-snug">
+                {member.departmentDisplayLabel || member.departments.join(' · ')}
+              </p>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {member.departments.map((dept) => (
+                  <span
+                    key={dept}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#F4EFE6] text-[#52606D] text-[11px] font-medium"
+                  >
+                    {dept}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Câu quote in nghiêng gần gũi */}
+          <p className="text-[13px] text-[#52606D] italic leading-[1.72]">
+            &ldquo;{member.quote}&rdquo;
+          </p>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className="bg-[#FAF8F5] text-[#1F2933]">
@@ -676,19 +810,19 @@ export function AboutView({
             </figure>
           </div>
 
-          {/* Bộ lọc phân ban thông minh */}
-          <div className="space-y-6">
+          {/* 4 Nút lọc phân ban tối giản căn giữa */}
+          <div className="space-y-10">
             <div
               role="tablist"
               aria-label="Lọc thành viên theo phân ban"
-              className="flex flex-wrap items-center gap-2"
+              className="flex flex-wrap items-center justify-center gap-2"
             >
               <button
                 type="button"
                 role="tab"
                 aria-selected={selectedDepartment === 'Tất cả'}
                 onClick={() => setSelectedDepartment('Tất cả')}
-                className={`min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                   selectedDepartment === 'Tất cả'
                     ? 'bg-[#3A6B5C] text-white shadow-2xs'
                     : 'bg-white border border-stone-200 text-[#52606D] hover:border-stone-300 hover:text-[#1F2933]'
@@ -706,91 +840,108 @@ export function AboutView({
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setSelectedDepartment(dept)}
-                    className={`min-h-[36px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                    className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                       isActive
                         ? 'bg-[#3A6B5C] text-white shadow-2xs'
                         : 'bg-white border border-stone-200 text-[#52606D] hover:border-stone-300 hover:text-[#1F2933]'
                     }`}
                   >
-                    {dept}
+                    {dept} ({departmentCounts[dept]})
                   </button>
                 );
               })}
             </div>
 
-            {/* Lưới 9 thẻ Thành viên (3 cột Desktop, 2 cột Tablet, 1 cột Mobile) */}
-            <div
-              ref={teamGridReveal.ref}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
-            >
-              {filteredMembers.map((member, idx) => (
-                <article
-                  key={member.id}
-                  style={{
-                    transitionDelay: teamGridReveal.visible
-                      ? `${Math.min(idx, 8) * 65}ms`
-                      : '0ms',
-                  }}
-                  className={`group rounded-2xl bg-white border border-stone-200/85 p-5 sm:p-6 flex flex-col justify-between gap-4 transition-all duration-500 ease-out hover:-translate-y-1 hover:border-[#3A6B5C]/45 hover:shadow-[0_12px_28px_rgba(31,41,51,0.05)] ${
-                    teamGridReveal.visible
-                      ? 'opacity-100 translate-y-0'
-                      : 'opacity-0 translate-y-5'
-                  }`}
-                >
-                  <div className="space-y-4">
-                    {/* Hàng đầu: Avatar 1:1 bo tròn + Họ tên + Chức vụ ngắn + Facebook */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div
-                          className={`w-13 h-13 aspect-square rounded-full overflow-hidden ring-1 flex items-center justify-center shrink-0 font-bold text-sm tracking-tight ${getAvatarToneClasses(
-                            member.accentTone
-                          )}`}
-                        >
-                          {member.avatarUrl ? (
-                            <img
-                              src={member.avatarUrl}
-                              alt={member.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{member.initials}</span>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 space-y-0.5">
-                          <h3 className="text-[15px] font-bold text-[#1F2933] leading-snug truncate">
-                            {member.name}
-                          </h3>
-                          <p className="text-xs font-semibold text-[#D96B38] whitespace-nowrap truncate">
-                            {member.role}
-                          </p>
-                        </div>
+            {/* Khu vực hiển thị đội ngũ */}
+            <div ref={teamGridReveal.ref}>
+              {selectedDepartment === 'Tất cả' ? (
+                /* BỐ CỤC PHÂN CẤP 3 TẦNG SẠCH SẼ — KHÔNG TIÊU ĐỀ PHÂN TÁCH */
+                <div className="space-y-8 md:space-y-10">
+                  {/* Tầng 1: Project Leader — 1 thẻ ngang Spotlight căn giữa */}
+                  {projectLeader && (
+                    <article
+                      className={`group max-w-2xl mx-auto rounded-3xl bg-white border border-emerald-900/20 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-7 text-center sm:text-left ${
+                        teamGridReveal.visible
+                          ? 'opacity-100 translate-y-0'
+                          : 'opacity-0 translate-y-5'
+                      }`}
+                    >
+                      <div
+                        className={`w-24 h-24 aspect-square rounded-full overflow-hidden ring-1 flex items-center justify-center shrink-0 font-bold text-xl tracking-tight ${getAvatarToneClasses(
+                          projectLeader.accentTone
+                        )}`}
+                      >
+                        {projectLeader.avatarUrl ? (
+                          <img
+                            src={projectLeader.avatarUrl}
+                            alt={projectLeader.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{projectLeader.initials}</span>
+                        )}
                       </div>
 
-                      <a
-                        href={member.facebookUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Facebook của ${member.name}`}
-                        title={`Facebook của ${member.name}`}
-                        className="w-8 h-8 rounded-full text-[#829AB1] hover:text-[#3A6B5C] hover:bg-[#3A6B5C]/10 flex items-center justify-center shrink-0 transition-colors"
-                      >
-                        <FacebookIcon className="w-4 h-4" />
-                      </a>
-                    </div>
+                      <div className="min-w-0 flex-1 space-y-2.5">
+                        <div className="flex items-center justify-center sm:justify-between gap-3">
+                          <span className="inline-flex items-center px-3 py-0.5 rounded-full bg-[#3A6B5C]/10 text-[#3A6B5C] text-[11px] font-bold tracking-wide uppercase">
+                            {projectLeader.role}
+                          </span>
 
-                    {/* Câu quote in nghiêng gần gũi */}
-                    <p className="text-[13px] text-[#52606D] italic leading-[1.7]">
-                      &ldquo;{member.quote}&rdquo;
-                    </p>
+                          <a
+                            href={projectLeader.facebookUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Facebook của ${projectLeader.name}`}
+                            title={`Facebook của ${projectLeader.name}`}
+                            className="w-8 h-8 rounded-full text-[#829AB1] hover:text-[#3A6B5C] hover:bg-[#3A6B5C]/10 flex items-center justify-center shrink-0 transition-colors"
+                          >
+                            <FacebookIcon className="w-4 h-4" />
+                          </a>
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <h3 className="text-lg sm:text-xl font-bold text-[#1F2933] leading-snug">
+                            {projectLeader.name}
+                          </h3>
+                          <p className="text-xs sm:text-[13px] font-medium text-[#52606D]">
+                            {projectLeader.departmentDisplayLabel}
+                          </p>
+                        </div>
+
+                        <p className="text-sm text-[#52606D] italic leading-[1.75] pt-0.5">
+                          &ldquo;{projectLeader.quote}&rdquo;
+                        </p>
+                      </div>
+                    </article>
+                  )}
+
+                  {/* Tầng 2: 3 Trưởng ban — 1 hàng 3 cột đều nhau */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                    {departmentLeaders.map((leader, idx) =>
+                      renderVerticalMemberCard(leader, idx + 1, 'h-full')
+                    )}
                   </div>
 
-                  {/* Nhãn Phân ban gọn nhẹ ở đáy thẻ */}
-                  <div className="pt-3 border-t border-stone-100 text-[11px] font-medium text-[#616E7C]">
-                    {member.departments.join(' · ')}
+                  {/* Tầng 3: 5 Thành viên — 3 thẻ hàng trên + 2 thẻ căn giữa hàng dưới */}
+                  <div className="flex flex-wrap justify-center gap-6">
+                    {regularMembers.map((member, idx) =>
+                      renderVerticalMemberCard(
+                        member,
+                        idx + 4,
+                        'w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]'
+                      )
+                    )}
                   </div>
-                </article>
-              ))}
+                </div>
+              ) : (
+                /* BỐ CỤC KHI LỌC THEO TỪNG BAN (4 NGƯỜI/BAN — LƯỚI 2x2 CĂN GIỮA, PL/TRƯỞNG BAN ĐỨNG ĐẦU) */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
+                  {filteredDepartmentMembers.map((member, idx) =>
+                    renderVerticalMemberCard(member, idx, 'h-full')
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
