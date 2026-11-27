@@ -16,7 +16,7 @@ export interface TeamMember {
   departmentDisplayLabel?: string;
   quote: string;
   facebookUrl: string;
-  /** Để trống để hiển thị avatar chữ cái tối giản; điền URL ảnh chân dung 500x500px để thay ảnh thật */
+  /** Đường dẫn ảnh chân dung trong public/members/; tự động fallback sang nền pastel chữ cái nếu chưa có file ảnh */
   avatarUrl?: string;
   accentTone: 'forest' | 'terracotta' | 'stone';
 }
@@ -47,6 +47,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Mỗi món đồ được giữ lại là thêm một câu chuyện tử tế được nối dài giữa thành phố.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/quynh.jpg',
     accentTone: 'forest',
   },
   // Tầng 2 — 3 Trưởng ban
@@ -61,6 +62,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Công nghệ đẹp nhất là khi giúp những người lao động thầm lặng được nhìn thấy nhiều hơn.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/minh.jpg',
     accentTone: 'forest',
   },
   {
@@ -74,6 +76,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Chúng mình không kể chuyện để gây thương hại, mà để lan tỏa niềm tự hào về tay nghề cô chú.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/nhu.jpg',
     accentTone: 'terracotta',
   },
   {
@@ -87,7 +90,8 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Đi thực địa dưới nắng mới thấy nụ cười của cô chú thợ đáng giá hơn mọi giờ chạy deadline.',
     facebookUrl: 'https://facebook.com',
-    accentTone: 'forest',
+    avatarUrl: '/members/khang.jpg',
+    accentTone: 'stone',
   },
   // Tầng 3 — 5 Thành viên
   {
@@ -100,6 +104,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Sửa một món đồ cũ không chỉ tiết kiệm cho sinh viên, mà còn là cách sống chậm và xanh hơn.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/khanh.jpg',
     accentTone: 'stone',
   },
   {
@@ -112,7 +117,8 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       "Hy vọng góc web nhỏ này sẽ là nơi đầu tiên mọi người nhớ đến mỗi khi đồ đạc 'dở chứng'.",
     facebookUrl: 'https://facebook.com',
-    accentTone: 'stone',
+    avatarUrl: '/members/quoc-anh.jpg',
+    accentTone: 'forest',
   },
   {
     id: 'tran-ngoc-ha',
@@ -124,6 +130,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Đằng sau mỗi chấm nhỏ trên bản đồ là cả một cuộc mưu sinh bền bỉ đáng được trân trọng.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/ha.jpg',
     accentTone: 'terracotta',
   },
   {
@@ -136,6 +143,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Một địa chỉ chuẩn xác, một mức giá rõ ràng — đôi khi sự tiện lợi nhỏ lại tạo nên kết nối lớn.',
     facebookUrl: 'https://facebook.com',
+    avatarUrl: '/members/nhan.jpg',
     accentTone: 'forest',
   },
   {
@@ -148,6 +156,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Mong những góc thợ bình dị trong hẻm nhỏ sẽ không còn bị bỏ quên giữa nhịp sống vội vã.',
     facebookUrl: 'https://facebook.com',
-    accentTone: 'stone',
+    avatarUrl: '/members/linh.jpg',
+    accentTone: 'terracotta',
   },
 ];
