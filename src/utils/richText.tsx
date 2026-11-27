@@ -347,28 +347,45 @@ export function compressImageFileToDataUrl(
   });
 }
 
-function ArticleInlineImage({ src, alt }: { src: string; alt: string }) {
+function ArticleInlineImage({
+  src,
+  alt,
+  inFigure = false,
+}: {
+  src: string;
+  alt: string;
+  inFigure?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
-    return (
-      <figure className="my-6 rounded-2xl bg-[#F4EFE6] border border-[#E5DFD5] p-8 flex flex-col items-center justify-center gap-2 text-[#7B8794]">
+    const fallback = (
+      <div className="my-4 rounded-xl bg-[#F4EFE6] border border-[#E5DFD5] p-8 flex flex-col items-center justify-center gap-2 text-[#7B8794]">
         <ImageOff className="w-6 h-6" />
         <span className="text-xs">{alt || 'Không thể tải hình ảnh minh họa'}</span>
-      </figure>
+      </div>
     );
+    return inFigure ? fallback : <figure className="my-6">{fallback}</figure>;
+  }
+
+  const imageEl = (
+    <img
+      src={src}
+      alt={alt || 'Ảnh minh họa bài viết'}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="max-w-full w-auto h-auto mx-auto block rounded-xl my-4 border border-[#E8E2D9] bg-[#F4EFE6]"
+    />
+  );
+
+  if (inFigure) {
+    return imageEl;
   }
 
   return (
-    <figure className="my-7 space-y-2.5">
-      <img
-        src={src}
-        alt={alt || 'Ảnh minh họa bài viết'}
-        referrerPolicy="no-referrer"
-        loading="lazy"
-        onError={() => setFailed(true)}
-        className="w-full rounded-2xl border border-[#E8E2D9] object-cover max-h-[520px] bg-[#F4EFE6]"
-      />
+    <figure className="my-6 space-y-2">
+      {imageEl}
       {alt && (
         <figcaption className="text-xs text-[#616E7C] italic text-center px-2">
           {alt}
@@ -390,7 +407,7 @@ export function RichTextRenderer({ html }: { html: string }) {
 
   const parsed = new DOMParser().parseFromString(html, 'text/html');
 
-  function renderNode(node: Node, key: string): ReactNode {
+  function renderNode(node: Node, key: string, inFigure = false): ReactNode {
     if (node.nodeType === Node.TEXT_NODE) {
       return node.textContent;
     }
@@ -405,8 +422,9 @@ export function RichTextRenderer({ html }: { html: string }) {
       return null;
     }
 
+    const childInFigure = inFigure || tag === 'figure';
     const children = Array.from(el.childNodes).map((child, idx) =>
-      renderNode(child, `${key}-${idx}`)
+      renderNode(child, `${key}-${idx}`, childInFigure)
     );
 
     if (!ALLOWED_TAGS.has(tag)) {
@@ -540,6 +558,7 @@ export function RichTextRenderer({ html }: { html: string }) {
             key={key}
             src={safeSrc}
             alt={(el.getAttribute('alt') ?? '').trim()}
+            inFigure={inFigure}
           />
         );
       }
@@ -553,7 +572,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <figcaption
             key={key}
-            className={`text-xs text-[#616E7C] italic text-center ${alignClass}`}
+            className={`text-xs text-[#616E7C] italic text-center px-2 leading-relaxed ${alignClass}`}
           >
             {children}
           </figcaption>
@@ -584,7 +603,7 @@ export function RichTextRenderer({ html }: { html: string }) {
   return (
     <div className="text-[15.5px] sm:text-[16.5px] text-[#2D3748] break-words">
       {Array.from(parsed.body.childNodes).map((child, idx) =>
-        renderNode(child, `root-${idx}`)
+        renderNode(child, `root-${idx}`, false)
       )}
     </div>
   );

@@ -1302,6 +1302,7 @@ export interface MicrolinkExtractedArticle {
   imageUrl?: string;
   publisher: string;
   externalUrl: string;
+  contentHtml?: string;
 }
 
 const ARTICLE_FETCH_TIMEOUT_MS = 12_000;
@@ -1336,13 +1337,64 @@ function resolveSafeArticleImage(
 ): string | undefined {
   if (!rawImg || typeof rawImg !== 'string') return undefined;
   const trimmed = rawImg.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed || /^(data:|blob:|javascript:)/i.test(trimmed)) return undefined;
   try {
     const resolved = new URL(trimmed, pageUrl).toString();
     return sanitizeImageSrc(resolved);
   } catch {
     return sanitizeImageSrc(trimmed);
   }
+}
+
+function extractBodyContentInBrowser(doc: Document, pageUrl: string): string {
+  const selectors = [
+    '.detail-content',
+    '[data-role="content"]',
+    '#main-detail-body',
+    '.afcbc-body',
+    'article.fck_detail',
+    '.fck_detail',
+    '.singular-content',
+    '.maincontent',
+    '.main-content',
+    '[itemprop="articleBody"]',
+    '.article-content',
+    '.post-content',
+    '.entry-content',
+    'article',
+  ];
+
+  let container: Element | null = null;
+  for (const sel of selectors) {
+    const matched = doc.querySelector(sel);
+    if (matched && (matched.textContent ?? '').trim().length >= 80) {
+      container = matched.cloneNode(true) as Element;
+      break;
+    }
+  }
+
+  if (!container) return '';
+
+  // Gỡ thành phần rác
+  const junkSelector =
+    'script, style, iframe, noscript, button, form, .ads, [class*="related"], [class*="tinlienquan"], [type="RelatedNewsBox"], [type="RelatedOneNews"], .box-tinlienquan, .tags, .social-share';
+  container.querySelectorAll(junkSelector).forEach((el) => el.remove());
+
+  // Xử lý ảnh lazy-load & chuyển link ảnh tương đối sang đầy đủ
+  container.querySelectorAll('img').forEach((img) => {
+    const realSrc =
+      resolveSafeArticleImage(img.getAttribute('data-original'), pageUrl) ||
+      resolveSafeArticleImage(img.getAttribute('data-src'), pageUrl) ||
+      resolveSafeArticleImage(img.getAttribute('data-lazy-src'), pageUrl) ||
+      resolveSafeArticleImage(img.getAttribute('src'), pageUrl);
+    if (realSrc) {
+      img.setAttribute('src', realSrc);
+    } else {
+      img.remove();
+    }
+  });
+
+  return sanitizeRichHtmlString(container.innerHTML);
 }
 
 function parseMetaFromHtmlInBrowser(
@@ -1375,6 +1427,7 @@ function parseMetaFromHtmlInBrowser(
   const imageUrl = resolveSafeArticleImage(rawImg, pageUrl);
   const publisher =
     getMeta('meta[property="og:site_name"]') || fallbackHost;
+  const contentHtml = extractBodyContentInBrowser(doc, pageUrl);
 
   if (!title && !description && !imageUrl) {
     return null;
@@ -1386,14 +1439,15 @@ function parseMetaFromHtmlInBrowser(
     imageUrl,
     publisher,
     externalUrl: pageUrl,
+    contentHtml: contentHtml || undefined,
   };
 }
 
 /**
  * Cơ chế lấy thông tin bài báo 3 lớp ổn định:
- * - Lớp 1: Vercel Serverless API `/api/fetch-article` (ưu tiên, nhanh & không giới hạn)
+ * - Lớp 1: Vercel Serverless API `/api/fetch-article` (ưu tiên, bóc trọn thân bài + ảnh + chú thích)
  * - Lớp 2: Microlink API `https://api.microlink.io` (dự phòng khi chạy local preview hoặc Lớp 1 lỗi)
- * - Lớp 3: AllOrigins `https://api.allorigins.win/get` + bóc tách thẻ OpenGraph ngay trên trình duyệt
+ * - Lớp 3: AllOrigins `https://api.allorigins.win/get` + bóc tách thẻ OpenGraph & nội dung bài trên trình duyệt
  */
 export async function fetchMicrolinkMetadata(
   rawUrl: string
@@ -1425,6 +1479,7 @@ export async function fetchMicrolinkMetadata(
       image?: string | null;
       publisher?: string | null;
       url?: string | null;
+      contentHtml?: string | null;
     };
   }>(`/api/fetch-article?url=${encodeURIComponent(safeUrl)}`);
 
@@ -1435,6 +1490,9 @@ export async function fetchMicrolinkMetadata(
     const publisher =
       String(layer1.data.publisher ?? '').trim() || fallbackHost;
     const finalUrl = sanitizeExternalUrl(layer1.data.url) || safeUrl;
+    const contentHtml = layer1.data.contentHtml
+      ? sanitizeRichHtmlString(String(layer1.data.contentHtml))
+      : undefined;
 
     if (title || description || imageUrl) {
       return {
@@ -1446,6 +1504,7 @@ export async function fetchMicrolinkMetadata(
           imageUrl,
           publisher,
           externalUrl: finalUrl,
+          contentHtml,
         },
       };
     }
@@ -1486,7 +1545,7 @@ export async function fetchMicrolinkMetadata(
     }
   }
 
-  // LỚP 3: AllOrigins proxy + bóc tách og:title, og:description, og:image trên trình duyệt (timeout 12 giây)
+  // LỚP 3: AllOrigins proxy + bóc tách og:title, og:description, og:image & nội dung bài trên trình duyệt (timeout 12 giây)
   const layer3 = await fetchJsonWithTimeout<{
     contents?: string | null;
   }>(`https://api.allorigins.win/get?url=${encodeURIComponent(safeUrl)}`);

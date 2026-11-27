@@ -139,9 +139,11 @@ export function AdminArticlesTab({
       const res = await fetchMicrolinkMetadata(importUrl);
       if (res.ok && res.data) {
         const extracted = res.data;
-        const seedContent = extracted.description
-          ? `<p>${extracted.description.replace(/[<>]/g, '')}</p>`
-          : '';
+        const seedContent = extracted.contentHtml?.trim()
+          ? extracted.contentHtml
+          : extracted.description
+            ? `<p>${extracted.description.replace(/[<>]/g, '')}</p>`
+            : '';
         setImportModalOpen(false);
         setEditorSeed({
           title: extracted.title,
