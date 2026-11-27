@@ -6,10 +6,12 @@ import {
   Compass,
   History,
   Info,
+  LogIn,
   LogOut,
   MapPin,
   Newspaper,
   PlusCircle,
+  Search,
   ShieldCheck,
   User,
 } from 'lucide-react';
@@ -106,7 +108,7 @@ export function AccountMenuDropdown({
 
         <span
           className={`font-semibold text-[#1F2933] truncate ${
-            compact ? 'max-w-[100px]' : 'max-w-[160px]'
+            compact ? 'max-w-[96px]' : 'max-w-[150px]'
           }`}
         >
           {displayName}
@@ -256,11 +258,12 @@ export function AccountMenuDropdown({
 interface NavbarProps {
   activeTab: AppTab;
   onChangeTab: (tab: AppTab) => void;
-  currentUser: AdminAccount;
+  currentUser: AdminAccount | null;
   pendingCount?: number;
   favoritesCount: number;
   contributionsCount: number;
   badgeEmoji?: string | null;
+  onOpenAuth: () => void;
   onOpenBadge: () => void;
   onOpenSaved: () => void;
   onOpenContributions: () => void;
@@ -269,8 +272,9 @@ interface NavbarProps {
 }
 
 /**
- * Top Navbar cố định trên Desktop (h-16) gộp chung 1 nút tài khoản ở góc phải
- * và Bottom Navigation Bar cố định trên Mobile (3 tab, vùng chạm >= 44px).
+ * Top Navbar cố định trên Desktop (h-16):
+ * - Khách chưa đăng nhập thấy ngay nút "Đăng nhập / Đăng ký" rõ ràng ở góc phải.
+ * - Thành viên đã đăng nhập thấy AccountMenuDropdown (tên, huy hiệu, Trang Quản trị nếu có quyền, Đăng xuất).
  */
 export function DesktopNavbar({
   activeTab,
@@ -280,18 +284,26 @@ export function DesktopNavbar({
   favoritesCount,
   contributionsCount,
   badgeEmoji,
+  onOpenAuth,
   onOpenBadge,
   onOpenSaved,
   onOpenContributions,
   onOpenAdmin,
   onLogout,
 }: NavbarProps) {
+  const navItems: { id: AppTab; label: string }[] = [
+    { id: 'home', label: 'Tìm thợ' },
+    { id: 'explore', label: 'Bản đồ' },
+    { id: 'news', label: 'Bản tin' },
+    { id: 'about', label: 'Về dự án' },
+  ];
+
   return (
-    <header className="hidden lg:flex items-center justify-between gap-6 h-16 px-6 bg-white border-b border-[#E8E2D9] sticky top-0 z-40">
+    <header className="hidden lg:flex items-center justify-between gap-6 h-16 px-6 bg-white border-b border-[#E8E2D9] sticky top-0 z-40 shrink-0">
       {/* Vùng 1: Brand Wordmark */}
       <button
         type="button"
-        onClick={() => onChangeTab('explore')}
+        onClick={() => onChangeTab('home')}
         className="flex items-center gap-2.5 text-left whitespace-nowrap shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded-lg px-1 py-1"
       >
         <span className="w-9 h-9 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-sm transition-transform duration-150 group-hover:scale-105">
@@ -304,79 +316,129 @@ export function DesktopNavbar({
 
       {/* Vùng 2: Nav Links */}
       <nav aria-label="Điều hướng chính" className="flex items-center gap-7">
-        <button
-          type="button"
-          onClick={() => onChangeTab('explore')}
-          className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
-            activeTab === 'explore'
-              ? 'text-[#D96B38] font-semibold'
-              : 'text-[#52606D] hover:text-[#1F2933]'
-          }`}
-        >
-          Khám phá
-          {activeTab === 'explore' && (
-            <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChangeTab('news')}
-          className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
-            activeTab === 'news'
-              ? 'text-[#D96B38] font-semibold'
-              : 'text-[#52606D] hover:text-[#1F2933]'
-          }`}
-        >
-          Bản tin
-          {activeTab === 'news' && (
-            <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onChangeTab('about')}
-          className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
-            activeTab === 'about'
-              ? 'text-[#D96B38] font-semibold'
-              : 'text-[#52606D] hover:text-[#1F2933]'
-          }`}
-        >
-          Về dự án
-          {activeTab === 'about' && (
-            <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
-          )}
-        </button>
+        {navItems.map(({ id, label }) => {
+          const isActive = activeTab === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onChangeTab(id)}
+              className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
+                isActive
+                  ? 'text-[#D96B38] font-semibold'
+                  : 'text-[#52606D] hover:text-[#1F2933]'
+              }`}
+            >
+              {label}
+              {isActive && (
+                <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      {/* Vùng 3: Primary CTA Gợi ý thợ + 1 Nút Tài khoản gộp chung kèm Menu xổ xuống */}
+      {/* Vùng 3: Gợi ý thợ + Đăng nhập / Đăng ký hoặc Menu tài khoản */}
       <div className="flex items-center gap-2.5 shrink-0">
         <button
           type="button"
           onClick={() => onChangeTab('suggest')}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D96B38] ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap shrink-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D96B38] ${
             activeTab === 'suggest'
-              ? 'bg-[#B85427] text-white shadow-sm'
-              : 'bg-[#D96B38] hover:bg-[#C25A2B] text-white shadow-sm'
+              ? 'bg-[#3A6B5C] text-white shadow-sm'
+              : 'bg-[#FAF8F5] hover:bg-[#F3ECE2] text-[#1F2933] border border-[#E5DFD5]'
           }`}
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4 text-[#D96B38]" />
           <span>Gợi ý thợ</span>
         </button>
 
-        <AccountMenuDropdown
-          currentUser={currentUser}
-          badgeEmoji={badgeEmoji}
-          favoritesCount={favoritesCount}
-          contributionsCount={contributionsCount}
-          pendingCount={pendingCount}
-          onOpenBadge={onOpenBadge}
-          onOpenSaved={onOpenSaved}
-          onOpenContributions={onOpenContributions}
-          onOpenAdmin={onOpenAdmin}
-          onLogout={onLogout}
-        />
+        {currentUser ? (
+          <AccountMenuDropdown
+            currentUser={currentUser}
+            badgeEmoji={badgeEmoji}
+            favoritesCount={favoritesCount}
+            contributionsCount={contributionsCount}
+            pendingCount={pendingCount}
+            onOpenBadge={onOpenBadge}
+            onOpenSaved={onOpenSaved}
+            onOpenContributions={onOpenContributions}
+            onOpenAdmin={onOpenAdmin}
+            onLogout={onLogout}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#D96B38]"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Đăng nhập / Đăng ký</span>
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}
+
+/**
+ * Header gọn cho Mobile trên các trang Tìm thợ, Bản tin, Gợi ý, Về dự án
+ * (đảm bảo nút Đăng nhập / Đăng ký hoặc Menu tài khoản luôn hiển thị rõ góc trên bên phải).
+ */
+export function MobileTopHeader({
+  currentUser,
+  pendingCount = 0,
+  favoritesCount,
+  contributionsCount,
+  badgeEmoji,
+  onGoHome,
+  onOpenAuth,
+  onOpenBadge,
+  onOpenSaved,
+  onOpenContributions,
+  onOpenAdmin,
+  onLogout,
+}: Omit<NavbarProps, 'activeTab' | 'onChangeTab'> & { onGoHome: () => void }) {
+  return (
+    <header className="lg:hidden flex items-center justify-between gap-2 h-14 px-3.5 bg-white/95 backdrop-blur-md border-b border-[#E8E2D9] sticky top-0 z-40 shrink-0">
+      <button
+        type="button"
+        onClick={onGoHome}
+        className="flex items-center gap-2 text-left min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded-lg py-1"
+      >
+        <span className="w-8 h-8 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-xs shrink-0">
+          <MapPin className="w-4 h-4" strokeWidth={2.3} />
+        </span>
+        <span className="text-sm font-bold tracking-tight text-[#1F2933] truncate">
+          GÓC THỢ QUANH TA
+        </span>
+      </button>
+
+      <div className="shrink-0">
+        {currentUser ? (
+          <AccountMenuDropdown
+            compact
+            currentUser={currentUser}
+            badgeEmoji={badgeEmoji}
+            favoritesCount={favoritesCount}
+            contributionsCount={contributionsCount}
+            pendingCount={pendingCount}
+            onOpenBadge={onOpenBadge}
+            onOpenSaved={onOpenSaved}
+            onOpenContributions={onOpenContributions}
+            onOpenAdmin={onOpenAdmin}
+            onLogout={onLogout}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="h-9 px-3 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap transition-colors"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Đăng nhập / Đăng ký</span>
+          </button>
+        )}
       </div>
     </header>
   );
@@ -387,9 +449,10 @@ export function MobileBottomNav({
   onChangeTab,
 }: Pick<NavbarProps, 'activeTab' | 'onChangeTab'>) {
   const tabs: { id: AppTab; label: string; Icon: typeof Compass }[] = [
-    { id: 'explore', label: 'Khám phá', Icon: Compass },
+    { id: 'home', label: 'Tìm thợ', Icon: Search },
+    { id: 'explore', label: 'Bản đồ', Icon: Compass },
     { id: 'news', label: 'Bản tin', Icon: Newspaper },
-    { id: 'suggest', label: 'Gợi ý thợ', Icon: PlusCircle },
+    { id: 'suggest', label: 'Gợi ý', Icon: PlusCircle },
     { id: 'about', label: 'Về dự án', Icon: Info },
   ];
 
@@ -399,7 +462,7 @@ export function MobileBottomNav({
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D9] shadow-[0_-4px_16px_rgba(31,41,51,0.06)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-5 h-16">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = activeTab === id;
           return (
@@ -413,7 +476,7 @@ export function MobileBottomNav({
             >
               <Icon className="w-5 h-5" strokeWidth={isActive ? 2.4 : 1.9} />
               <span
-                className={`text-[11px] leading-none whitespace-nowrap ${
+                className={`text-[10.5px] leading-none whitespace-nowrap ${
                   isActive ? 'font-semibold' : 'font-medium'
                 }`}
               >

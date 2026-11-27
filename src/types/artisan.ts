@@ -228,4 +228,10 @@ export interface Article {
   updatedAt?: string;
 }
 
-export type AppTab = 'explore' | 'news' | 'suggest' | 'about';
+export type GpsPermissionStatus =
+  | 'locating'
+  | 'granted'
+  | 'denied'
+  | 'unsupported';
+
+export type AppTab = 'home' | 'explore' | 'news' | 'suggest' | 'about';

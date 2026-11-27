@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   ExternalLink,
   List,
   Loader2,
+  LogIn,
   Map as MapIcon,
   MapPin,
   Navigation,
@@ -44,6 +46,7 @@ import type {
   AuditLogEntry,
   CraftCategory,
   District,
+  GpsPermissionStatus,
   KudosKey,
   PendingSuggestion,
   RouteInfo,
@@ -112,13 +115,15 @@ import { ArtisanCard, getStatusDisplay } from './components/ArtisanCard';
 import { ArtisanDetail } from './components/ArtisanDetail';
 import { ArtisanIllustration } from './components/ArtisanIllustration';
 import { ArtisanMap } from './components/ArtisanMap';
-import { AuthGate } from './components/AuthGate';
+import { AuthModal, DEFAULT_SOFT_AUTH_PROMPT } from './components/AuthModal';
 import { BadgeModal, evaluateUserBadges } from './components/BadgeModal';
+import { HomeDiscoveryView } from './components/HomeDiscoveryView';
 import { QrDirectionsModal, StatusReportModal } from './components/Modals';
 import {
   AccountMenuDropdown,
   DesktopNavbar,
   MobileBottomNav,
+  MobileTopHeader,
 } from './components/Navbar';
 import { NewsView } from './components/NewsView';
 import { SuggestArtisanView } from './components/SuggestArtisanView';
@@ -145,7 +150,7 @@ function copyTextFallback(text: string): boolean {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>('explore');
+  const [activeTab, setActiveTab] = useState<AppTab>('home');
 
   // 3 bảng cốt lõi đồng bộ với Supabase (fallback dữ liệu mẫu trong bộ nhớ nếu chưa cấu hình biến môi trường)
   const [artisans, setArtisans] = useState<Artisan[]>(() =>
@@ -258,9 +263,17 @@ export default function App() {
     }
   }, [adminAccounts]);
 
-  // Hệ thống tài khoản đăng nhập bắt buộc (chỉ lưu metadata phiên không nhạy cảm vào localStorage, tuyệt đối không lưu mật khẩu)
+  // Hệ thống tài khoản mở tự do cho khách (Guest-first) + Soft Auth Modal khi tương tác
   const [currentUser, setCurrentUser] = useState<AdminAccount | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
+  const [authModalState, setAuthModalState] = useState<{
+    open: boolean;
+    prompt?: string;
+    defaultMode?: 'login' | 'register';
+  }>({ open: false });
+  const pendingAuthActionRef = useRef<((account: AdminAccount) => void) | null>(
+    null
+  );
   const [isAdminView, setIsAdminView] = useState(false);
   const [badgeModalOpen, setBadgeModalOpen] = useState(false);
   const [savedModalOpen, setSavedModalOpen] = useState(false);
@@ -269,6 +282,27 @@ export default function App() {
     UserContributionItem[]
   >([]);
   const [isLoadingContributions, setIsLoadingContributions] = useState(false);
+
+  const openAuthModal = useCallback(
+    (
+      prompt?: string,
+      defaultMode: 'login' | 'register' = 'login',
+      onAfterAuth?: (account: AdminAccount) => void
+    ) => {
+      pendingAuthActionRef.current = onAfterAuth ?? null;
+      setAuthModalState({
+        open: true,
+        prompt: prompt ?? DEFAULT_SOFT_AUTH_PROMPT,
+        defaultMode,
+      });
+    },
+    []
+  );
+
+  const closeAuthModal = useCallback(() => {
+    pendingAuthActionRef.current = null;
+    setAuthModalState((prev) => ({ ...prev, open: false }));
+  }, []);
 
   const persistAuthSession = useCallback((account: AdminAccount | null) => {
     try {
@@ -423,8 +457,9 @@ export default function App() {
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Định vị GPS & lộ trình OSRM
+  // Định vị GPS tự động & lộ trình OSRM
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<GpsPermissionStatus>('locating');
   const [isLocating, setIsLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [travelMode, setTravelMode] = useState<TravelMode>('driving');
@@ -473,9 +508,11 @@ export default function App() {
   const recordUserContribution = useCallback(
     (
       field: 'suggestionsCount' | 'reportsCount' | 'revivedCount' | 'thanksCount',
-      defaultToast: string
+      defaultToast: string,
+      actorOverride?: AdminAccount | null
     ) => {
-      const existingBadges = currentUser?.badges ?? [];
+      const activeAccount = actorOverride ?? currentUser;
+      const existingBadges = activeAccount?.badges ?? [];
       const prevEval = evaluateUserBadges(effectiveUserStats, existingBadges);
       const nextStats: UserContributionStats = {
         ...effectiveUserStats,
@@ -492,18 +529,18 @@ export default function App() {
       setUserContribution((prev) => ({
         ...prev,
         displayName:
-          currentUser?.displayName || currentUser?.name || prev.displayName,
+          activeAccount?.displayName || activeAccount?.name || prev.displayName,
         [field]: prev[field] + 1,
       }));
 
-      if (currentUser) {
+      if (activeAccount) {
         const nextUserRevived =
           field === 'revivedCount'
-            ? (currentUser.revivedCount ?? 0) + 1
-            : currentUser.revivedCount ?? 0;
+            ? (activeAccount.revivedCount ?? 0) + 1
+            : activeAccount.revivedCount ?? 0;
 
         const updatedUser: AdminAccount = {
-          ...currentUser,
+          ...activeAccount,
           revivedCount: nextUserRevived,
           badges: mergedBadgeIds,
         };
@@ -513,7 +550,7 @@ export default function App() {
         );
 
         if (isSupabaseConfigured) {
-          void updateAccountProfileDb(currentUser.id, {
+          void updateAccountProfileDb(activeAccount.id, {
             revivedCount: nextUserRevived,
             badges: mergedBadgeIds,
           }).catch(() => {
@@ -678,15 +715,22 @@ export default function App() {
     }
   }, [persistAuthSession]);
 
-  // Tự động tải dữ liệu công khai, Bản tin & lịch sử đóng góp khi đã đăng nhập
+  // Tự động tải dữ liệu công khai (cô chú thợ & Bản tin) ngay khi mở app — không cần đăng nhập
   useEffect(() => {
-    if (!currentUser) return;
     if (isSupabaseConfigured) {
       void loadPublicArtisans();
       void loadPublicArticles();
     }
+  }, [loadPublicArtisans, loadPublicArticles]);
+
+  // Chỉ tải lịch sử đóng góp khi đã có tài khoản đăng nhập
+  useEffect(() => {
+    if (!currentUser) {
+      setUserContributions([]);
+      return;
+    }
     void loadUserContributions(currentUser);
-  }, [currentUser?.id, loadPublicArtisans, loadPublicArticles]);
+  }, [currentUser?.id]);
 
   // Cập nhật lịch sử đóng góp ở chế độ cục bộ khi danh sách thay đổi
   useEffect(() => {
@@ -875,6 +919,65 @@ export default function App() {
     [showToast]
   );
 
+  // Tự động xin tọa độ GPS ngay khi mở trang để sắp xếp cô chú gần nhất (không ép fallback ảo)
+  const requestAutoGps = useCallback(
+    (interactive = false) => {
+      if (!('geolocation' in navigator)) {
+        setGpsStatus('unsupported');
+        if (interactive) {
+          showToast(
+            'Trình duyệt chưa hỗ trợ GPS — bạn có thể chọn quận để tìm cô chú gần nhất.'
+          );
+        }
+        return;
+      }
+
+      setGpsStatus('locating');
+      setIsLocating(true);
+      setGpsError(null);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc: UserLocation = {
+            coords: {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            },
+            source: 'gps',
+            label: 'Vị trí GPS của bạn',
+          };
+          setUserLocation(loc);
+          setGpsStatus('granted');
+          setSortByNearest(true);
+          setIsLocating(false);
+          setGpsError(null);
+          if (interactive) {
+            showToast('Đã định vị — tự động sắp xếp cô chú gần bạn nhất!');
+          }
+        },
+        () => {
+          setIsLocating(false);
+          setGpsStatus('denied');
+          if (interactive) {
+            showToast(
+              'Chưa bật quyền GPS — bạn hãy chọn quận ở ngay bên dưới để tìm gần nhất nhé.'
+            );
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 60000,
+        }
+      );
+    },
+    [showToast]
+  );
+
+  useEffect(() => {
+    requestAutoGps(false);
+  }, [requestAutoGps]);
+
   const locateUser = useCallback(
     (options?: {
       autoFallback?: boolean;
@@ -883,6 +986,7 @@ export default function App() {
       setGpsError(null);
 
       if (!('geolocation' in navigator)) {
+        setGpsStatus('unsupported');
         if (options?.autoFallback) {
           const fallbackLoc = applyFallbackLocation(
             'Trình duyệt chưa hỗ trợ GPS — tạm dùng mốc Bình Thạnh / Quận 1 để xếp thợ gần nhất!'
@@ -900,6 +1004,7 @@ export default function App() {
       }
 
       setIsLocating(true);
+      setGpsStatus('locating');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const loc: UserLocation = {
@@ -911,6 +1016,7 @@ export default function App() {
             label: 'Vị trí GPS của bạn',
           };
           setUserLocation(loc);
+          setGpsStatus('granted');
           setIsLocating(false);
           setGpsError(null);
           showToast('Đã xác định vị trí GPS và sắp xếp cô chú gần bạn nhất!');
@@ -918,6 +1024,7 @@ export default function App() {
         },
         () => {
           setIsLocating(false);
+          setGpsStatus('denied');
           if (options?.autoFallback) {
             const fallbackLoc = applyFallbackLocation();
             options.onLocated?.(fallbackLoc);
@@ -1004,6 +1111,36 @@ export default function App() {
     setMobileDetailOpen(false);
   }, []);
 
+  const handleSelectArtisanFromHome = useCallback((artisan: Artisan) => {
+    setActiveTab('explore');
+    setSelectedArtisanId(artisan.id);
+    setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
+    setMobileViewMode('map');
+    setMobileDetailOpen(true);
+  }, []);
+
+  const handleOpenFullMap = useCallback(() => {
+    setActiveTab('explore');
+    setSelectedArtisanId(null);
+    setMobileViewMode('map');
+    setMobileDetailOpen(false);
+  }, []);
+
+  const handleNavigateTab = useCallback(
+    (tab: AppTab) => {
+      if (tab === 'suggest' && !currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để gợi ý thêm cô chú thợ mới và theo dõi trạng thái duyệt nhé.',
+          'login',
+          () => setActiveTab('suggest')
+        );
+        return;
+      }
+      setActiveTab(tab);
+    },
+    [currentUser, openAuthModal]
+  );
+
   const handleResetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('Tất cả');
@@ -1054,9 +1191,9 @@ export default function App() {
     [showToast]
   );
 
-  // Bộ đếm "Món đồ được hồi sinh" + đồng bộ Supabase + tích điểm Huy hiệu
-  const handleMarkRevived = useCallback(
-    async (artisan: Artisan) => {
+  // Bộ đếm "Món đồ được hồi sinh" + đồng bộ Supabase + tích điểm Huy hiệu (Soft Auth Wall)
+  const executeMarkRevived = useCallback(
+    async (artisan: Artisan, actor: AdminAccount) => {
       const nextArtisanRevived = (artisan.revivedCount ?? 0) + 1;
       setRevivedCount((c) => c + 1);
       setArtisans((prev) =>
@@ -1077,20 +1214,42 @@ export default function App() {
 
       recordUserContribution(
         'revivedCount',
-        'Cảm ơn bạn đã chọn sửa chữa thay vì vứt bỏ! Bạn vừa giúp hồi sinh thêm 1 món đồ.'
+        'Cảm ơn bạn đã chọn sửa chữa thay vì vứt bỏ! Bạn vừa giúp hồi sinh thêm 1 món đồ.',
+        actor
       );
     },
     [recordUserContribution, showToast]
   );
 
-  // Sổ lưu bút cảm ơn: người dùng gửi lời cảm ơn -> chờ duyệt + tích điểm Huy hiệu
-  const handleSubmitThankYou = useCallback(
-    (artisan: Artisan, payload: { author: string; message: string }) => {
+  const handleMarkRevived = useCallback(
+    (artisan: Artisan) => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để xác nhận đã hồi sinh món đồ và tích huy hiệu Sống xanh nhé.',
+          'login',
+          (user) => {
+            void executeMarkRevived(artisan, user);
+          }
+        );
+        return;
+      }
+      void executeMarkRevived(artisan, currentUser);
+    },
+    [currentUser, openAuthModal, executeMarkRevived]
+  );
+
+  // Sổ lưu bút cảm ơn: người dùng gửi lời cảm ơn -> chờ duyệt + tích điểm Huy hiệu (Soft Auth Wall)
+  const executeSubmitThankYou = useCallback(
+    (
+      artisan: Artisan,
+      payload: { author: string; message: string },
+      actor: AdminAccount
+    ) => {
       const newNote: ThankYouNote = {
         id: `thanks-${Date.now()}`,
         artisanId: artisan.id,
         artisanName: artisan.name,
-        author: payload.author,
+        author: payload.author || actor.displayName || actor.name,
         message: payload.message,
         createdAt: formatVietnamDate(),
         approved: false,
@@ -1098,14 +1257,36 @@ export default function App() {
       setThankYouNotes((prev) => [newNote, ...prev]);
       recordUserContribution(
         'thanksCount',
-        'Cảm ơn tấm lòng của bạn! Lời nhắn sẽ hiển thị sau khi đội ngũ Góc Thợ duyệt qua nhé.'
+        'Cảm ơn tấm lòng của bạn! Lời nhắn sẽ hiển thị sau khi đội ngũ Góc Thợ duyệt qua nhé.',
+        actor
       );
     },
     [recordUserContribution]
   );
 
-  // Quick Kudos 1 chạm + đồng bộ Supabase
-  const handleToggleKudos = useCallback(
+  const handleSubmitThankYou = useCallback(
+    (
+      artisan: Artisan,
+      payload: { author: string; message: string }
+    ): boolean => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để gửi lời cảm ơn vào sổ lưu bút của cô chú nhé.',
+          'login',
+          (user) => {
+            executeSubmitThankYou(artisan, payload, user);
+          }
+        );
+        return false;
+      }
+      executeSubmitThankYou(artisan, payload, currentUser);
+      return true;
+    },
+    [currentUser, openAuthModal, executeSubmitThankYou]
+  );
+
+  // Quick Kudos 1 chạm + đồng bộ Supabase (Soft Auth Wall)
+  const executeToggleKudos = useCallback(
     async (artisanId: string, kudosKey: KudosKey) => {
       const currentList = kudosReactedMap[artisanId] ?? [];
       const alreadyActive = currentList.includes(kudosKey);
@@ -1147,8 +1328,25 @@ export default function App() {
     [artisans, kudosReactedMap, showToast]
   );
 
-  // Bình luận trải nghiệm mới + đồng bộ Supabase
-  const handleAddPraise = useCallback(
+  const handleToggleKudos = useCallback(
+    (artisanId: string, kudosKey: KudosKey) => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để gửi lời khen tiếp sức cho cô chú thợ nhé.',
+          'login',
+          () => {
+            void executeToggleKudos(artisanId, kudosKey);
+          }
+        );
+        return;
+      }
+      void executeToggleKudos(artisanId, kudosKey);
+    },
+    [currentUser, openAuthModal, executeToggleKudos]
+  );
+
+  // Bình luận trải nghiệm mới + đồng bộ Supabase (Soft Auth Wall)
+  const executeAddPraise = useCallback(
     async (
       artisanId: string,
       payload: {
@@ -1198,6 +1396,49 @@ export default function App() {
       showToast('Đã đăng lời khen của bạn vào Cộng đồng khen ngợi!');
     },
     [artisans, showToast]
+  );
+
+  const handleAddPraise = useCallback(
+    async (
+      artisanId: string,
+      payload: {
+        author: string;
+        kudosKey: KudosKey;
+        comment: string;
+      }
+    ): Promise<boolean> => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để gửi lời khen và chia sẻ trải nghiệm sửa đồ nhé.',
+          'login',
+          (user) => {
+            void executeAddPraise(artisanId, {
+              ...payload,
+              author: user.displayName || user.name || payload.author,
+            });
+          }
+        );
+        return false;
+      }
+      await executeAddPraise(artisanId, payload);
+      return true;
+    },
+    [currentUser, openAuthModal, executeAddPraise]
+  );
+
+  const handleRequestStatusReport = useCallback(
+    (artisan: Artisan) => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để báo cáo tình trạng làm việc của cô chú giúp cộng đồng nhé.',
+          'login',
+          () => setReportModalArtisan(artisan)
+        );
+        return;
+      }
+      setReportModalArtisan(artisan);
+    },
+    [currentUser, openAuthModal]
   );
 
   // Báo tình trạng 1 chạm -> Insert vào bảng status_reports trên Supabase + tích điểm Huy hiệu
@@ -1272,17 +1513,16 @@ export default function App() {
   // =======================================================
   // CÁ NHÂN HÓA ĐỒNG BỘ SUPABASE (LƯU GÓC THỢ & ĐỔI TÊN HIỂN THỊ)
   // =======================================================
-  const handleToggleFavorite = useCallback(
-    async (artisanId: string) => {
-      if (!currentUser) return;
-      const currentIds = currentUser.favoriteArtisanIds ?? [];
+  const executeToggleFavorite = useCallback(
+    async (artisanId: string, actor: AdminAccount) => {
+      const currentIds = actor.favoriteArtisanIds ?? [];
       const exists = currentIds.includes(artisanId);
       const nextIds = exists
         ? currentIds.filter((id) => id !== artisanId)
         : [artisanId, ...currentIds];
 
       const updatedUser: AdminAccount = {
-        ...currentUser,
+        ...actor,
         favoriteArtisanIds: nextIds,
       };
       setCurrentUser(updatedUser);
@@ -1292,7 +1532,7 @@ export default function App() {
 
       if (isSupabaseConfigured) {
         try {
-          await updateAccountProfileDb(currentUser.id, {
+          await updateAccountProfileDb(actor.id, {
             favoriteArtisanIds: nextIds,
           });
         } catch (err) {
@@ -1307,7 +1547,24 @@ export default function App() {
           : 'Đã lưu góc thợ vào mục "Góc thợ đã lưu" của bạn!'
       );
     },
-    [currentUser, showToast]
+    [showToast]
+  );
+
+  const handleToggleFavorite = useCallback(
+    async (artisanId: string) => {
+      if (!currentUser) {
+        openAuthModal(
+          'Đăng nhập nhanh trong 5 giây để lưu cô chú thợ yêu thích vào sổ tay của bạn nhé.',
+          'login',
+          (user) => {
+            void executeToggleFavorite(artisanId, user);
+          }
+        );
+        return;
+      }
+      await executeToggleFavorite(artisanId, currentUser);
+    },
+    [currentUser, openAuthModal, executeToggleFavorite]
   );
 
   const handleUpdateMyDisplayName = useCallback(
@@ -1444,7 +1701,8 @@ export default function App() {
       setCurrentUser(normalized);
       persistAuthSession(normalized);
       setIsAdminView(false);
-      setActiveTab('explore');
+      // Giữ nguyên trang/cô chú thợ người dùng đang xem và đóng Modal
+      setAuthModalState((prev) => ({ ...prev, open: false }));
       setUserContribution((prev) => ({
         ...prev,
         displayName: normalized.displayName,
@@ -1455,6 +1713,14 @@ export default function App() {
           ? `Chào mừng ${normalized.displayName} gia nhập Góc Thợ Quanh Ta!`
           : `Chào mừng ${normalized.displayName} quay lại Góc Thợ Quanh Ta!`
       );
+
+      const pendingAction = pendingAuthActionRef.current;
+      pendingAuthActionRef.current = null;
+      if (pendingAction) {
+        window.setTimeout(() => {
+          pendingAction(normalized);
+        }, 0);
+      }
     },
     [persistAuthSession, showToast]
   );
@@ -2267,7 +2533,7 @@ export default function App() {
   );
 
   // =======================================================
-  // MÀN HÌNH CHỜ KHÔI PHỤC PHIÊN & CỔNG ĐĂNG NHẬP BẮT BUỘC
+  // MÀN HÌNH CHỜ KHÔI PHỤC PHIÊN (NHANH, KHÔNG CHẶN KHÁCH)
   // =======================================================
   if (isRestoringSession) {
     return (
@@ -2283,20 +2549,10 @@ export default function App() {
     );
   }
 
-  if (!currentUser) {
-    return (
-      <AuthGate
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        onAuthSuccess={handleAuthSuccess}
-      />
-    );
-  }
-
   // =======================================================
   // RENDER KHU QUẢN TRỊ (CHO CẢ 'Super Admin' & 'Cộng tác viên')
   // =======================================================
-  if (isAdminView && canAccessAdminDashboard(currentUser.role)) {
+  if (isAdminView && currentUser && canAccessAdminDashboard(currentUser.role)) {
     const isDbArtisansEmpty =
       isSupabaseConfigured &&
       (dbTotalArtisansCount === 0 ||
@@ -2408,18 +2664,31 @@ export default function App() {
     ? getDistanceForArtisan(selectedArtisan)
     : null;
 
+  const handleOpenBadgeModal = () => {
+    if (!currentUser) {
+      openAuthModal(
+        'Đăng nhập nhanh trong 5 giây để xem hành trình Sống xanh và tích huy hiệu hồi sinh đồ nhé.',
+        'login',
+        () => setBadgeModalOpen(true)
+      );
+      return;
+    }
+    setBadgeModalOpen(true);
+  };
+
   return (
     <div className="h-[100dvh] lg:h-screen flex flex-col bg-[#FAF8F5] text-[#1F2933] overflow-hidden">
-      {/* Desktop Top Navbar cố định (h-16) với nút tài khoản hợp nhất */}
+      {/* Desktop Top Navbar cố định (h-16) với nút Đăng nhập / Đăng ký hoặc Tài khoản */}
       <DesktopNavbar
         activeTab={activeTab}
-        onChangeTab={setActiveTab}
+        onChangeTab={handleNavigateTab}
         currentUser={currentUser}
         pendingCount={pendingSuggestions.length}
         favoritesCount={savedArtisans.length}
         contributionsCount={userContributions.length}
         badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
-        onOpenBadge={() => setBadgeModalOpen(true)}
+        onOpenAuth={() => openAuthModal()}
+        onOpenBadge={handleOpenBadgeModal}
         onOpenSaved={() => setSavedModalOpen(true)}
         onOpenContributions={() => {
           setContributionsModalOpen(true);
@@ -2428,6 +2697,27 @@ export default function App() {
         onOpenAdmin={handleOpenAdmin}
         onLogout={handleLogout}
       />
+
+      {/* Mobile Top Header trên màn hình mở đầu, Bản tin, Gợi ý, Về dự án */}
+      {activeTab !== 'explore' && (
+        <MobileTopHeader
+          currentUser={currentUser}
+          pendingCount={pendingSuggestions.length}
+          favoritesCount={savedArtisans.length}
+          contributionsCount={userContributions.length}
+          badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
+          onGoHome={() => setActiveTab('home')}
+          onOpenAuth={() => openAuthModal()}
+          onOpenBadge={handleOpenBadgeModal}
+          onOpenSaved={() => setSavedModalOpen(true)}
+          onOpenContributions={() => {
+            setContributionsModalOpen(true);
+            void loadUserContributions(currentUser);
+          }}
+          onOpenAdmin={handleOpenAdmin}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Cảnh báo nhỏ khi chưa cấu hình biến môi trường Supabase (tránh trắng trang) */}
       {supabaseConfigWarning && !dismissedConfigWarning && (
@@ -2451,21 +2741,49 @@ export default function App() {
 
       {/* Nội dung chính */}
       <main className="flex-1 min-h-0 relative overflow-hidden">
+        {activeTab === 'home' && (
+          <div className="h-full overflow-y-auto thin-scrollbar">
+            <HomeDiscoveryView
+              artisans={publicArtisans}
+              isLoading={isLoadingPublicData}
+              dbError={publicDbError}
+              gpsStatus={gpsStatus}
+              userLocation={userLocation}
+              selectedDistrict={selectedDistrict}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              onSelectedDistrictChange={setSelectedDistrict}
+              onRequestGps={() => requestAutoGps(true)}
+              onRetryLoad={() => void loadPublicArtisans()}
+              onSelectArtisanOnMap={handleSelectArtisanFromHome}
+              onOpenFullMap={handleOpenFullMap}
+              onRequestSuggest={() => handleNavigateTab('suggest')}
+            />
+          </div>
+        )}
+
         {activeTab === 'explore' && (
           <div className="h-full w-full lg:flex">
             {/* =======================================================
-                CỘT TRÁI DESKTOP (440px): Tác động xanh, Tìm kiếm, Bộ lọc, Danh sách & Chi tiết
+                CỘT TRÁI DESKTOP (440px): Quay lại Tìm lỗi khác, Tác động xanh, Tìm kiếm, Bộ lọc, Danh sách & Chi tiết
                ======================================================= */}
             <aside className="hidden lg:flex flex-col w-[440px] shrink-0 h-full bg-[#FAF8F5] border-r border-[#E8E2D9] relative overflow-hidden">
               <div className="flex flex-col h-full">
-                {/* Thanh đếm gọn nhẹ: Món đồ được hồi sinh */}
+                {/* Thanh đếm gọn nhẹ + Nút quay lại trang Tìm lỗi khác */}
                 <div className="px-4 py-2 bg-[#3A6B5C]/10 border-b border-[#3A6B5C]/15 flex items-center justify-between gap-2 shrink-0">
-                  <p className="text-xs font-semibold text-[#3A6B5C] flex items-center gap-1.5 tabular-nums">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('home')}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#1F2933] hover:text-[#D96B38] transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Tìm lỗi khác</span>
+                  </button>
+                  <p className="text-[11px] font-semibold text-[#3A6B5C] flex items-center gap-1 tabular-nums truncate">
                     <Recycle className="w-3.5 h-3.5 shrink-0" />
                     <span>
-                      ♻️ Đã có{' '}
-                      <strong className="font-bold">{revivedCount}</strong> món đồ
-                      được hồi sinh cùng Góc Thợ
+                      <strong className="font-bold">{revivedCount}</strong> món
+                      đồ hồi sinh
                     </span>
                   </p>
                 </div>
@@ -2702,7 +3020,7 @@ export default function App() {
                     approvedThankYouNotes={selectedArtisanApprovedThanks}
                     isFavorite={favoriteIdsSet.has(selectedArtisan.id)}
                     currentUserDisplayName={
-                      currentUser.displayName || currentUser.name
+                      currentUser?.displayName || currentUser?.name || ''
                     }
                     onBack={() => setSelectedArtisanId(null)}
                     onShare={handleShareArtisan}
@@ -2712,7 +3030,7 @@ export default function App() {
                     onDrawRoute={handleDrawRouteFromDetail}
                     onChangeTravelMode={handleChangeTravelMode}
                     onOpenQr={setQrModalArtisan}
-                    onOpenStatusReport={setReportModalArtisan}
+                    onOpenStatusReport={handleRequestStatusReport}
                     onToggleKudos={handleToggleKudos}
                     onAddPraise={handleAddPraise}
                   />
@@ -2724,32 +3042,46 @@ export default function App() {
                 CỘT PHẢI DESKTOP & MÀN HÌNH CHÍNH MOBILE: BẢN ĐỒ + FLOATING CONTROLS
                ======================================================= */}
             <section className="relative flex-1 h-full w-full">
-              {/* Thanh tác động xanh + Menu tài khoản hợp nhất + tìm kiếm + chip lọc nổi phía trên cho Mobile */}
+              {/* Nút ← Tìm lỗi khác + Đăng nhập / Tài khoản + tìm kiếm + chip lọc nổi phía trên cho Mobile */}
               <div className="lg:hidden absolute top-0 left-0 right-0 z-[440] p-3 pointer-events-none space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="pointer-events-auto inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#3A6B5C]/95 backdrop-blur-md text-white text-[11px] font-semibold shadow-sm tabular-nums truncate">
-                    <span className="truncate">
-                      ♻️ <strong>{revivedCount}</strong> món đồ hồi sinh
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('home')}
+                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-sm text-xs font-bold text-[#1F2933] hover:text-[#D96B38] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Tìm lỗi khác</span>
+                  </button>
 
                   <div className="pointer-events-auto shrink-0">
-                    <AccountMenuDropdown
-                      compact
-                      currentUser={currentUser}
-                      badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
-                      favoritesCount={savedArtisans.length}
-                      contributionsCount={userContributions.length}
-                      pendingCount={pendingSuggestions.length}
-                      onOpenBadge={() => setBadgeModalOpen(true)}
-                      onOpenSaved={() => setSavedModalOpen(true)}
-                      onOpenContributions={() => {
-                        setContributionsModalOpen(true);
-                        void loadUserContributions(currentUser);
-                      }}
-                      onOpenAdmin={handleOpenAdmin}
-                      onLogout={handleLogout}
-                    />
+                    {currentUser ? (
+                      <AccountMenuDropdown
+                        compact
+                        currentUser={currentUser}
+                        badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
+                        favoritesCount={savedArtisans.length}
+                        contributionsCount={userContributions.length}
+                        pendingCount={pendingSuggestions.length}
+                        onOpenBadge={handleOpenBadgeModal}
+                        onOpenSaved={() => setSavedModalOpen(true)}
+                        onOpenContributions={() => {
+                          setContributionsModalOpen(true);
+                          void loadUserContributions(currentUser);
+                        }}
+                        onOpenAdmin={handleOpenAdmin}
+                        onLogout={handleLogout}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openAuthModal()}
+                        className="h-9 px-3 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold shadow-sm inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                      >
+                        <LogIn className="w-3.5 h-3.5" />
+                        <span>Đăng nhập / Đăng ký</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -3153,7 +3485,7 @@ export default function App() {
                     approvedThankYouNotes={selectedArtisanApprovedThanks}
                     isFavorite={favoriteIdsSet.has(selectedArtisan.id)}
                     currentUserDisplayName={
-                      currentUser.displayName || currentUser.name
+                      currentUser?.displayName || currentUser?.name || ''
                     }
                     onBack={() => setMobileDetailOpen(false)}
                     onShare={handleShareArtisan}
@@ -3163,7 +3495,7 @@ export default function App() {
                     onDrawRoute={handleDrawRouteFromDetail}
                     onChangeTravelMode={handleChangeTravelMode}
                     onOpenQr={setQrModalArtisan}
-                    onOpenStatusReport={setReportModalArtisan}
+                    onOpenStatusReport={handleRequestStatusReport}
                     onToggleKudos={handleToggleKudos}
                     onAddPraise={handleAddPraise}
                   />
@@ -3195,6 +3527,7 @@ export default function App() {
           <div className="h-full overflow-y-auto thin-scrollbar">
             <SuggestArtisanView
               currentUser={currentUser}
+              onRequestAuth={(prompt) => openAuthModal(prompt)}
               onSubmitPendingSuggestion={handleSubmitPendingSuggestion}
               onBackToExplore={() => setActiveTab('explore')}
             />
@@ -3210,8 +3543,9 @@ export default function App() {
               favoritesCount={savedArtisans.length}
               contributionsCount={userContributions.length}
               badgeTitle={badgeSummary.highestUnlocked?.title ?? null}
-              onNavigate={setActiveTab}
-              onOpenBadge={() => setBadgeModalOpen(true)}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenBadge={handleOpenBadgeModal}
               onOpenSaved={() => setSavedModalOpen(true)}
               onOpenContributions={() => {
                 setContributionsModalOpen(true);
@@ -3224,11 +3558,22 @@ export default function App() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar 3 tab */}
-      <MobileBottomNav activeTab={activeTab} onChangeTab={setActiveTab} />
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav activeTab={activeTab} onChangeTab={handleNavigateTab} />
+
+      {/* Soft Auth Modal: chỉ mở khi khách bấm Đăng nhập hoặc các hành động tương tác */}
+      <AuthModal
+        isOpen={authModalState.open}
+        defaultMode={authModalState.defaultMode}
+        promptMessage={authModalState.prompt}
+        onClose={closeAuthModal}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        onAuthSuccess={handleAuthSuccess}
+      />
 
       {/* Modals: Huy hiệu, Góc thợ đã lưu, Lịch sử đóng góp, Mã QR & Báo tình trạng */}
-      {badgeModalOpen && (
+      {badgeModalOpen && currentUser && (
         <BadgeModal
           stats={effectiveUserStats}
           syncedBadgeIds={currentUser.badges}
@@ -3239,7 +3584,7 @@ export default function App() {
         />
       )}
 
-      {savedModalOpen && (
+      {savedModalOpen && currentUser && (
         <SavedArtisansModal
           savedArtisans={savedArtisans}
           onSelectArtisan={(artisan) => {
@@ -3253,7 +3598,7 @@ export default function App() {
         />
       )}
 
-      {contributionsModalOpen && (
+      {contributionsModalOpen && currentUser && (
         <ContributionHistoryModal
           items={userContributions}
           isLoading={isLoadingContributions}
@@ -3264,7 +3609,7 @@ export default function App() {
             setMobileViewMode('map');
             setMobileDetailOpen(true);
           }}
-          onSuggestNew={() => setActiveTab('suggest')}
+          onSuggestNew={() => handleNavigateTab('suggest')}
           onClose={() => setContributionsModalOpen(false)}
         />
       )}

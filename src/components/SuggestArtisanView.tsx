@@ -23,7 +23,8 @@ import type {
 import { formatVietnamTimestamp } from '../utils/storage';
 
 interface SuggestArtisanViewProps {
-  currentUser: AdminAccount;
+  currentUser: AdminAccount | null;
+  onRequestAuth: (prompt?: string) => void;
   onSubmitPendingSuggestion: (
     suggestion: PendingSuggestion
   ) => Promise<{ ok: boolean; error?: string }> | { ok: boolean; error?: string } | void;
@@ -32,6 +33,7 @@ interface SuggestArtisanViewProps {
 
 export function SuggestArtisanView({
   currentUser,
+  onRequestAuth,
   onSubmitPendingSuggestion,
   onBackToExplore,
 }: SuggestArtisanViewProps) {
@@ -83,6 +85,13 @@ export function SuggestArtisanView({
     e.preventDefault();
     if (isSubmitting) return;
 
+    if (!currentUser) {
+      onRequestAuth(
+        'Đăng nhập nhanh trong 5 giây để gửi gợi ý cô chú thợ mới và theo dõi quá trình xác minh nhé.'
+      );
+      return;
+    }
+
     if (name.trim().length < 2) {
       setErrorMsg('Bạn vui lòng nhập tên hoặc cách gọi thân mật của cô chú nhé.');
       return;
@@ -129,7 +138,7 @@ export function SuggestArtisanView({
       paymentMethod,
       parkingInfo,
       customImageUrl: photoPreview,
-      submittedBy: currentUser.username || currentUser.id,
+      submittedBy: currentUser?.username || currentUser?.id || 'community',
       submittedAt: formatVietnamTimestamp(),
     };
 
@@ -175,6 +184,25 @@ export function SuggestArtisanView({
             Biết một cô chú sửa giày, may vá hay đánh khóa khéo tay trên đường đi học, đi làm? Gửi thông tin để đội ngũ xác minh, xin phép cô chú và đưa lên bản đồ nhé.
           </p>
         </header>
+
+        {!currentUser && (
+          <div className="rounded-2xl bg-[#FFF6EE] border border-[#F0D3BC] px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-[#7C3A1B]">
+            <p className="font-medium leading-relaxed">
+              Đăng nhập nhanh trong 5 giây để gửi gợi ý cô chú thợ mới và tích huy hiệu đóng góp cộng đồng.
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                onRequestAuth(
+                  'Đăng nhập nhanh trong 5 giây để gửi gợi ý cô chú thợ mới và theo dõi trạng thái duyệt nhé.'
+                )
+              }
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-bold whitespace-nowrap shrink-0 transition-colors"
+            >
+              Đăng nhập / Đăng ký
+            </button>
+          </div>
+        )}
 
         {submittedSuggestion ? (
           <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-6 sm:p-8 text-center space-y-4">
@@ -436,7 +464,9 @@ export function SuggestArtisanView({
                 <div className="rounded-xl bg-[#FAF8F5] border border-[#E5DFD5] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
                   <span className="text-[#52606D]">Người đóng góp (lưu lịch sử):</span>
                   <span className="font-semibold text-[#3A6B5C] truncate">
-                    {currentUser.displayName} (@{currentUser.username})
+                    {currentUser
+                      ? `${currentUser.displayName} (@${currentUser.username})`
+                      : 'Cần đăng nhập trước khi gửi'}
                   </span>
                 </div>
 

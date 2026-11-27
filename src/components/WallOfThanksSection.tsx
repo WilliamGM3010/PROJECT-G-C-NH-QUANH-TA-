@@ -9,7 +9,7 @@ interface WallOfThanksSectionProps {
   onSubmitThankYou: (
     artisan: Artisan,
     payload: { author: string; message: string }
-  ) => void;
+  ) => boolean | void;
 }
 
 const MAX_MESSAGE_LENGTH = 200;
@@ -34,10 +34,14 @@ export function WallOfThanksSection({
       return;
     }
 
-    onSubmitThankYou(artisan, {
+    const result = onSubmitThankYou(artisan, {
       author: author.trim() || currentUserDisplayName || 'Thành viên Góc Thợ',
       message: cleaned.slice(0, MAX_MESSAGE_LENGTH),
     });
+
+    if (result === false) {
+      return;
+    }
 
     setAuthor(currentUserDisplayName);
     setMessage('');

@@ -15,7 +15,7 @@ interface PraiseCornerProps {
       kudosKey: KudosKey;
       comment: string;
     }
-  ) => void;
+  ) => boolean | Promise<boolean | void> | void;
 }
 
 const KUDOS_MAP: Record<KudosKey, { emoji: string; label: string }> = {
@@ -41,7 +41,7 @@ export function PraiseCorner({
   const [comment, setComment] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const cleaned = comment.trim();
     if (cleaned.length < 6) {
@@ -49,11 +49,15 @@ export function PraiseCorner({
       return;
     }
 
-    onAddPraise(artisan.id, {
+    const result = await onAddPraise(artisan.id, {
       author: currentUserDisplayName.trim() || 'Thành viên Góc Thợ',
       kudosKey: selectedTag,
       comment: cleaned,
     });
+
+    if (result === false) {
+      return;
+    }
 
     setComment('');
     setErrorMsg('');

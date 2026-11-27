@@ -43,6 +43,14 @@ export function formatDistanceKm(km: number): string {
   return `${km.toFixed(1)}km`;
 }
 
+export function formatCompactDistance(km: number): string {
+  if (km < 1) {
+    const meters = Math.max(20, Math.round((km * 1000) / 10) * 10);
+    return `${meters} m`;
+  }
+  return `${km.toFixed(1)} km`;
+}
+
 export function formatDistanceWithPrefix(km: number): string {
   return `Cách ${formatDistanceKm(km)}`;
 }

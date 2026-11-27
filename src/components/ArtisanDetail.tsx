@@ -58,7 +58,7 @@ interface ArtisanDetailProps {
   onSubmitThankYou: (
     artisan: Artisan,
     payload: { author: string; message: string }
-  ) => void;
+  ) => boolean | void;
   onDrawRoute: (artisan: Artisan, mode?: TravelMode) => void;
   onChangeTravelMode: (mode: TravelMode) => void;
   onOpenQr: (artisan: Artisan) => void;
@@ -71,7 +71,7 @@ interface ArtisanDetailProps {
       kudosKey: KudosKey;
       comment: string;
     }
-  ) => void;
+  ) => boolean | Promise<boolean | void> | void;
 }
 
 export function ArtisanDetail({
