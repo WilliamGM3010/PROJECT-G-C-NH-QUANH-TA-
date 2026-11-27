@@ -8,6 +8,9 @@ import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import type {
   AdminAccount,
   AdminRole,
+  Article,
+  ArticleSourceType,
+  ArticleStatus,
   Artisan,
   ArtisanStatus,
   CraftCategory,
@@ -27,6 +30,12 @@ import {
   normalizeAccountRole,
   toIsoDate,
 } from '../utils/storage';
+import {
+  sanitizeExternalUrl,
+  sanitizeImageSrc,
+  sanitizeRichHtmlString,
+  validatePublicArticleUrl,
+} from '../utils/richText';
 
 type UnknownRow = Record<string, unknown>;
 
@@ -53,15 +62,15 @@ export function formatSupabaseError(err: unknown): string {
   }
 
   if (lower.includes('relation') && lower.includes('does not exist')) {
-    return 'Chưa tìm thấy bảng dữ liệu trên Supabase. Vui lòng tạo 3 bảng artisans, status_reports, admin_accounts theo file supabase-schema.sql.';
+    return 'Chưa tìm thấy bảng dữ liệu trên Supabase. Vui lòng tạo các bảng artisans, status_reports, admin_accounts, articles theo file supabase-schema.sql.';
   }
 
   if (lower.includes('row-level security') || lower.includes('permission denied')) {
-    return 'Supabase đang chặn quyền truy cập bảng (RLS). Vui lòng bật policy cho phép đọc/ghi trên 3 bảng artisans, status_reports, admin_accounts.';
+    return 'Supabase đang chặn quyền truy cập bảng (RLS). Vui lòng bật policy cho phép đọc/ghi trên các bảng dữ liệu.';
   }
 
   if (lower.includes('column') && lower.includes('does not exist')) {
-    return 'Bảng admin_accounts trên Supabase chưa có đủ cột mới (username, display_name, revived_count, badges, favorite_artisan_ids). Vui lòng chạy đoạn ALTER TABLE trong file supabase-schema.sql.';
+    return 'Bảng dữ liệu trên Supabase chưa có đủ cột mới. Vui lòng chạy đoạn ALTER TABLE trong file supabase-schema.sql.';
   }
 
   return rawMessage
@@ -1101,4 +1110,289 @@ export async function deleteAdminAccountDb(accountId: string): Promise<void> {
     .eq('id', accountId);
 
   if (error) throw error;
+}
+
+// ============================================================================
+// BẢNG ARTICLES (Bản tin kể chuyện & tin tức cộng đồng)
+// ============================================================================
+
+function normalizeArticleSourceType(value: unknown): ArticleSourceType {
+  return String(value ?? '').toLowerCase() === 'external_link'
+    ? 'external_link'
+    : 'original';
+}
+
+function normalizeArticleStatus(value: unknown): ArticleStatus {
+  return String(value ?? '').toLowerCase() === 'draft' ? 'draft' : 'published';
+}
+
+function formatPublishedDateFallback(row: UnknownRow): string {
+  const direct = String(row.published_at ?? '').trim();
+  if (direct) {
+    // Nếu là chuỗi ISO (YYYY-MM-DD...) thì chuyển sang dd/mm/yyyy dễ đọc
+    if (/^\d{4}-\d{2}-\d{2}/.test(direct)) {
+      const parsed = new Date(direct);
+      if (!Number.isNaN(parsed.getTime())) {
+        return formatVietnamDate(parsed);
+      }
+    }
+    return direct;
+  }
+  const created = String(row.created_at ?? '').trim();
+  if (created) {
+    const parsed = new Date(created);
+    if (!Number.isNaN(parsed.getTime())) {
+      return formatVietnamDate(parsed);
+    }
+  }
+  return formatVietnamDate();
+}
+
+export function rowToArticle(row: UnknownRow): Article {
+  const sourceType = normalizeArticleSourceType(row.source_type);
+  const externalUrl = sanitizeExternalUrl(
+    String(row.external_url ?? row.source_url ?? '')
+  );
+  const imageUrl = sanitizeImageSrc(
+    String(row.image_url ?? row.cover_image ?? row.thumbnail_url ?? '')
+  );
+
+  return {
+    id: String(row.id ?? `art-${Date.now()}`),
+    title: String(row.title ?? 'Bài viết chưa có tiêu đề').trim(),
+    subtitle: String(row.subtitle ?? row.summary ?? row.sapo ?? '').trim(),
+    content: sanitizeRichHtmlString(String(row.content ?? '')),
+    imageUrl,
+    imageCaption: String(row.image_caption ?? '').trim() || undefined,
+    category: String(row.category ?? 'Chuyện nghề vỉa hè').trim() || 'Chuyện nghề vỉa hè',
+    sourceType,
+    externalUrl,
+    sourceName: String(row.source_name ?? '').trim() || undefined,
+    authorName: String(row.author_name ?? row.author ?? 'Ban biên tập Góc Thợ').trim(),
+    relatedArtisanId: String(row.related_artisan_id ?? '').trim() || undefined,
+    isSpotlight: Boolean(row.is_spotlight ?? row.is_hero ?? false),
+    isFeatured: Boolean(row.is_featured ?? false),
+    isPinned: Boolean(row.is_pinned ?? false),
+    status: normalizeArticleStatus(row.status),
+    publishedAt: formatPublishedDateFallback(row),
+    createdAt: row.created_at ? String(row.created_at) : undefined,
+    updatedAt: row.updated_at ? String(row.updated_at) : undefined,
+  };
+}
+
+function articleToDbRow(article: Article) {
+  return {
+    id: article.id,
+    title: article.title.trim(),
+    subtitle: article.subtitle.trim(),
+    content: sanitizeRichHtmlString(article.content),
+    image_url: sanitizeImageSrc(article.imageUrl) ?? null,
+    image_caption: article.imageCaption?.trim() ?? '',
+    category: article.category.trim() || 'Chuyện nghề vỉa hè',
+    source_type: normalizeArticleSourceType(article.sourceType),
+    external_url: sanitizeExternalUrl(article.externalUrl) ?? null,
+    source_name: article.sourceName?.trim() || null,
+    author_name: article.authorName.trim() || 'Ban biên tập Góc Thợ',
+    related_artisan_id: article.relatedArtisanId?.trim() || null,
+    is_spotlight: Boolean(article.isSpotlight),
+    is_featured: Boolean(article.isFeatured),
+    is_pinned: Boolean(article.isPinned),
+    status: normalizeArticleStatus(article.status),
+    published_at: article.publishedAt || formatVietnamDate(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchPublishedArticlesDb(): Promise<Article[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .eq('status', 'published')
+    .order('is_pinned', { ascending: false })
+    .order('is_spotlight', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => rowToArticle(r as UnknownRow));
+}
+
+export async function fetchAllArticlesForAdminDb(): Promise<Article[]> {
+  if (!isSupabaseConfigured || !supabase) return [];
+
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*')
+    .order('is_pinned', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => rowToArticle(r as UnknownRow));
+}
+
+export async function upsertArticleDb(article: Article): Promise<Article> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const row = articleToDbRow(article);
+  const { data, error } = await supabase
+    .from('articles')
+    .upsert(row, { onConflict: 'id' })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return rowToArticle((data ?? row) as UnknownRow);
+}
+
+export async function updateArticleStatusDb(
+  articleId: string,
+  status: ArticleStatus
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const { error } = await supabase
+    .from('articles')
+    .update({
+      status: normalizeArticleStatus(status),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', articleId);
+
+  if (error) throw error;
+}
+
+export async function deleteArticleDb(articleId: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const { error } = await supabase
+    .from('articles')
+    .delete()
+    .eq('id', articleId);
+
+  if (error) throw error;
+}
+
+export async function bulkUpsertArticlesDb(
+  articles: Article[]
+): Promise<Article[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase chưa được cấu hình.');
+  }
+
+  const rows = articles.map(articleToDbRow);
+  const { data, error } = await supabase
+    .from('articles')
+    .upsert(rows, { onConflict: 'id' })
+    .select('*');
+
+  if (error) throw error;
+  return (data ?? rows).map((r) => rowToArticle(r as UnknownRow));
+}
+
+export interface MicrolinkExtractedArticle {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  publisher: string;
+  externalUrl: string;
+}
+
+/**
+ * Gọi API miễn phí Microlink để trích xuất metadata bài báo từ đường dẫn công khai.
+ */
+export async function fetchMicrolinkMetadata(
+  rawUrl: string
+): Promise<{
+  ok: boolean;
+  data?: MicrolinkExtractedArticle;
+  error?: string;
+  normalizedUrl?: string;
+}> {
+  const checked = validatePublicArticleUrl(rawUrl);
+  if (!checked.ok || !checked.normalized) {
+    return { ok: false, error: checked.error ?? 'URL không hợp lệ.' };
+  }
+
+  const safeUrl = checked.normalized;
+  let fallbackHost = '';
+  try {
+    fallbackHost = new URL(safeUrl).hostname.replace(/^www\./i, '');
+  } catch {
+    fallbackHost = '';
+  }
+
+  try {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 12000);
+    const response = await fetch(
+      `https://api.microlink.io?url=${encodeURIComponent(safeUrl)}`,
+      {
+        method: 'GET',
+        signal: controller.signal,
+      }
+    );
+    window.clearTimeout(timer);
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        normalizedUrl: safeUrl,
+        error:
+          'Trang báo này đang chặn lấy dữ liệu tự động. Bạn vẫn có thể mở trình soạn thảo để dán nhanh tiêu đề, mô tả và ảnh bìa nhé.',
+      };
+    }
+
+    const json = (await response.json()) as {
+      status?: string;
+      data?: {
+        title?: string | null;
+        description?: string | null;
+        image?: { url?: string | null } | null;
+        logo?: { url?: string | null } | null;
+        publisher?: string | null;
+      };
+    };
+
+    const meta = json?.data;
+    const title = String(meta?.title ?? '').trim();
+    const description = String(meta?.description ?? '').trim();
+    const rawImg = meta?.image?.url ?? meta?.logo?.url ?? '';
+    const imageUrl = sanitizeImageSrc(rawImg);
+    const publisher = String(meta?.publisher ?? '').trim() || fallbackHost;
+
+    if (!title && !description && !imageUrl) {
+      return {
+        ok: false,
+        normalizedUrl: safeUrl,
+        error:
+          'Không trích xuất được tiêu đề từ trang báo này (có thể do tường chặn tự động). Bạn hãy chuyển sang nhập thủ công trong khung soạn thảo nhé.',
+      };
+    }
+
+    return {
+      ok: true,
+      normalizedUrl: safeUrl,
+      data: {
+        title,
+        description,
+        imageUrl,
+        publisher,
+        externalUrl: safeUrl,
+      },
+    };
+  } catch {
+    return {
+      ok: false,
+      normalizedUrl: safeUrl,
+      error:
+        'Không thể kết nối dịch vụ lấy tin tự động (quá thời gian hoặc bị chặn). Bạn vẫn có thể mở khung soạn thảo để tự dán tiêu đề và ảnh.',
+    };
+  }
 }

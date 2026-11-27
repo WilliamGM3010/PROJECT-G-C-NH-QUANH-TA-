@@ -18,6 +18,7 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  Newspaper,
   Plus,
   Printer,
   QrCode,
@@ -41,6 +42,8 @@ import type {
   AdminAccount,
   AdminRole,
   AppBackupPayload,
+  Article,
+  ArticleStatus,
   Artisan,
   ArtisanStatus,
   AuditCategory,
@@ -67,6 +70,7 @@ import {
   parseArtisansFromCsv,
   parseBackupJson,
 } from '../utils/storage';
+import { AdminArticlesTab } from './AdminArticlesTab';
 import { AdminArtisanFormModal } from './AdminArtisanFormModal';
 import { AdminQrCardModal } from './AdminQrCardModal';
 import { AdminThankYouCardModal } from './AdminThankYouCardModal';
@@ -75,6 +79,7 @@ import { ArtisanIllustration } from './ArtisanIllustration';
 
 type AdminTabId =
   | 'overview'
+  | 'articles'
   | 'pending'
   | 'artisans'
   | 'thanks'
@@ -85,6 +90,7 @@ type AdminTabId =
 interface AdminDashboardProps {
   currentAdmin: AdminAccount;
   artisans: Artisan[];
+  articles: Article[];
   pendingSuggestions: PendingSuggestion[];
   statusReports: StatusReport[];
   thankYouNotes: ThankYouNote[];
@@ -93,6 +99,14 @@ interface AdminDashboardProps {
   revivedCount: number;
   onExitToMap: () => void;
   onLogout: () => void;
+  onSaveArticle: (article: Article) => Promise<void> | void;
+  onToggleArticleStatus: (
+    articleId: string,
+    nextStatus: ArticleStatus
+  ) => Promise<void> | void;
+  onDeleteArticle: (articleId: string) => Promise<void> | void;
+  onSeedInitialArticles?: () => Promise<void> | void;
+  isSeedingArticles?: boolean;
   onSaveArtisan: (artisan: Artisan, approvedPendingId?: string) => void;
   onVerifyArtisanToday: (artisanId: string) => void;
   onToggleArtisanVisibility: (artisanId: string) => void;
@@ -169,6 +183,7 @@ const AUDIT_CATEGORY_LABEL: Record<
   pending: { label: 'Duyệt đề xuất', badgeClass: 'bg-[#D96B38]/12 text-[#D96B38]' },
   report: { label: 'Báo cáo', badgeClass: 'bg-[#E9A825]/20 text-[#9A6807]' },
   thanks: { label: 'Lưu bút', badgeClass: 'bg-[#D96B38]/15 text-[#B85427]' },
+  article: { label: 'Bản tin', badgeClass: 'bg-[#3A6B5C]/15 text-[#2E574A]' },
   account: { label: 'Tài khoản', badgeClass: 'bg-[#1F2933]/10 text-[#1F2933]' },
   data: { label: 'Dữ liệu', badgeClass: 'bg-[#52606D]/12 text-[#52606D]' },
 };
@@ -176,6 +191,7 @@ const AUDIT_CATEGORY_LABEL: Record<
 export function AdminDashboard({
   currentAdmin,
   artisans,
+  articles,
   pendingSuggestions,
   statusReports,
   thankYouNotes,
@@ -184,6 +200,11 @@ export function AdminDashboard({
   revivedCount,
   onExitToMap,
   onLogout,
+  onSaveArticle,
+  onToggleArticleStatus,
+  onDeleteArticle,
+  onSeedInitialArticles,
+  isSeedingArticles = false,
   onSaveArtisan,
   onVerifyArtisanToday,
   onToggleArtisanVisibility,
@@ -644,6 +665,12 @@ export function AdminDashboard({
     badgeHighlight?: boolean;
   }[] = [
     { id: 'overview', label: 'Tổng quan', Icon: BarChart3 },
+    {
+      id: 'articles',
+      label: 'Quản lý Bản tin',
+      Icon: Newspaper,
+      badge: articles.length,
+    },
     {
       id: 'pending',
       label: 'Duyệt đề xuất',
@@ -2378,6 +2405,22 @@ export function AdminDashboard({
                   </div>
                 </div>
               </div>
+            )}
+            {/* =====================================================
+                TAB QUẢN LÝ BẢN TIN (CẢ Super Admin & Cộng tác viên)
+               ===================================================== */}
+            {activeTab === 'articles' && (
+              <AdminArticlesTab
+                currentAdmin={currentAdmin}
+                articles={articles}
+                artisans={artisans}
+                isSupabaseMode={isSupabaseMode}
+                isSeedingArticles={isSeedingArticles}
+                onSaveArticle={onSaveArticle}
+                onToggleArticleStatus={onToggleArticleStatus}
+                onDeleteArticle={onDeleteArticle}
+                onSeedInitialArticles={onSeedInitialArticles}
+              />
             )}
           </div>
         </main>

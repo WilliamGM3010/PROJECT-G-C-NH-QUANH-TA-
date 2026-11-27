@@ -16,6 +16,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
+import { INITIAL_ARTICLES } from './data/articles';
 import {
   CRAFT_CATEGORIES,
   DEFAULT_REVIVED_ITEMS_COUNT,
@@ -35,6 +36,8 @@ import type {
   AdminRole,
   AppBackupPayload,
   AppTab,
+  Article,
+  ArticleStatus,
   Artisan,
   ArtisanStatus,
   AuditCategory,
@@ -74,13 +77,17 @@ import {
 import {
   authenticateUserDb,
   bulkInsertAdminAccountsDb,
+  bulkUpsertArticlesDb,
   bulkUpsertArtisansDb,
   deleteAdminAccountDb,
+  deleteArticleDb,
   deleteArtisanDb,
   fetchAccountByIdDb,
   fetchAdminAccountsDb,
+  fetchAllArticlesForAdminDb,
   fetchAllArtisansForAdmin,
   fetchApprovedArtisans,
+  fetchPublishedArticlesDb,
   fetchStatusReportsDb,
   fetchUserSubmittedArtisansDb,
   formatSupabaseError,
@@ -92,8 +99,10 @@ import {
   resolveStatusReportDb,
   updateAccountByAdminDb,
   updateAccountProfileDb,
+  updateArticleStatusDb,
   updateArtisanFieldsDb,
   upsertApprovedArtisanDb,
+  upsertArticleDb,
   type UserContributionItem,
 } from './services/supabaseService';
 import { isSupabaseConfigured, supabaseConfigWarning } from './supabaseClient';
@@ -111,6 +120,7 @@ import {
   DesktopNavbar,
   MobileBottomNav,
 } from './components/Navbar';
+import { NewsView } from './components/NewsView';
 import { SuggestArtisanView } from './components/SuggestArtisanView';
 import {
   ContributionHistoryModal,
@@ -147,6 +157,12 @@ export default function App() {
   const [statusReports, setStatusReports] = useState<StatusReport[]>(() =>
     isSupabaseConfigured ? [] : INITIAL_STATUS_REPORTS
   );
+  const [articles, setArticles] = useState<Article[]>(() =>
+    isSupabaseConfigured ? [] : INITIAL_ARTICLES
+  );
+  const [isLoadingArticles, setIsLoadingArticles] = useState<boolean>(false);
+  const [articlesDbError, setArticlesDbError] = useState<string | null>(null);
+  const [isSeedingArticles, setIsSeedingArticles] = useState<boolean>(false);
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() => {
     if (isSupabaseConfigured) return [];
     const stored = loadFromStorage<AdminAccount[]>(
@@ -599,22 +615,45 @@ export default function App() {
     }
   }, []);
 
-  // Tải toàn bộ 3 bảng từ Supabase cho Khu Quản Trị
+  // Tải danh sách bài viết đã xuất bản cho trang Bản tin công khai
+  const loadPublicArticles = useCallback(async () => {
+    if (!isSupabaseConfigured) return;
+    setIsLoadingArticles(true);
+    setArticlesDbError(null);
+    try {
+      const published = await fetchPublishedArticlesDb();
+      setArticles(published);
+    } catch (err) {
+      setArticlesDbError(formatSupabaseError(err));
+    } finally {
+      setIsLoadingArticles(false);
+    }
+  }, []);
+
+  // Tải toàn bộ bảng từ Supabase cho Khu Quản Trị (gồm cả articles)
   const loadAdminData = useCallback(async () => {
     if (!isSupabaseConfigured) return;
     setIsLoadingAdminData(true);
     setAdminDbError(null);
     try {
-      const [artisanBundle, reports, accounts] = await Promise.all([
+      const [artisanBundle, reports, accounts, allArticles] = await Promise.all([
         fetchAllArtisansForAdmin(),
         fetchStatusReportsDb(),
         fetchAdminAccountsDb(),
+        fetchAllArticlesForAdminDb().catch((err) => {
+          setArticlesDbError(formatSupabaseError(err));
+          return null;
+        }),
       ]);
       setArtisans(artisanBundle.approved);
       setPendingSuggestions(artisanBundle.pending);
       setDbTotalArtisansCount(artisanBundle.totalCount);
       setStatusReports(reports);
       setAdminAccounts(accounts);
+      if (allArticles !== null) {
+        setArticles(allArticles);
+        setArticlesDbError(null);
+      }
 
       // Đồng bộ lại thông tin & vai trò mới nhất của chính tài khoản đang đăng nhập
       setCurrentUser((prev) => {
@@ -639,14 +678,15 @@ export default function App() {
     }
   }, [persistAuthSession]);
 
-  // Tự động tải dữ liệu công khai & lịch sử đóng góp khi đã đăng nhập
+  // Tự động tải dữ liệu công khai, Bản tin & lịch sử đóng góp khi đã đăng nhập
   useEffect(() => {
     if (!currentUser) return;
     if (isSupabaseConfigured) {
       void loadPublicArtisans();
+      void loadPublicArticles();
     }
     void loadUserContributions(currentUser);
-  }, [currentUser?.id, loadPublicArtisans]);
+  }, [currentUser?.id, loadPublicArtisans, loadPublicArticles]);
 
   // Cập nhật lịch sử đóng góp ở chế độ cục bộ khi danh sách thay đổi
   useEffect(() => {
@@ -1772,6 +1812,121 @@ export default function App() {
     showToast('Đã xóa toàn bộ Nhật ký hoạt động.');
   }, [currentUser, showToast]);
 
+  // Quản lý Bản tin (cả 'Super Admin' & 'Cộng tác viên')
+  const handleSaveArticle = useCallback(
+    async (saved: Article) => {
+      if (!currentUser || !canAccessAdminDashboard(currentUser.role)) return;
+      const isExisting = articles.some((a) => a.id === saved.id);
+      let persisted = saved;
+
+      if (isSupabaseConfigured) {
+        try {
+          persisted = await upsertArticleDb(saved);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setArticles((prev) =>
+        prev.some((a) => a.id === persisted.id)
+          ? prev.map((a) => (a.id === persisted.id ? persisted : a))
+          : [persisted, ...prev]
+      );
+
+      appendAuditLog(
+        isExisting
+          ? `Đã cập nhật bài viết "${persisted.title}" (${persisted.status === 'published' ? 'Đã xuất bản' : 'Tin nháp'})`
+          : `Đã tạo bài viết "${persisted.title}" (${persisted.status === 'published' ? 'Đã xuất bản' : 'Tin nháp'})`,
+        'article'
+      );
+      showToast(
+        persisted.status === 'published'
+          ? `Đã xuất bản bài viết "${persisted.title}" lên Bản tin!`
+          : `Đã lưu tin nháp "${persisted.title}".`
+      );
+    },
+    [currentUser, articles, appendAuditLog, showToast]
+  );
+
+  const handleToggleArticleStatus = useCallback(
+    async (articleId: string, nextStatus: ArticleStatus) => {
+      if (!currentUser || !canAccessAdminDashboard(currentUser.role)) return;
+      const target = articles.find((a) => a.id === articleId);
+      if (!target) return;
+
+      if (isSupabaseConfigured) {
+        try {
+          await updateArticleStatusDb(articleId, nextStatus);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setArticles((prev) =>
+        prev.map((a) =>
+          a.id === articleId ? { ...a, status: nextStatus } : a
+        )
+      );
+      appendAuditLog(
+        nextStatus === 'published'
+          ? `Đã xuất bản bài viết "${target.title}"`
+          : `Đã chuyển bài viết "${target.title}" về Tin nháp`,
+        'article'
+      );
+      showToast(
+        nextStatus === 'published'
+          ? `Đã xuất bản "${target.title}" lên trang Bản tin.`
+          : `Đã chuyển "${target.title}" về trạng thái Tin nháp.`
+      );
+    },
+    [currentUser, articles, appendAuditLog, showToast]
+  );
+
+  const handleDeleteArticle = useCallback(
+    async (articleId: string) => {
+      if (!currentUser || !canAccessAdminDashboard(currentUser.role)) return;
+      const target = articles.find((a) => a.id === articleId);
+
+      if (isSupabaseConfigured) {
+        try {
+          await deleteArticleDb(articleId);
+        } catch (err) {
+          showToast(formatSupabaseError(err));
+          return;
+        }
+      }
+
+      setArticles((prev) => prev.filter((a) => a.id !== articleId));
+      if (target) {
+        appendAuditLog(`Đã xóa bài viết "${target.title}"`, 'article');
+      }
+      showToast('Đã xóa bài viết khỏi Bản tin.');
+    },
+    [currentUser, articles, appendAuditLog, showToast]
+  );
+
+  const handleSeedInitialArticles = useCallback(async () => {
+    if (!currentUser || !canAccessAdminDashboard(currentUser.role)) return;
+    if (!isSupabaseConfigured || isSeedingArticles) return;
+    setIsSeedingArticles(true);
+    try {
+      const inserted = await bulkUpsertArticlesDb(INITIAL_ARTICLES);
+      setArticles(inserted);
+      setArticlesDbError(null);
+      appendAuditLog(
+        `Đã nạp ${inserted.length} bài viết Bản tin mẫu lên Supabase`,
+        'article'
+      );
+      showToast(`Đã nạp thành công ${inserted.length} bài viết mẫu vào Database!`);
+    } catch (err) {
+      showToast(formatSupabaseError(err));
+    } finally {
+      setIsSeedingArticles(false);
+    }
+  }, [currentUser, isSeedingArticles, appendAuditLog, showToast]);
+
   // Nhập hàng loạt cô chú thợ từ CSV -> đồng bộ lên bảng artisans
   const handleImportArtisansCsv = useCallback(
     async (imported: Artisan[], skipped: number) => {
@@ -2155,6 +2310,7 @@ export default function App() {
         <AdminDashboard
           currentAdmin={currentUser}
           artisans={artisans}
+          articles={articles}
           pendingSuggestions={pendingSuggestions}
           statusReports={statusReports}
           thankYouNotes={thankYouNotes}
@@ -2165,10 +2321,17 @@ export default function App() {
           supabaseWarning={supabaseConfigWarning}
           isLoadingAdminData={isLoadingAdminData}
           isSeedingDb={isSeedingDb}
+          isSeedingArticles={isSeedingArticles}
           isDbArtisansEmpty={isDbArtisansEmpty}
           dbError={adminDbError}
           onRefreshAdminData={() => void loadAdminData()}
           onSeedInitialArtisans={() => void handleSeedInitialArtisans()}
+          onSeedInitialArticles={() => handleSeedInitialArticles()}
+          onSaveArticle={(article) => handleSaveArticle(article)}
+          onToggleArticleStatus={(id, nextStatus) =>
+            handleToggleArticleStatus(id, nextStatus)
+          }
+          onDeleteArticle={(id) => handleDeleteArticle(id)}
           onExitToMap={handleExitAdminToMap}
           onLogout={handleLogout}
           onSaveArtisan={(artisan, pendingId) => {
@@ -3007,6 +3170,24 @@ export default function App() {
                 </div>
               )}
             </section>
+          </div>
+        )}
+
+        {activeTab === 'news' && (
+          <div className="h-full overflow-y-auto thin-scrollbar">
+            <NewsView
+              articles={articles}
+              artisans={publicArtisans}
+              isLoading={isLoadingArticles}
+              error={articlesDbError}
+              onRefresh={() => void loadPublicArticles()}
+              onOpenArtisanOnMap={(artisanId) => {
+                setActiveTab('explore');
+                setSelectedArtisanId(artisanId);
+                setMobileViewMode('map');
+                setMobileDetailOpen(true);
+              }}
+            />
           </div>
         )}
 

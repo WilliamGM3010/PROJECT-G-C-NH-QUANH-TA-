@@ -141,6 +141,7 @@ export type AuditCategory =
   | 'pending'
   | 'report'
   | 'thanks'
+  | 'article'
   | 'account'
   | 'data';
 
@@ -201,4 +202,30 @@ export interface RouteInfo {
   isFallback: boolean;
 }
 
-export type AppTab = 'explore' | 'suggest' | 'about';
+export type ArticleSourceType = 'original' | 'external_link';
+
+export type ArticleStatus = 'published' | 'draft';
+
+export interface Article {
+  id: string;
+  title: string;
+  subtitle: string;
+  content: string;
+  imageUrl?: string;
+  imageCaption?: string;
+  category: string;
+  sourceType: ArticleSourceType;
+  externalUrl?: string;
+  sourceName?: string;
+  authorName: string;
+  relatedArtisanId?: string;
+  isSpotlight: boolean;
+  isFeatured: boolean;
+  isPinned: boolean;
+  status: ArticleStatus;
+  publishedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type AppTab = 'explore' | 'news' | 'suggest' | 'about';

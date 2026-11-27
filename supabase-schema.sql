@@ -92,3 +92,44 @@ values
   ('admin-super-1', 'William Gia Minh (Điều phối dự án)', 'William Gia Minh (Điều phối dự án)', 'admin@goctho.vn', 'admin@goctho.vn', 'admin123', 'Super Admin', true, 0, '[]'::jsonb, '[]'::jsonb, '01/11/2026'),
   ('admin-ctv-1', 'Quang Huy (Cộng tác viên Q.1)', 'Quang Huy (Cộng tác viên Q.1)', 'ctv@goctho.vn', 'ctv@goctho.vn', 'ctv123', 'Cộng tác viên', true, 0, '[]'::jsonb, '[]'::jsonb, '12/11/2026')
 on conflict (email) do nothing;
+
+-- 4. Bảng Bản tin cộng đồng & kể chuyện nghề (articles)
+create table if not exists public.articles (
+  id text primary key,
+  title text not null,
+  subtitle text not null default '',
+  content text not null default '',
+  image_url text,
+  image_caption text not null default '',
+  category text not null default 'Chuyện nghề vỉa hè',
+  source_type text not null default 'original',
+  external_url text,
+  source_name text,
+  author_name text not null default '',
+  related_artisan_id text,
+  is_spotlight boolean not null default false,
+  is_featured boolean not null default false,
+  is_pinned boolean not null default false,
+  status text not null default 'published',
+  published_at text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Migration an toàn nếu bảng articles đã tồn tại nhưng thiếu cột
+alter table public.articles add column if not exists subtitle text not null default '';
+alter table public.articles add column if not exists image_caption text not null default '';
+alter table public.articles add column if not exists source_type text not null default 'original';
+alter table public.articles add column if not exists external_url text;
+alter table public.articles add column if not exists source_name text;
+alter table public.articles add column if not exists author_name text not null default '';
+alter table public.articles add column if not exists related_artisan_id text;
+alter table public.articles add column if not exists is_spotlight boolean not null default false;
+alter table public.articles add column if not exists is_featured boolean not null default false;
+alter table public.articles add column if not exists is_pinned boolean not null default false;
+alter table public.articles add column if not exists status text not null default 'published';
+alter table public.articles add column if not exists published_at text not null default '';
+alter table public.articles add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_articles_status_created on public.articles (status, created_at desc);
+

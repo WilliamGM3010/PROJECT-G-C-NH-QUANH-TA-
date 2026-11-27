@@ -8,6 +8,7 @@ import {
   Info,
   LogOut,
   MapPin,
+  Newspaper,
   PlusCircle,
   ShieldCheck,
   User,
@@ -320,6 +321,21 @@ export function DesktopNavbar({
 
         <button
           type="button"
+          onClick={() => onChangeTab('news')}
+          className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
+            activeTab === 'news'
+              ? 'text-[#D96B38] font-semibold'
+              : 'text-[#52606D] hover:text-[#1F2933]'
+          }`}
+        >
+          Bản tin
+          {activeTab === 'news' && (
+            <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#D96B38]" />
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => onChangeTab('about')}
           className={`relative py-2 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded ${
             activeTab === 'about'
@@ -372,6 +388,7 @@ export function MobileBottomNav({
 }: Pick<NavbarProps, 'activeTab' | 'onChangeTab'>) {
   const tabs: { id: AppTab; label: string; Icon: typeof Compass }[] = [
     { id: 'explore', label: 'Khám phá', Icon: Compass },
+    { id: 'news', label: 'Bản tin', Icon: Newspaper },
     { id: 'suggest', label: 'Gợi ý thợ', Icon: PlusCircle },
     { id: 'about', label: 'Về dự án', Icon: Info },
   ];
@@ -382,7 +399,7 @@ export function MobileBottomNav({
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D9] shadow-[0_-4px_16px_rgba(31,41,51,0.06)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-3 h-16">
+      <div className="grid grid-cols-4 h-16">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = activeTab === id;
           return (
