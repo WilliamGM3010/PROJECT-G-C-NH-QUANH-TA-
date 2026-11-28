@@ -60,7 +60,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     departments: ['Nội dung - Phát triển'],
     departmentDisplayLabel: 'Ban Nội dung - Phát triển dự án',
     quote:
-      'Công nghệ đẹp nhất là khi giúp những người lao động thầm lặng được nhìn thấy nhiều hơn.',
+      "Đừng buồn, dù có buồn thì công việc cũng không bao giờ xong đâu.",
     facebookUrl: 'https://facebook.com/williamgiaminhh',
     avatarUrl: '/assets/aistudio/minh_2a239f32.jpg',
     accentTone: 'forest',
