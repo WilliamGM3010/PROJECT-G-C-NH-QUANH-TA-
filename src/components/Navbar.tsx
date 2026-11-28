@@ -113,7 +113,7 @@ export function AccountMenuDropdown({
           {avatarSnapshotUrl ? (
             <img
               src={avatarSnapshotUrl}
-              alt={`Avatar 3D của ${displayName}`}
+              alt={`Avatar của ${displayName}`}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -179,10 +179,10 @@ export function AccountMenuDropdown({
               >
                 <span className="inline-flex items-center gap-2.5">
                   <Sparkles className="w-4 h-4 text-[#D46534]" />
-                  <span>Góc Thợ Avatar 3D</span>
+                  <span>Góc Thợ Avatar</span>
                 </span>
                 <span className="font-mono text-[10px] font-bold uppercase text-[#D46534]">
-                  3D
+                  2D
                 </span>
               </button>
             )}

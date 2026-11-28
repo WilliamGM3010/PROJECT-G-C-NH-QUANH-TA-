@@ -5,6 +5,7 @@ export type AvatarSlot =
   | 'top'
   | 'bottom'
   | 'shoes'
+  | 'headwear'
   | 'accessory';
 
 export type AvatarCollectionId =
@@ -29,8 +30,8 @@ export type AvatarSubTab =
 export type FaceExpressionId =
   | 'sparkle_round'
   | 'happy_squint'
-  | 'cool_confident'
   | 'playful_wink'
+  | 'cool_confident'
   | 'cute_surprised';
 
 export type HairStyleId =
@@ -41,48 +42,13 @@ export type HairStyleId =
   | 'fresh_undercut'
   | 'long_flowing';
 
-export type TopStyleId =
-  | 'basic_tee'
-  | 'warm_hoodie'
-  | 'bomber_jacket'
-  | 'cropped_jacket'
-  | 'ba_ba_modern'
-  | 'ao_dai_modern'
-  | 'craft_apron'
-  | 'guardian_jacket'
-  | 'winter_knit'
-  | 'tet_silk_teaser';
-
-export type BottomStyleId =
-  | 'jogger_cuff'
-  | 'active_shorts'
-  | 'straight_jeans'
-  | 'pleated_skirt'
-  | 'wide_traditional';
-
-export type ShoesStyleId =
-  | 'chunky_sneakers'
-  | 'canvas_low'
-  | 'pastel_slides'
-  | 'craft_boots';
-
-export type AccessoryId =
-  | 'acc_beanie'
-  | 'acc_cap'
-  | 'acc_non_la'
-  | 'acc_round_glasses'
-  | 'acc_headphones'
-  | 'acc_saigon_tote'
-  | 'acc_craft_pouch'
-  | 'acc_red_scarf';
-
 export type AccessoryLayer =
   | 'headwear'
   | 'eyewear'
-  | 'audio'
-  | 'bag'
-  | 'waist'
-  | 'neck';
+  | 'back_bag'
+  | 'neck_front'
+  | 'chest_front'
+  | 'hand_charm';
 
 export interface AvatarItemModelConfig {
   primaryColor: string;
@@ -99,11 +65,11 @@ export interface AvatarItem {
   collection: AvatarCollectionId;
   rarity: AvatarRarity;
   unlockType: AvatarUnlockType;
-  gpCost?: number;
-  questId?: string;
+  priceGp: number;
+  questId?: AvatarQuestId;
   story: string;
-  /** Sẵn sàng mở rộng gắn file .glb thật trong tương lai */
-  glbUrl?: string;
+  /** Hybrid asset: nếu team thiết kế gắn file PNG/SVG tách lớp thì render <image> trực tiếp */
+  assetUrl?: string;
   modelConfig: AvatarItemModelConfig;
   comingSoon?: boolean;
   comingSoonNote?: string;
@@ -113,14 +79,15 @@ export interface SkinToneOption {
   id: string;
   name: string;
   hex: string;
-  blushHex: string;
   shadowHex: string;
+  blushHex: string;
 }
 
 export interface HairColorOption {
   id: string;
   name: string;
   hex: string;
+  shadowHex: string;
   highlightHex: string;
 }
 
@@ -134,30 +101,31 @@ export interface FaceExpressionOption {
 export interface StudioBackgroundOption {
   id: string;
   name: string;
-  cssGradient: string;
-  canvasStops: [string, string, string];
-  floorTint: string;
+  subtitle: string;
+  cssBackground: string;
+  canvasStops: [string, string];
+  isDark?: boolean;
+  stitchColor: string;
   textColor: string;
 }
 
 export interface AvatarCollectionMeta {
   id: AvatarCollectionId;
   name: string;
-  vietnameseTag: string;
+  englishTag: string;
   subtitle: string;
   story: string;
   accentColor: string;
   surfaceTint: string;
-  badgeText: string;
 }
 
 export type AvatarQuestId =
-  | 'explore_3_artisans'
+  | 'first_avatar_save'
   | 'revive_item'
   | 'send_praise'
   | 'save_favorite'
-  | 'suggest_artisan'
-  | 'first_avatar_save';
+  | 'explore_3_artisans'
+  | 'suggest_artisan';
 
 export interface AvatarQuestDefinition {
   id: AvatarQuestId;
@@ -188,27 +156,30 @@ export interface AvatarConfig {
   topId: string;
   bottomId: string;
   shoesId: string;
+  /** Các phụ kiện tách lớp: nón, kính, balo lưng, máy ảnh, thước dây, cà phê, khăn, charm... */
   accessoryIds: string[];
   studioBgId: string;
 }
 
 export interface AvatarQuestProgressState {
-  explore_3_artisans: number;
+  first_avatar_save: number;
   revive_item: number;
   send_praise: number;
   save_favorite: number;
+  explore_3_artisans: number;
   suggest_artisan: number;
-  first_avatar_save: number;
   viewedArtisanIds: string[];
 }
 
 export interface AvatarProfile {
   userKey: string;
+  displayName: string;
   avatarConfig: AvatarConfig;
   ownedItemIds: string[];
   gpBalance: number;
   questProgress: AvatarQuestProgressState;
   claimedQuestIds: AvatarQuestId[];
+  unlockedAchievementIds: string[];
   equippedTitleId: string;
   snapshotDataUrl: string | null;
   updatedAt: string;

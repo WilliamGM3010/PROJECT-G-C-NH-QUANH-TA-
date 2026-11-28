@@ -334,7 +334,7 @@ export default function App() {
   >([]);
   const [isLoadingContributions, setIsLoadingContributions] = useState(false);
 
-  // Hồ sơ Góc Thợ Avatar 3D (đồng bộ Supabase user_avatar_profiles + fallback localStorage)
+  // Hồ sơ Góc Thợ Avatar 2D (đồng bộ Supabase user_avatar_profiles + fallback localStorage)
   const [avatarProfile, setAvatarProfile] = useState<AvatarProfile>(
     () => loadLocalAvatarProfile('guest') ?? createDefaultAvatarProfile('guest')
   );
@@ -342,18 +342,22 @@ export default function App() {
   avatarProfileRef.current = avatarProfile;
 
   const avatarUserKey = currentUser?.id || currentUser?.email || 'guest';
+  const avatarDisplayName =
+    currentUser?.displayName || currentUser?.name || 'Bạn trẻ Sài Gòn';
 
   useEffect(() => {
     let cancelled = false;
-    void loadAvatarProfile(avatarUserKey).then(({ profile }) => {
-      if (!cancelled) {
-        setAvatarProfile(profile);
+    void loadAvatarProfile(avatarUserKey, avatarDisplayName).then(
+      ({ profile }) => {
+        if (!cancelled) {
+          setAvatarProfile(profile);
+        }
       }
-    });
+    );
     return () => {
       cancelled = true;
     };
-  }, [avatarUserKey]);
+  }, [avatarUserKey, avatarDisplayName]);
 
   const claimableAvatarQuestsCount = useMemo(
     () => countClaimableQuests(avatarProfile),
@@ -677,6 +681,7 @@ export default function App() {
       const base: AvatarProfile = {
         ...avatarProfileRef.current,
         userKey: avatarUserKey,
+        displayName: avatarDisplayName,
         avatarConfig: nextConfig,
         snapshotDataUrl:
           snapshotDataUrl ?? avatarProfileRef.current.snapshotDataUrl,
@@ -699,7 +704,7 @@ export default function App() {
         showToast('Đã lưu nhân vật Góc Thợ Avatar trên thiết bị này!');
       }
     },
-    [avatarUserKey, showToast]
+    [avatarUserKey, avatarDisplayName, showToast]
   );
 
   const handleUnlockAvatarItem = useCallback(

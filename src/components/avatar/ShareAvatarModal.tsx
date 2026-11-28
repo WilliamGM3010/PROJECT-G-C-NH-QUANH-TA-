@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Check,
   Download,
@@ -13,15 +13,17 @@ import {
   getStudioBackgroundById,
   STUDIO_BACKGROUNDS,
 } from '../../data/avatarCatalog';
+import type { AvatarConfig } from '../../types/avatar';
+import { svgElementToImage } from '../../utils/avatarSvgExport';
+import { ChibiAvatar2D } from './ChibiAvatar2D';
 
 type ShareFormat = 'square' | 'story';
 
 interface ShareAvatarModalProps {
   isOpen: boolean;
-  avatarSnapshotUrl: string | null;
+  config: AvatarConfig;
   displayName: string;
   equippedTitleId: string;
-  initialBgId: string;
   gpBalance: number;
   ownedCount: number;
   onClose: () => void;
@@ -51,23 +53,24 @@ function drawRoundedRect(
 
 export function ShareAvatarModal({
   isOpen,
-  avatarSnapshotUrl,
+  config,
   displayName,
   equippedTitleId,
-  initialBgId,
   gpBalance,
   ownedCount,
   onClose,
   onDownloaded,
 }: ShareAvatarModalProps) {
   const [format, setFormat] = useState<ShareFormat>('square');
-  const [selectedBgId, setSelectedBgId] = useState<string>(initialBgId);
+  const [selectedBgId, setSelectedBgId] = useState<string>(config.studioBgId);
   const [composedUrl, setComposedUrl] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
 
+  const staticSvgRef = useRef<SVGSVGElement | null>(null);
+
   useEffect(() => {
-    setSelectedBgId(initialBgId);
-  }, [initialBgId, isOpen]);
+    setSelectedBgId(config.studioBgId);
+  }, [config.studioBgId, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -82,34 +85,27 @@ export function ShareAvatarModal({
   const bgMeta = getStudioBackgroundById(selectedBgId);
 
   const composePoster = useCallback(async () => {
-    if (!isOpen || !avatarSnapshotUrl) return;
+    if (!isOpen || !staticSvgRef.current) return;
     setIsComposing(true);
     try {
-      const width = 1080;
-      const height = format === 'story' ? 1920 : 1080;
+      // Độ phân giải 2x sắc nét (Square 1200x1200 / Story 1080x1920)
+      const width = format === 'story' ? 1080 : 1200;
+      const height = format === 'story' ? 1920 : 1200;
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // 1. Soft radial studio gradient backdrop
-      const grad = ctx.createRadialGradient(
-        width * 0.5,
-        height * 0.36,
-        60,
-        width * 0.5,
-        height * 0.5,
-        Math.max(width, height) * 0.72
-      );
+      // 1. Phông nền Saigon/Craft
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
       grad.addColorStop(0, bgMeta.canvasStops[0]);
-      grad.addColorStop(0.58, bgMeta.canvasStops[1]);
-      grad.addColorStop(1, bgMeta.canvasStops[2]);
+      grad.addColorStop(1, bgMeta.canvasStops[1]);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Decorative editorial border frame
-      const margin = format === 'story' ? 54 : 44;
+      // 2. Đường chỉ may đứt nét trang trí đặc trưng THE NEIGHBORHOOD CRAFT
+      const margin = format === 'story' ? 54 : 46;
       ctx.save();
       drawRoundedRect(
         ctx,
@@ -119,55 +115,50 @@ export function ShareAvatarModal({
         height - margin * 2,
         44
       );
-      ctx.strokeStyle = 'rgba(37, 41, 46, 0.12)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([12, 10]);
+      ctx.strokeStyle = bgMeta.stitchColor;
+      ctx.lineWidth = 3.5;
+      ctx.setLineDash([14, 11]);
       ctx.stroke();
       ctx.restore();
 
-      // 3. Top brand stamp
+      // 3. Con dấu thương hiệu trên đầu thẻ
       ctx.textAlign = 'center';
-      ctx.fillStyle = bgMeta.textColor;
-      ctx.globalAlpha = 0.78;
+      ctx.fillStyle = bgMeta.isDark ? '#F5C451' : '#B93818';
       ctx.font = '700 22px "JetBrains Mono", monospace';
       ctx.fillText(
-        'THE NEIGHBORHOOD CRAFT · SÀI GÒN',
+        'GÓC THỢ QUANH TA · THE NEIGHBORHOOD CRAFT',
         width / 2,
-        format === 'story' ? 148 : 112
+        format === 'story' ? 148 : 114
       );
-      ctx.globalAlpha = 1;
 
-      ctx.font = '800 36px "Be Vietnam Pro", sans-serif';
-      ctx.fillStyle = '#1B3B82';
+      ctx.font = '800 38px "Be Vietnam Pro", sans-serif';
+      ctx.fillStyle = bgMeta.isDark ? '#F7F2E8' : '#1B3B82';
       ctx.fillText(
-        'GÓC THỢ AVATAR',
+        'Góc Thợ Avatar',
         width / 2,
-        format === 'story' ? 202 : 160
+        format === 'story' ? 204 : 166
       );
 
-      // 4. Load & draw 3D Chibi snapshot centered
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = reject;
-        image.src = avatarSnapshotUrl;
-      });
+      // 4. Serialize bản SVG tĩnh (disableAnimation=true) sang hình 2x siêu nét
+      const avatarImg = await svgElementToImage(staticSvgRef.current);
+      const drawW = format === 'story' ? 760 : 580;
+      const drawH = drawW * (480 / 400);
+      const drawX = (width - drawW) / 2;
+      const drawY = format === 'story' ? 320 : 185;
+      ctx.drawImage(avatarImg, drawX, drawY, drawW, drawH);
 
-      const drawSize = format === 'story' ? 880 : 620;
-      const drawX = (width - drawSize) / 2;
-      const drawY = format === 'story' ? 320 : 175;
-      ctx.drawImage(img, drawX, drawY, drawSize, drawSize);
-
-      // 5. Bottom editorial identity card
+      // 5. Bảng thông tin nhân vật ở đáy thẻ
       const cardW = width - margin * 2 - 72;
-      const cardH = format === 'story' ? 330 : 210;
+      const cardH = format === 'story' ? 320 : 216;
       const cardX = (width - cardW) / 2;
-      const cardY = height - margin - cardH - 42;
+      const cardY = height - margin - cardH - 40;
 
       ctx.save();
       drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 32);
-      ctx.fillStyle = 'rgba(255, 252, 246, 0.94)';
-      ctx.shadowColor = 'rgba(37, 41, 46, 0.12)';
+      ctx.fillStyle = bgMeta.isDark
+        ? 'rgba(255, 251, 245, 0.96)'
+        : 'rgba(255, 252, 246, 0.94)';
+      ctx.shadowColor = 'rgba(37, 41, 46, 0.14)';
       ctx.shadowBlur = 32;
       ctx.shadowOffsetY = 12;
       ctx.fill();
@@ -175,57 +166,47 @@ export function ShareAvatarModal({
 
       ctx.save();
       drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 32);
-      ctx.strokeStyle = '#E8DFD1';
+      ctx.strokeStyle = '#E6D9C6';
       ctx.lineWidth = 2.5;
       ctx.stroke();
       ctx.restore();
 
-      // Title pill inside card
-      const badgeLabel = `${titleMeta.badgeCode} · ${titleMeta.title.toUpperCase()}`;
-      ctx.font = '700 22px "JetBrains Mono", monospace';
-      const badgeW = Math.min(cardW - 80, ctx.measureText(badgeLabel).width + 54);
-      const badgeH = 46;
-      const badgeX = width / 2 - badgeW / 2;
-      const badgeY = cardY + (format === 'story' ? 42 : 28);
-
-      drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 23);
-      ctx.fillStyle = '#FDF0E9';
-      ctx.fill();
-      ctx.strokeStyle = '#E5B29A';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
+      // Danh hiệu đang đeo (sạch thoáng không nặng nề)
       ctx.fillStyle = '#B93818';
-      ctx.textAlign = 'center';
-      ctx.fillText(badgeLabel, width / 2, badgeY + 31);
+      ctx.font = '700 22px "JetBrains Mono", monospace';
+      ctx.fillText(
+        `${titleMeta.badgeCode} · ${titleMeta.title}`,
+        width / 2,
+        cardY + (format === 'story' ? 68 : 54)
+      );
 
-      // User display name
+      // Tên người dùng
       ctx.fillStyle = '#25292E';
       ctx.font =
         format === 'story'
-          ? '800 52px "Be Vietnam Pro", sans-serif'
-          : '800 44px "Be Vietnam Pro", sans-serif';
+          ? '800 54px "Be Vietnam Pro", sans-serif'
+          : '800 46px "Be Vietnam Pro", sans-serif';
       const cleanName = displayName.trim() || 'Bạn trẻ Sài Gòn';
       ctx.fillText(
         cleanName.slice(0, 26),
         width / 2,
-        badgeY + (format === 'story' ? 116 : 96)
+        cardY + (format === 'story' ? 142 : 114)
       );
 
-      // Stats & Footer tagline
+      // Chỉ số sưu tầm
       ctx.fillStyle = '#615D57';
       ctx.font = '600 24px "Be Vietnam Pro", sans-serif';
       ctx.fillText(
         `${ownedCount} món tủ đồ  ·  ${gpBalance} Điểm Góc (GP)`,
         width / 2,
-        badgeY + (format === 'story' ? 172 : 140)
+        cardY + (format === 'story' ? 196 : 162)
       );
 
       if (format === 'story') {
         ctx.fillStyle = '#1B3B82';
-        ctx.font = '700 24px "Be Vietnam Pro", sans-serif';
+        ctx.font = 'italic 600 26px "Lora", Georgia, serif';
         ctx.fillText(
-          'Hỏng đâu sửa liền · Sống xanh cùng Góc Thợ Quanh Ta',
+          'Hỏng đâu sửa liền · Sống xanh cùng các góc thợ Sài Gòn',
           width / 2,
           cardY + cardH - 46
         );
@@ -233,13 +214,12 @@ export function ShareAvatarModal({
 
       setComposedUrl(canvas.toDataURL('image/png'));
     } catch {
-      setComposedUrl(avatarSnapshotUrl);
+      setComposedUrl(null);
     } finally {
       setIsComposing(false);
     }
   }, [
     isOpen,
-    avatarSnapshotUrl,
     format,
     bgMeta,
     titleMeta,
@@ -249,8 +229,13 @@ export function ShareAvatarModal({
   ]);
 
   useEffect(() => {
-    void composePoster();
-  }, [composePoster]);
+    if (!isOpen) return;
+    // Chờ 1 frame để SVG ẩn kịp mount ref
+    const id = window.requestAnimationFrame(() => {
+      void composePoster();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [isOpen, composePoster, config]);
 
   if (!isOpen) return null;
 
@@ -272,6 +257,20 @@ export function ShareAvatarModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      {/* Bản SVG tĩnh ẩn để XMLSerializer xuất ảnh PNG 2x siêu nét đứng ngay ngắn chính giữa */}
+      <div
+        aria-hidden="true"
+        className="fixed -left-[9999px] -top-[9999px] w-[400px] h-[480px] pointer-events-none opacity-0"
+      >
+        <ChibiAvatar2D
+          ref={staticSvgRef}
+          config={config}
+          disableAnimation
+          showGroundShadow
+          isDarkBackdrop={bgMeta.isDark}
+        />
+      </div>
+
       <div
         role="dialog"
         aria-modal="true"
@@ -280,11 +279,11 @@ export function ShareAvatarModal({
       >
         <div className="px-5 py-4 border-b border-dashed border-[#DFD3C2] bg-[#F7F2E8] flex items-center justify-between gap-3 shrink-0">
           <div>
-            <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#D46534]">
-              XUẤT ẢNH CHIA SẺ PNG
+            <p className="font-mono text-[11px] font-bold text-[#D46534]">
+              Xuất ảnh PNG độ phân giải 2x
             </p>
             <h3 className="font-display text-base sm:text-lg font-extrabold text-[#25292E]">
-              Tạo thẻ nhân vật Góc Thợ Avatar
+              Chia sẻ Góc Thợ Avatar
             </h3>
           </div>
           <button
@@ -305,7 +304,9 @@ export function ShareAvatarModal({
                 src={composedUrl}
                 alt="Thẻ chia sẻ Góc Thợ Avatar"
                 className={`rounded-2xl shadow-lg object-contain transition-all ${
-                  format === 'story' ? 'max-h-[420px] w-auto' : 'max-h-[380px] w-auto'
+                  format === 'story'
+                    ? 'max-h-[430px] w-auto'
+                    : 'max-h-[380px] w-auto'
                 }`}
               />
             ) : (
@@ -313,8 +314,8 @@ export function ShareAvatarModal({
                 <ImageIcon className="w-8 h-8 text-[#B8AFA3]" />
                 <span>
                   {isComposing
-                    ? 'Đang dựng thẻ ảnh sắc nét...'
-                    : 'Đang chụp nhân vật 3D...'}
+                    ? 'Đang xuất ảnh 2D sắc nét...'
+                    : 'Đang chuẩn bị thẻ chia sẻ...'}
                 </span>
               </div>
             )}
@@ -325,7 +326,7 @@ export function ShareAvatarModal({
             <div className="space-y-5">
               {/* Format switcher */}
               <div className="space-y-2">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#615D57]">
+                <p className="text-xs font-bold text-[#25292E]">
                   1. Chọn khung tỷ lệ
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
@@ -339,8 +340,8 @@ export function ShareAvatarModal({
                     }`}
                   >
                     <Square className="w-4 h-4 mb-1.5" />
-                    <p className="text-xs font-bold">Ảnh vuông 1:1</p>
-                    <p className="text-[11px] opacity-75">Avatar / Bài đăng</p>
+                    <p className="text-xs font-bold">Vuông 1:1</p>
+                    <p className="text-[11px] opacity-75">Avatar / Facebook</p>
                   </button>
                   <button
                     type="button"
@@ -352,19 +353,19 @@ export function ShareAvatarModal({
                     }`}
                   >
                     <Smartphone className="w-4 h-4 mb-1.5" />
-                    <p className="text-xs font-bold">Story 9:16</p>
-                    <p className="text-[11px] opacity-75">Instagram / TikTok</p>
+                    <p className="text-xs font-bold">Dọc 9:16</p>
+                    <p className="text-[11px] opacity-75">Story IG / TikTok</p>
                   </button>
                 </div>
               </div>
 
-              {/* Studio pastel backgrounds */}
+              {/* Studio backgrounds */}
               <div className="space-y-2">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-[#615D57] flex items-center gap-1.5">
+                <p className="text-xs font-bold text-[#25292E] flex items-center gap-1.5">
                   <Palette className="w-3.5 h-3.5 text-[#D46534]" />
-                  2. Phông nền studio
+                  <span>2. Chọn phông nền</span>
                 </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {STUDIO_BACKGROUNDS.map((bg) => {
                     const active = bg.id === selectedBgId;
                     return (
@@ -372,40 +373,42 @@ export function ShareAvatarModal({
                         key={bg.id}
                         type="button"
                         onClick={() => setSelectedBgId(bg.id)}
-                        className={`p-2 rounded-xl border text-left transition-all ${
+                        className={`p-2 rounded-xl border text-left transition-all flex items-center gap-2 ${
                           active
-                            ? 'border-[#1B3B82] ring-2 ring-[#1B3B82]/20 bg-white'
+                            ? 'border-[#1B3B82] ring-2 ring-[#1B3B82]/15 bg-white'
                             : 'border-[#E8DFD1] bg-white hover:border-[#CBBFA9]'
                         }`}
                       >
-                        <div
-                          className="h-7 rounded-lg mb-1.5 flex items-center justify-center"
-                          style={{ background: bg.cssGradient }}
+                        <span
+                          className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center border border-black/10"
+                          style={{ background: bg.cssBackground }}
                         >
                           {active && (
-                            <Check className="w-3.5 h-3.5 text-[#1B3B82]" />
+                            <Check
+                              className={`w-3.5 h-3.5 ${
+                                bg.isDark ? 'text-white' : 'text-[#1B3B82]'
+                              }`}
+                            />
                           )}
-                        </div>
-                        <p className="text-[10.5px] font-semibold text-[#25292E] truncate">
+                        </span>
+                        <span className="text-[11px] font-semibold text-[#25292E] truncate">
                           {bg.name}
-                        </p>
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Info card */}
-              <div className="p-3.5 rounded-2xl bg-white border border-[#EAE0D2] text-xs text-[#615D57] space-y-1">
-                <p className="font-bold text-[#25292E]">
-                  Thông tin in trên thẻ:
-                </p>
+              {/* Card info */}
+              <div className="p-3.5 rounded-2xl bg-white border border-dashed border-[#DFD3C2] text-xs text-[#615D57] space-y-1">
                 <p>
-                  Tên: <strong className="text-[#25292E]">{displayName}</strong>
+                  Tên hiển thị:{' '}
+                  <strong className="text-[#25292E]">{displayName}</strong>
                 </p>
                 <p>
                   Danh hiệu:{' '}
-                  <strong className="text-[#D46534]">{titleMeta.title}</strong>
+                  <strong className="text-[#B93818]">{titleMeta.title}</strong>
                 </p>
               </div>
             </div>
@@ -414,10 +417,10 @@ export function ShareAvatarModal({
               type="button"
               disabled={!composedUrl || isComposing}
               onClick={handleDownload}
-              className="w-full min-h-[46px] px-5 py-3 rounded-2xl bg-[#D46534] hover:bg-[#BC5326] disabled:opacity-50 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-colors"
+              className="w-full min-h-[46px] px-5 py-3 rounded-2xl bg-[#1B3B82] hover:bg-[#142D66] disabled:opacity-50 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-colors"
             >
               <Download className="w-4 h-4" />
-              <span>Tải ảnh PNG sắc nét</span>
+              <span>Tải ảnh PNG</span>
             </button>
           </div>
         </div>

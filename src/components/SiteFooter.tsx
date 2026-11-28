@@ -114,7 +114,7 @@ export function SiteFooter({
                   onClick={() => onNavigate('avatar')}
                   className="hover:text-[#D46534] transition-colors font-semibold text-[#1B3B82]"
                 >
-                  Góc Thợ Avatar 3D
+                  Góc Thợ Avatar
                 </button>
               </li>
               <li>

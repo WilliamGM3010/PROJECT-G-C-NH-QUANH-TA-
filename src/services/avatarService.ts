@@ -6,6 +6,9 @@ import {
   DEFAULT_QUEST_PROGRESS,
   FREE_STARTER_ITEM_IDS,
   getAvatarItemById,
+  HAIR_COLORS,
+  SKIN_TONES,
+  STUDIO_BACKGROUNDS,
 } from '../data/avatarCatalog';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import type {
@@ -15,48 +18,89 @@ import type {
   AvatarQuestProgressState,
 } from '../types/avatar';
 
-const GUEST_STORAGE_KEY = 'gtqt_avatar_profile_guest_v1';
-const USER_STORAGE_PREFIX = 'gtqt_avatar_profile_user_v1_';
+const GUEST_STORAGE_KEY = 'gtqt_avatar_profile_2d_guest_v2';
+const USER_STORAGE_PREFIX = 'gtqt_avatar_profile_2d_user_v2_';
 
 function getLocalKeyForUser(userKey: string): string {
   if (!userKey || userKey === 'guest') return GUEST_STORAGE_KEY;
   return `${USER_STORAGE_PREFIX}${encodeURIComponent(userKey)}`;
 }
 
-export function createDefaultAvatarProfile(userKey = 'guest'): AvatarProfile {
+export function createDefaultAvatarProfile(
+  userKey = 'guest',
+  displayName = 'Bạn trẻ Sài Gòn'
+): AvatarProfile {
   return {
     userKey,
+    displayName,
     avatarConfig: { ...DEFAULT_AVATAR_CONFIG, accessoryIds: [] },
     ownedItemIds: [...FREE_STARTER_ITEM_IDS],
-    gpBalance: 50, // Quà chào mừng tân binh để trải nghiệm mở khóa ngay
+    gpBalance: 50,
     questProgress: {
       ...DEFAULT_QUEST_PROGRESS,
       viewedArtisanIds: [],
     },
     claimedQuestIds: [],
+    unlockedAchievementIds: ['title_rookie'],
     equippedTitleId: 'title_rookie',
     snapshotDataUrl: null,
     updatedAt: new Date().toISOString(),
   };
 }
 
-function sanitizeConfig(raw: Partial<AvatarConfig> | null | undefined): AvatarConfig {
+function validItemOrDefault(
+  candidate: unknown,
+  slot: string,
+  fallbackId: string
+): string {
+  if (typeof candidate !== 'string') return fallbackId;
+  const found = getAvatarItemById(candidate);
+  if (found && found.slot === slot && !found.comingSoon) return found.id;
+  return fallbackId;
+}
+
+function sanitizeConfig(
+  raw: Partial<AvatarConfig> | null | undefined
+): AvatarConfig {
   const base = { ...DEFAULT_AVATAR_CONFIG };
   if (!raw || typeof raw !== 'object') return base;
+
+  const skinId = SKIN_TONES.some((s) => s.id === raw.skinId)
+    ? (raw.skinId as string)
+    : base.skinId;
+  const hairColorId = HAIR_COLORS.some((c) => c.id === raw.hairColorId)
+    ? (raw.hairColorId as string)
+    : base.hairColorId;
+  const studioBgId = STUDIO_BACKGROUNDS.some((b) => b.id === raw.studioBgId)
+    ? (raw.studioBgId as string)
+    : base.studioBgId;
+
+  const validAccessoryIds = Array.isArray(raw.accessoryIds)
+    ? raw.accessoryIds.filter((id): id is string => {
+        if (typeof id !== 'string') return false;
+        const item = getAvatarItemById(id);
+        return Boolean(
+          item &&
+            (item.slot === 'headwear' || item.slot === 'accessory') &&
+            !item.comingSoon
+        );
+      })
+    : [];
+
   return {
-    skinId: typeof raw.skinId === 'string' ? raw.skinId : base.skinId,
+    skinId,
     faceId: (raw.faceId ?? base.faceId) as AvatarConfig['faceId'],
-    hairId: (raw.hairId ?? base.hairId) as AvatarConfig['hairId'],
-    hairColorId:
-      typeof raw.hairColorId === 'string' ? raw.hairColorId : base.hairColorId,
-    topId: typeof raw.topId === 'string' ? raw.topId : base.topId,
-    bottomId: typeof raw.bottomId === 'string' ? raw.bottomId : base.bottomId,
-    shoesId: typeof raw.shoesId === 'string' ? raw.shoesId : base.shoesId,
-    accessoryIds: Array.isArray(raw.accessoryIds)
-      ? raw.accessoryIds.filter((id): id is string => typeof id === 'string')
-      : [],
-    studioBgId:
-      typeof raw.studioBgId === 'string' ? raw.studioBgId : base.studioBgId,
+    hairId: validItemOrDefault(
+      raw.hairId,
+      'hair',
+      base.hairId
+    ) as AvatarConfig['hairId'],
+    hairColorId,
+    topId: validItemOrDefault(raw.topId, 'top', base.topId),
+    bottomId: validItemOrDefault(raw.bottomId, 'bottom', base.bottomId),
+    shoesId: validItemOrDefault(raw.shoesId, 'shoes', base.shoesId),
+    accessoryIds: Array.from(new Set(validAccessoryIds)),
+    studioBgId,
   };
 }
 
@@ -67,12 +111,12 @@ function sanitizeQuestProgress(
     return { ...DEFAULT_QUEST_PROGRESS, viewedArtisanIds: [] };
   }
   return {
-    explore_3_artisans: Number(raw.explore_3_artisans) || 0,
+    first_avatar_save: Number(raw.first_avatar_save) || 0,
     revive_item: Number(raw.revive_item) || 0,
     send_praise: Number(raw.send_praise) || 0,
     save_favorite: Number(raw.save_favorite) || 0,
+    explore_3_artisans: Number(raw.explore_3_artisans) || 0,
     suggest_artisan: Number(raw.suggest_artisan) || 0,
-    first_avatar_save: Number(raw.first_avatar_save) || 0,
     viewedArtisanIds: Array.isArray(raw.viewedArtisanIds)
       ? raw.viewedArtisanIds.filter((v): v is string => typeof v === 'string')
       : [],
@@ -87,15 +131,21 @@ interface RawAvatarProfileInput
 
 function sanitizeProfile(
   raw: RawAvatarProfileInput | null | undefined,
-  userKey: string
+  userKey: string,
+  fallbackDisplayName = 'Bạn trẻ Sài Gòn'
 ): AvatarProfile {
-  const fallback = createDefaultAvatarProfile(userKey);
+  const fallback = createDefaultAvatarProfile(userKey, fallbackDisplayName);
   if (!raw || typeof raw !== 'object') return fallback;
 
+  const validItemIds = new Set(
+    AVATAR_ITEMS.filter((i) => !i.comingSoon).map((i) => i.id)
+  );
   const ownedSet = new Set<string>([
     ...FREE_STARTER_ITEM_IDS,
     ...(Array.isArray(raw.ownedItemIds)
-      ? raw.ownedItemIds.filter((id): id is string => typeof id === 'string')
+      ? raw.ownedItemIds.filter(
+          (id): id is string => typeof id === 'string' && validItemIds.has(id)
+        )
       : []),
   ]);
 
@@ -106,8 +156,12 @@ function sanitizeProfile(
       )
     : [];
 
-  return {
+  const nextProfile: AvatarProfile = {
     userKey,
+    displayName:
+      typeof raw.displayName === 'string' && raw.displayName.trim()
+        ? raw.displayName.trim()
+        : fallbackDisplayName,
     avatarConfig: sanitizeConfig(raw.avatarConfig),
     ownedItemIds: Array.from(ownedSet),
     gpBalance:
@@ -116,6 +170,11 @@ function sanitizeProfile(
         : fallback.gpBalance,
     questProgress: sanitizeQuestProgress(raw.questProgress),
     claimedQuestIds: Array.from(new Set(claimed)),
+    unlockedAchievementIds: Array.isArray(raw.unlockedAchievementIds)
+      ? raw.unlockedAchievementIds.filter(
+          (id): id is string => typeof id === 'string'
+        )
+      : ['title_rookie'],
     equippedTitleId:
       typeof raw.equippedTitleId === 'string' &&
       AVATAR_ACHIEVEMENTS.some((a) => a.id === raw.equippedTitleId)
@@ -129,14 +188,20 @@ function sanitizeProfile(
     updatedAt:
       typeof raw.updatedAt === 'string' ? raw.updatedAt : fallback.updatedAt,
   };
+
+  nextProfile.unlockedAchievementIds = getUnlockedAchievementIds(nextProfile);
+  return nextProfile;
 }
 
-export function loadLocalAvatarProfile(userKey = 'guest'): AvatarProfile | null {
+export function loadLocalAvatarProfile(
+  userKey = 'guest',
+  displayName = 'Bạn trẻ Sài Gòn'
+): AvatarProfile | null {
   try {
     const raw = window.localStorage.getItem(getLocalKeyForUser(userKey));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AvatarProfile>;
-    return sanitizeProfile(parsed, userKey);
+    const parsed = JSON.parse(raw) as RawAvatarProfileInput;
+    return sanitizeProfile(parsed, userKey, displayName);
   } catch {
     return null;
   }
@@ -149,33 +214,35 @@ export function saveLocalAvatarProfile(profile: AvatarProfile): void {
       JSON.stringify(profile)
     );
   } catch {
-    // Nếu quota đầy (do snapshot lớn), lưu bản không kèm snapshot
     try {
       window.localStorage.setItem(
         getLocalKeyForUser(profile.userKey),
         JSON.stringify({ ...profile, snapshotDataUrl: null })
       );
     } catch {
-      // Bỏ qua nếu trình duyệt chặn localStorage
+      // Ignore storage quota / privacy mode errors
     }
   }
 }
 
 /**
- * Tải hồ sơ Góc Thợ Avatar từ Supabase `user_avatar_profiles` (nếu đã đăng nhập),
- * tự động dự phòng (fallback) sang localStorage nếu bảng chưa tồn tại hoặc lỗi mạng.
+ * Đọc hồ sơ từ bảng Supabase `user_avatar_profiles` (hỗ trợ đúng 10 cột chuẩn),
+ * tự động fallback mượt mà sang localStorage nếu là khách hoặc bảng chưa tạo.
  */
 export async function loadAvatarProfile(
-  userKey: string | null
+  userKey: string | null,
+  displayName = 'Bạn trẻ Sài Gòn'
 ): Promise<{ profile: AvatarProfile; syncedFromDb: boolean }> {
   const effectiveKey = userKey?.trim() || 'guest';
-  const localGuest = loadLocalAvatarProfile('guest');
+  const localGuest = loadLocalAvatarProfile('guest', displayName);
   const localUser =
-    effectiveKey !== 'guest' ? loadLocalAvatarProfile(effectiveKey) : null;
+    effectiveKey !== 'guest'
+      ? loadLocalAvatarProfile(effectiveKey, displayName)
+      : null;
 
   if (effectiveKey === 'guest') {
     return {
-      profile: localGuest ?? createDefaultAvatarProfile('guest'),
+      profile: localGuest ?? createDefaultAvatarProfile('guest', displayName),
       syncedFromDb: false,
     };
   }
@@ -189,25 +256,43 @@ export async function loadAvatarProfile(
         .maybeSingle();
 
       if (!error && data) {
+        const record = data as Record<string, unknown>;
         const dbProfile = sanitizeProfile(
           {
             userKey: effectiveKey,
-            avatarConfig: data.avatar_config as Partial<AvatarConfig>,
-            ownedItemIds: data.owned_item_ids as string[],
-            gpBalance: Number(data.gp_balance ?? 0),
-            questProgress: data.quest_progress as Partial<AvatarQuestProgressState>,
-            claimedQuestIds: data.claimed_quest_ids as AvatarQuestId[],
-            equippedTitleId: (data.equipped_title_id as string) ?? 'title_rookie',
-            snapshotDataUrl: (data.snapshot_data_url as string | null) ?? null,
-            updatedAt: (data.updated_at as string) ?? new Date().toISOString(),
+            displayName:
+              (record.display_name as string | undefined) ?? displayName,
+            avatarConfig: record.avatar_config as Partial<AvatarConfig>,
+            ownedItemIds:
+              (record.owned_items as string[] | undefined) ??
+              (record.owned_item_ids as string[] | undefined),
+            gpBalance: Number(record.gp_balance ?? 0),
+            questProgress:
+              record.quest_progress as Partial<AvatarQuestProgressState>,
+            claimedQuestIds:
+              (record.claimed_quests as AvatarQuestId[] | undefined) ??
+              (record.claimed_quest_ids as AvatarQuestId[] | undefined),
+            unlockedAchievementIds: record.unlocked_achievements as
+              | string[]
+              | undefined,
+            equippedTitleId:
+              (record.active_title as string | undefined) ??
+              (record.equipped_title_id as string | undefined) ??
+              'title_rookie',
+            snapshotDataUrl:
+              (record.snapshot_data_url as string | null | undefined) ?? null,
+            updatedAt:
+              (record.updated_at as string | undefined) ??
+              new Date().toISOString(),
           },
-          effectiveKey
+          effectiveKey,
+          displayName
         );
         saveLocalAvatarProfile(dbProfile);
         return { profile: dbProfile, syncedFromDb: true };
       }
     } catch {
-      // Bảng chưa được tạo trên Supabase hoặc mất mạng -> rơi về localStorage an toàn
+      // Fallback safely to localStorage
     }
   }
 
@@ -215,11 +300,11 @@ export async function loadAvatarProfile(
     return { profile: localUser, syncedFromDb: false };
   }
 
-  // Nếu người dùng vừa đăng nhập từ phiên khách -> thừa kế tiến trình khách sang tài khoản
   if (localGuest) {
     const migrated: AvatarProfile = {
       ...localGuest,
       userKey: effectiveKey,
+      displayName,
       updatedAt: new Date().toISOString(),
     };
     saveLocalAvatarProfile(migrated);
@@ -227,29 +312,27 @@ export async function loadAvatarProfile(
   }
 
   return {
-    profile: createDefaultAvatarProfile(effectiveKey),
+    profile: createDefaultAvatarProfile(effectiveKey, displayName),
     syncedFromDb: false,
   };
 }
 
 /**
- * Lưu hồ sơ Avatar về localStorage (luôn thành công) + upsert lên Supabase `user_avatar_profiles` (nếu có tài khoản).
+ * Lưu hồ sơ về localStorage + upsert lên bảng Supabase `user_avatar_profiles` với đúng schema cột.
  */
 export async function saveAvatarProfile(
   profile: AvatarProfile
 ): Promise<{ savedToDb: boolean }> {
+  const unlockedIds = getUnlockedAchievementIds(profile);
   const stamped: AvatarProfile = {
     ...profile,
+    unlockedAchievementIds: unlockedIds,
     updatedAt: new Date().toISOString(),
   };
 
   saveLocalAvatarProfile(stamped);
 
-  if (
-    stamped.userKey === 'guest' ||
-    !isSupabaseConfigured ||
-    !supabase
-  ) {
+  if (stamped.userKey === 'guest' || !isSupabaseConfigured || !supabase) {
     return { savedToDb: false };
   }
 
@@ -257,12 +340,14 @@ export async function saveAvatarProfile(
     const { error } = await supabase.from('user_avatar_profiles').upsert(
       {
         user_key: stamped.userKey,
-        avatar_config: stamped.avatarConfig,
-        owned_item_ids: stamped.ownedItemIds,
+        display_name: stamped.displayName,
         gp_balance: stamped.gpBalance,
+        active_title: stamped.equippedTitleId,
+        avatar_config: stamped.avatarConfig,
+        owned_items: stamped.ownedItemIds,
         quest_progress: stamped.questProgress,
-        claimed_quest_ids: stamped.claimedQuestIds,
-        equipped_title_id: stamped.equippedTitleId,
+        claimed_quests: stamped.claimedQuestIds,
+        unlocked_achievements: stamped.unlockedAchievementIds,
         snapshot_data_url: stamped.snapshotDataUrl,
         updated_at: stamped.updatedAt,
       },
@@ -354,11 +439,13 @@ export function incrementQuestProgressInProfile(
     questProgress: nextProgress,
     updatedAt: new Date().toISOString(),
   };
+  nextProfile.unlockedAchievementIds = getUnlockedAchievementIds(nextProfile);
 
   const isNowCompleted = isQuestCompleted(nextProfile, questId);
-  const justCompletedQuest = !wasCompleted && isNowCompleted;
-
-  return { nextProfile, justCompletedQuest };
+  return {
+    nextProfile,
+    justCompletedQuest: !wasCompleted && isNowCompleted,
+  };
 }
 
 export function claimQuestRewardInProfile(
@@ -392,6 +479,7 @@ export function claimQuestRewardInProfile(
     claimedQuestIds: [...profile.claimedQuestIds, questId],
     updatedAt: new Date().toISOString(),
   };
+  nextProfile.unlockedAchievementIds = getUnlockedAchievementIds(nextProfile);
 
   return {
     ok: true,
@@ -416,19 +504,20 @@ export function unlockItemWithGpInProfile(
   if (profile.ownedItemIds.includes(itemId)) {
     return { ok: false, reason: 'already_owned', nextProfile: profile };
   }
-  if (item.unlockType !== 'gp' || !item.gpCost) {
+  if (item.unlockType !== 'gp' || item.priceGp <= 0) {
     return { ok: false, reason: 'not_gp_item', nextProfile: profile };
   }
-  if (profile.gpBalance < item.gpCost) {
+  if (profile.gpBalance < item.priceGp) {
     return { ok: false, reason: 'insufficient_gp', nextProfile: profile };
   }
 
   const nextProfile: AvatarProfile = {
     ...profile,
-    gpBalance: profile.gpBalance - item.gpCost,
+    gpBalance: profile.gpBalance - item.priceGp,
     ownedItemIds: [...profile.ownedItemIds, itemId],
     updatedAt: new Date().toISOString(),
   };
+  nextProfile.unlockedAchievementIds = getUnlockedAchievementIds(nextProfile);
 
   return { ok: true, nextProfile };
 }
@@ -436,21 +525,20 @@ export function unlockItemWithGpInProfile(
 export function evaluateUnlockedAchievements(
   profile: AvatarProfile
 ): Record<string, boolean> {
-  const saigonOwnedCount = AVATAR_ITEMS.filter(
-    (item) =>
-      item.collection === 'saigon' &&
-      !item.comingSoon &&
-      profile.ownedItemIds.includes(item.id)
-  ).length;
-
   return {
     title_rookie: true,
     title_green_soul: isQuestCompleted(profile, 'revive_item'),
     title_alley_friend:
-      isQuestCompleted(profile, 'explore_3_artisans') ||
-      isQuestCompleted(profile, 'send_praise'),
-    title_saigon_collector: saigonOwnedCount >= 2,
+      isQuestCompleted(profile, 'send_praise') ||
+      isQuestCompleted(profile, 'save_favorite'),
+    title_story_reporter: isQuestCompleted(profile, 'explore_3_artisans'),
     title_craft_keeper: isQuestCompleted(profile, 'suggest_artisan'),
-    title_style_artisan: profile.ownedItemIds.length >= 14,
   };
+}
+
+export function getUnlockedAchievementIds(profile: AvatarProfile): string[] {
+  const evalMap = evaluateUnlockedAchievements(profile);
+  return Object.entries(evalMap)
+    .filter(([, unlocked]) => unlocked)
+    .map(([id]) => id);
 }

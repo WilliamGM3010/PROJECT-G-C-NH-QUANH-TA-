@@ -317,7 +317,7 @@ export function getDocumentTitleForRoute(options: {
     case 'suggest':
       return 'Gợi ý cô chú thợ mới | Góc Thợ Quanh Ta';
     case 'avatar':
-      return 'Góc Thợ Avatar 3D | Góc Thợ Quanh Ta';
+      return 'Góc Thợ Avatar | Góc Thợ Quanh Ta';
     case 'home':
     default:
       return 'Góc Thợ Quanh Ta — Hỏng đâu sửa liền';
