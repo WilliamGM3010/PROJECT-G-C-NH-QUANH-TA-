@@ -241,10 +241,10 @@ export function buildGoogleMapsDirectionsUrl(
 }
 
 export function buildArtisanDeepLink(artisanId: string): string {
-  if (typeof window === 'undefined') return `?tho=${encodeURIComponent(artisanId)}`;
-  const url = new URL(window.location.href);
-  url.search = '';
-  url.hash = '';
+  if (typeof window === 'undefined') {
+    return `/ban-do?tho=${encodeURIComponent(artisanId)}`;
+  }
+  const url = new URL('/ban-do', window.location.origin);
   url.searchParams.set('tho', artisanId);
   return url.toString();
 }

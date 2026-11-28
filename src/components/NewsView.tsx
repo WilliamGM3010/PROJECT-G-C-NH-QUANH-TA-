@@ -20,6 +20,7 @@ import {
   sanitizeExternalUrl,
   sanitizeImageSrc,
 } from '../utils/richText';
+import { matchArticleByRouteKey } from '../utils/routing';
 import { ArtisanIllustration } from './ArtisanIllustration';
 
 function ArticleCoverImage({
@@ -240,6 +241,8 @@ export function ArticleDetailView({
 interface NewsViewProps {
   articles: Article[];
   artisans: Artisan[];
+  selectedArticleKey?: string | null;
+  onSelectArticle?: (articleId: string | null) => void;
   isLoading?: boolean;
   error?: string | null;
   onRefresh?: () => void;
@@ -252,6 +255,8 @@ interface NewsViewProps {
 export function NewsView({
   articles,
   artisans,
+  selectedArticleKey,
+  onSelectArticle,
   isLoading = false,
   error = null,
   onRefresh,
@@ -259,7 +264,22 @@ export function NewsView({
 }: NewsViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
-  const [readingArticleId, setReadingArticleId] = useState<string | null>(null);
+  const [internalArticleKey, setInternalArticleKey] = useState<string | null>(
+    null
+  );
+
+  const isControlled = selectedArticleKey !== undefined;
+  const readingArticleKey = isControlled
+    ? selectedArticleKey
+    : internalArticleKey;
+
+  const handleSetReadingArticle = (articleId: string | null) => {
+    if (onSelectArticle) {
+      onSelectArticle(articleId);
+    } else {
+      setInternalArticleKey(articleId);
+    }
+  };
 
   const publishedArticles = useMemo(() => {
     return articles
@@ -282,8 +302,8 @@ export function NewsView({
   }, [publishedArticles]);
 
   const activeArticle = useMemo(
-    () => publishedArticles.find((a) => a.id === readingArticleId) ?? null,
-    [publishedArticles, readingArticleId]
+    () => matchArticleByRouteKey(publishedArticles, readingArticleKey),
+    [publishedArticles, readingArticleKey]
   );
 
   const spotlightArticle = useMemo(() => {
@@ -321,6 +341,46 @@ export function NewsView({
     return map;
   }, [artisans]);
 
+  if (readingArticleKey && isLoading && !activeArticle) {
+    return (
+      <div className="min-h-full bg-[#FAF8F5] flex items-center justify-center px-4 py-20">
+        <div className="rounded-2xl bg-white border border-[#EBE5DC] px-8 py-10 text-center space-y-3 max-w-md w-full">
+          <Loader2 className="w-7 h-7 text-[#D96B38] animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-[#1F2933]">
+            Đang tải bài viết...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (readingArticleKey && !isLoading && !activeArticle) {
+    return (
+      <div className="min-h-full bg-[#FAF8F5] flex items-center justify-center px-4 py-20">
+        <div className="rounded-2xl bg-white border border-[#EBE5DC] px-8 py-10 text-center space-y-4 max-w-md w-full">
+          <BookOpen className="w-9 h-9 text-[#D96B38]/65 mx-auto" />
+          <div className="space-y-1.5">
+            <h2 className="text-base font-bold text-[#1F2933]">
+              Không tìm thấy bài viết này
+            </h2>
+            <p className="text-xs sm:text-sm text-[#52606D] leading-relaxed">
+              Bài viết có thể đã được chuyển về bản nháp hoặc đường dẫn không
+              còn tồn tại.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSetReadingArticle(null)}
+            className="min-h-[42px] px-5 py-2 rounded-full bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại Bản tin</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (activeArticle) {
     const linkedArtisan = activeArticle.relatedArtisanId
       ? relatedArtisanMap.get(activeArticle.relatedArtisanId) ?? null
@@ -330,9 +390,8 @@ export function NewsView({
         <ArticleDetailView
           article={activeArticle}
           relatedArtisan={linkedArtisan}
-          onBack={() => setReadingArticleId(null)}
+          onBack={() => handleSetReadingArticle(null)}
           onOpenArtisanOnMap={(artisanId) => {
-            setReadingArticleId(null);
             onOpenArtisanOnMap(artisanId);
           }}
         />
@@ -445,11 +504,11 @@ export function NewsView({
             {spotlightArticle && (
               <section aria-label="Tin tiêu điểm">
                 <div
-                  onClick={() => setReadingArticleId(spotlightArticle.id)}
+                  onClick={() => handleSetReadingArticle(spotlightArticle.id)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setReadingArticleId(spotlightArticle.id);
+                      handleSetReadingArticle(spotlightArticle.id);
                     }
                   }}
                   role="button"
@@ -527,11 +586,11 @@ export function NewsView({
                     return (
                       <article
                         key={article.id}
-                        onClick={() => setReadingArticleId(article.id)}
+                        onClick={() => handleSetReadingArticle(article.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            setReadingArticleId(article.id);
+                            handleSetReadingArticle(article.id);
                           }
                         }}
                         role="button"

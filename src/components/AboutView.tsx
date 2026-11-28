@@ -827,8 +827,8 @@ export function AboutView({
                 className="mt-5 md:mt-6 text-xl sm:text-2xl md:text-[26px] font-semibold text-stone-800 tracking-tight leading-snug"
                 style={{ textWrap: 'balance' }}
               >
-                &ldquo;Who are we, we are who,{' '}
-                <span className="text-[#D96B38] italic">we help other!</span>
+                &ldquo;Who are we? We are WHO -{' '}
+                <span className="text-[#D96B38] italic">We Help Others!</span>
                 &rdquo;
               </p>
             </header>

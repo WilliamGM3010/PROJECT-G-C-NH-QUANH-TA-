@@ -6,6 +6,8 @@ import {
   ExternalLink,
   List,
   Loader2,
+  LogIn,
+  LogOut,
   Map as MapIcon,
   MapPin,
   Navigation,
@@ -13,6 +15,8 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   SlidersHorizontal,
   WifiOff,
   X,
@@ -76,6 +80,13 @@ import {
   STORAGE_KEYS,
   toIsoDate,
 } from './utils/storage';
+import {
+  buildRouteUrl,
+  getDocumentTitleForRoute,
+  matchArticleByRouteKey,
+  parseAppRoute,
+  type ParsedAppRoute,
+} from './utils/routing';
 import {
   authenticateUserDb,
   bulkInsertAdminAccountsDb,
@@ -150,7 +161,20 @@ function copyTextFallback(text: string): boolean {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>('home');
+  const initialRouteRef = useRef<ParsedAppRoute | null>(null);
+  if (initialRouteRef.current === null) {
+    initialRouteRef.current =
+      typeof window !== 'undefined'
+        ? parseAppRoute(window.location.pathname, window.location.search)
+        : parseAppRoute('/', '');
+  }
+  const initialRoute = initialRouteRef.current;
+
+  const [activeTab, setActiveTab] = useState<AppTab>(initialRoute.tab);
+  const [readingArticleKey, setReadingArticleKey] = useState<string | null>(
+    initialRoute.articleKey
+  );
+  const pageScrollRef = useRef<HTMLDivElement | null>(null);
 
   // 3 bảng cốt lõi đồng bộ với Supabase (fallback dữ liệu mẫu trong bộ nhớ nếu chưa cấu hình biến môi trường)
   const [artisans, setArtisans] = useState<Artisan[]>(() =>
@@ -274,7 +298,8 @@ export default function App() {
   const pendingAuthActionRef = useRef<((account: AdminAccount) => void) | null>(
     null
   );
-  const [isAdminView, setIsAdminView] = useState(false);
+  const [isAdminView, setIsAdminView] = useState<boolean>(initialRoute.isAdmin);
+  const adminAuthPromptedRef = useRef<boolean>(false);
   const [badgeModalOpen, setBadgeModalOpen] = useState(false);
   const [savedModalOpen, setSavedModalOpen] = useState(false);
   const [contributionsModalOpen, setContributionsModalOpen] = useState(false);
@@ -448,13 +473,15 @@ export default function App() {
 
   // Tương tác chọn & hover đồng bộ danh sách ↔ bản đồ
   const [selectedArtisanId, setSelectedArtisanId] = useState<string | null>(
-    null
+    initialRoute.artisanId
   );
   const [hoveredArtisanId, setHoveredArtisanId] = useState<string | null>(null);
 
   // Mobile UX states
   const [mobileViewMode, setMobileViewMode] = useState<'map' | 'list'>('map');
-  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState<boolean>(
+    Boolean(initialRoute.artisanId)
+  );
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Định vị GPS tự động & lộ trình OSRM
@@ -474,7 +501,78 @@ export default function App() {
   );
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimerRef = useRef<number | null>(null);
-  const deepLinkHandledRef = useRef(false);
+
+  // Đồng bộ URL sạch bằng Native History API (không cần thư viện ngoài)
+  const syncUrlToHistory = useCallback(
+    (nextUrl: string, mode: 'push' | 'replace' = 'push') => {
+      if (typeof window === 'undefined') return;
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === nextUrl) return;
+      if (mode === 'replace') {
+        window.history.replaceState({}, '', nextUrl);
+      } else {
+        window.history.pushState({}, '', nextUrl);
+      }
+    },
+    []
+  );
+
+  const scrollPageToTop = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    window.requestAnimationFrame(() => {
+      pageScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }, []);
+
+  // Chuẩn hóa đường dẫn lạ hoặc link cũ (?tho=...) ngay khi mới mở trang
+  useEffect(() => {
+    if (initialRoute.shouldCanonicalize) {
+      syncUrlToHistory(initialRoute.canonicalUrl, 'replace');
+    }
+  }, [initialRoute, syncUrlToHistory]);
+
+  // Lắng nghe nút Back / Forward của trình duyệt và điện thoại (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseAppRoute(
+        window.location.pathname,
+        window.location.search
+      );
+      if (parsed.shouldCanonicalize) {
+        window.history.replaceState({}, '', parsed.canonicalUrl);
+      }
+      setIsAdminView(parsed.isAdmin);
+      setActiveTab(parsed.tab);
+      setSelectedArtisanId(parsed.artisanId);
+      setReadingArticleKey(parsed.articleKey);
+
+      if (parsed.tab === 'explore') {
+        setMobileViewMode('map');
+        setMobileDetailOpen(Boolean(parsed.artisanId));
+      } else if (!parsed.isAdmin) {
+        scrollPageToTop();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [scrollPageToTop]);
+
+  // Tự mở hộp thoại đăng nhập gọn gàng 1 lần khi truy cập thẳng /quan-tri mà chưa đăng nhập
+  useEffect(() => {
+    if (!isAdminView) {
+      adminAuthPromptedRef.current = false;
+      return;
+    }
+    if (!isRestoringSession && !currentUser && !adminAuthPromptedRef.current) {
+      adminAuthPromptedRef.current = true;
+      openAuthModal(
+        'Vui lòng đăng nhập bằng tài khoản Quản trị viên hoặc Cộng tác viên để truy cập trang Quản trị.',
+        'login'
+      );
+    }
+  }, [isAdminView, isRestoringSession, currentUser, openAuthModal]);
 
   const showToast = useCallback((message: string) => {
     setToastMessage(message);
@@ -764,28 +862,15 @@ export default function App() {
     [artisans]
   );
 
-  // Deep Linking (?tho=ID) - chờ dữ liệu từ Supabase tải xong rồi mới khớp ID
-  useEffect(() => {
-    if (deepLinkHandledRef.current || isLoadingPublicData) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const sharedId = params.get('tho');
-    if (!sharedId) {
-      deepLinkHandledRef.current = true;
-      return;
-    }
-
-    if (publicArtisans.length === 0) return;
-    deepLinkHandledRef.current = true;
-
-    const matched = publicArtisans.find((a) => a.id === sharedId);
-    if (matched) {
-      setActiveTab('explore');
-      setSelectedArtisanId(matched.id);
-      setMobileViewMode('map');
-      setMobileDetailOpen(true);
-    }
-  }, [publicArtisans, isLoadingPublicData]);
+  // Bài viết đang đọc (khớp theo ID hoặc slug từ URL /ban-tin/<id>)
+  const activeReadingArticle = useMemo(
+    () =>
+      matchArticleByRouteKey(
+        articles.filter((a) => a.status === 'published'),
+        readingArticleKey
+      ),
+    [articles, readingArticleKey]
+  );
 
   // Lọc & sắp xếp danh sách người thợ công khai
   const filteredArtisans = useMemo(() => {
@@ -852,6 +937,21 @@ export default function App() {
     () => publicArtisans.find((a) => a.id === selectedArtisanId) ?? null,
     [publicArtisans, selectedArtisanId]
   );
+
+  // Tự động cập nhật tiêu đề tab trình duyệt (document.title) theo từng trang
+  useEffect(() => {
+    document.title = getDocumentTitleForRoute({
+      isAdmin: isAdminView,
+      tab: activeTab,
+      selectedArtisanName: selectedArtisan?.name ?? null,
+      activeArticleTitle: activeReadingArticle?.title ?? null,
+    });
+  }, [
+    isAdminView,
+    activeTab,
+    selectedArtisan?.name,
+    activeReadingArticle?.title,
+  ]);
 
   const selectedArtisanApprovedThanks = useMemo(
     () =>
@@ -1099,32 +1199,101 @@ export default function App() {
     [userLocation, selectedArtisan, routeInfo, computeRouteToArtisan]
   );
 
-  const handleSelectArtisanFromList = useCallback((artisan: Artisan) => {
-    setSelectedArtisanId(artisan.id);
-    setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
-    setMobileDetailOpen(true);
-  }, []);
+  const navigateToTab = useCallback(
+    (
+      tab: AppTab,
+      options?: {
+        artisanId?: string | null;
+        articleKey?: string | null;
+        replace?: boolean;
+        skipScroll?: boolean;
+      }
+    ) => {
+      const nextArtisanId =
+        tab === 'explore' ? (options?.artisanId ?? null) : null;
+      const nextArticleKey =
+        tab === 'news' ? (options?.articleKey ?? null) : null;
 
-  const handleSelectArtisanFromMap = useCallback((artisan: Artisan) => {
-    setSelectedArtisanId(artisan.id);
-    setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
+      setIsAdminView(false);
+      setActiveTab(tab);
+      setSelectedArtisanId(nextArtisanId);
+      setReadingArticleKey(nextArticleKey);
+
+      if (tab === 'explore') {
+        setMobileViewMode('map');
+        setMobileDetailOpen(Boolean(nextArtisanId));
+      }
+
+      const targetUrl = buildRouteUrl({
+        isAdmin: false,
+        tab,
+        artisanId: nextArtisanId,
+        articleKey: nextArticleKey,
+      });
+      syncUrlToHistory(targetUrl, options?.replace ? 'replace' : 'push');
+
+      if (tab !== 'explore' && !options?.skipScroll) {
+        scrollPageToTop();
+      }
+    },
+    [syncUrlToHistory, scrollPageToTop]
+  );
+
+  const handleSelectArtisanFromList = useCallback(
+    (artisan: Artisan) => {
+      setSelectedArtisanId(artisan.id);
+      setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
+      setMobileDetailOpen(true);
+      syncUrlToHistory(
+        buildRouteUrl({ tab: 'explore', artisanId: artisan.id }),
+        'push'
+      );
+    },
+    [syncUrlToHistory]
+  );
+
+  const handleSelectArtisanFromMap = useCallback(
+    (artisan: Artisan) => {
+      setSelectedArtisanId(artisan.id);
+      setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
+      setMobileDetailOpen(false);
+      syncUrlToHistory(
+        buildRouteUrl({ tab: 'explore', artisanId: artisan.id }),
+        'push'
+      );
+    },
+    [syncUrlToHistory]
+  );
+
+  const handleCloseSelectedArtisan = useCallback(() => {
+    setSelectedArtisanId(null);
     setMobileDetailOpen(false);
-  }, []);
+    syncUrlToHistory(buildRouteUrl({ tab: 'explore', artisanId: null }), 'push');
+  }, [syncUrlToHistory]);
 
-  const handleSelectArtisanFromHome = useCallback((artisan: Artisan) => {
-    setActiveTab('explore');
-    setSelectedArtisanId(artisan.id);
-    setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
-    setMobileViewMode('map');
-    setMobileDetailOpen(true);
-  }, []);
+  const handleSelectArtisanFromHome = useCallback(
+    (artisan: Artisan) => {
+      setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
+      navigateToTab('explore', { artisanId: artisan.id, skipScroll: true });
+    },
+    [navigateToTab]
+  );
 
   const handleOpenFullMap = useCallback(() => {
-    setActiveTab('explore');
-    setSelectedArtisanId(null);
-    setMobileViewMode('map');
-    setMobileDetailOpen(false);
-  }, []);
+    navigateToTab('explore', { artisanId: null, skipScroll: true });
+  }, [navigateToTab]);
+
+  const handleSelectArticle = useCallback(
+    (articleId: string | null) => {
+      setReadingArticleKey(articleId);
+      syncUrlToHistory(
+        buildRouteUrl({ tab: 'news', articleKey: articleId }),
+        'push'
+      );
+      scrollPageToTop();
+    },
+    [syncUrlToHistory, scrollPageToTop]
+  );
 
   const handleNavigateTab = useCallback(
     (tab: AppTab) => {
@@ -1132,13 +1301,13 @@ export default function App() {
         openAuthModal(
           'Đăng nhập nhanh trong 5 giây để gợi ý thêm cô chú thợ mới và theo dõi trạng thái duyệt nhé.',
           'login',
-          () => setActiveTab('suggest')
+          () => navigateToTab('suggest')
         );
         return;
       }
-      setActiveTab(tab);
+      navigateToTab(tab);
     },
-    [currentUser, openAuthModal]
+    [currentUser, openAuthModal, navigateToTab]
   );
 
   const handleResetFilters = () => {
@@ -1700,8 +1869,7 @@ export default function App() {
       };
       setCurrentUser(normalized);
       persistAuthSession(normalized);
-      setIsAdminView(false);
-      // Giữ nguyên trang/cô chú thợ người dùng đang xem và đóng Modal
+      // Giữ nguyên màn hình /quan-tri nếu người dùng vừa đăng nhập ngay tại trang Quản trị
       setAuthModalState((prev) => ({ ...prev, open: false }));
       setUserContribution((prev) => ({
         ...prev,
@@ -1728,33 +1896,31 @@ export default function App() {
   const handleLogout = useCallback(() => {
     persistAuthSession(null);
     setCurrentUser(null);
-    setIsAdminView(false);
     setSavedModalOpen(false);
     setContributionsModalOpen(false);
     setBadgeModalOpen(false);
     setUserContributions([]);
+    if (isAdminView) {
+      navigateToTab('home');
+    }
     showToast('Đã đăng xuất tài khoản.');
-  }, [persistAuthSession, showToast]);
+  }, [persistAuthSession, isAdminView, navigateToTab, showToast]);
 
   // =======================================================
   // HANDLERS CHO KHU QUẢN TRỊ (CHỈ 'Super Admin' & 'Cộng tác viên')
   // =======================================================
   const handleOpenAdmin = useCallback(() => {
-    if (!currentUser || !canAccessAdminDashboard(currentUser.role)) {
-      showToast(
-        'Chỉ tài khoản Super Admin hoặc Cộng tác viên mới truy cập được Trang Quản trị.'
-      );
-      return;
-    }
     setIsAdminView(true);
-  }, [currentUser, showToast]);
+    syncUrlToHistory(buildRouteUrl({ isAdmin: true }), 'push');
+    scrollPageToTop();
+  }, [syncUrlToHistory, scrollPageToTop]);
 
   const handleExitAdminToMap = useCallback(() => {
-    setIsAdminView(false);
+    navigateToTab('explore', { artisanId: null, skipScroll: true });
     if (isSupabaseConfigured) {
       void loadPublicArtisans();
     }
-  }, [loadPublicArtisans]);
+  }, [navigateToTab, loadPublicArtisans]);
 
   // Nút "Nạp 6 dữ liệu mẫu vào Database" khi bảng artisans trên Supabase đang trống
   const handleSeedInitialArtisans = useCallback(async () => {
@@ -2550,95 +2716,213 @@ export default function App() {
   }
 
   // =======================================================
-  // RENDER KHU QUẢN TRỊ (CHO CẢ 'Super Admin' & 'Cộng tác viên')
+  // BẢO VỆ ĐƯỜNG DẪN /quan-tri (CHỈ 'Super Admin' & 'Cộng tác viên')
   // =======================================================
-  if (isAdminView && currentUser && canAccessAdminDashboard(currentUser.role)) {
-    const isDbArtisansEmpty =
-      isSupabaseConfigured &&
-      (dbTotalArtisansCount === 0 ||
-        (dbTotalArtisansCount === null &&
-          !isLoadingAdminData &&
-          artisans.length === 0 &&
-          pendingSuggestions.length === 0));
+  if (isAdminView) {
+    if (currentUser && canAccessAdminDashboard(currentUser.role)) {
+      const isDbArtisansEmpty =
+        isSupabaseConfigured &&
+        (dbTotalArtisansCount === 0 ||
+          (dbTotalArtisansCount === null &&
+            !isLoadingAdminData &&
+            artisans.length === 0 &&
+            pendingSuggestions.length === 0));
 
+      return (
+        <>
+          <AdminDashboard
+            currentAdmin={currentUser}
+            artisans={artisans}
+            articles={articles}
+            pendingSuggestions={pendingSuggestions}
+            statusReports={statusReports}
+            thankYouNotes={thankYouNotes}
+            auditLogs={auditLogs}
+            adminAccounts={adminAccounts}
+            revivedCount={revivedCount}
+            isSupabaseMode={isSupabaseConfigured}
+            supabaseWarning={supabaseConfigWarning}
+            isLoadingAdminData={isLoadingAdminData}
+            isSeedingDb={isSeedingDb}
+            isSeedingArticles={isSeedingArticles}
+            isDbArtisansEmpty={isDbArtisansEmpty}
+            dbError={adminDbError}
+            onRefreshAdminData={() => void loadAdminData()}
+            onSeedInitialArtisans={() => void handleSeedInitialArtisans()}
+            onSeedInitialArticles={() => handleSeedInitialArticles()}
+            onSaveArticle={(article) => handleSaveArticle(article)}
+            onToggleArticleStatus={(id, nextStatus) =>
+              handleToggleArticleStatus(id, nextStatus)
+            }
+            onDeleteArticle={(id) => handleDeleteArticle(id)}
+            onExitToMap={handleExitAdminToMap}
+            onLogout={handleLogout}
+            onSaveArtisan={(artisan, pendingId) => {
+              void handleSaveArtisan(artisan, pendingId);
+            }}
+            onVerifyArtisanToday={(id) => {
+              void handleVerifyArtisanToday(id);
+            }}
+            onToggleArtisanVisibility={(id) => {
+              void handleToggleArtisanVisibility(id);
+            }}
+            onDeleteArtisan={(id) => {
+              void handleDeleteArtisan(id);
+            }}
+            onRejectPending={(id) => {
+              void handleRejectPending(id);
+            }}
+            onApplyReportStatus={(report) => {
+              void handleApplyReportStatus(report);
+            }}
+            onResolveReport={(id) => {
+              void handleResolveReport(id);
+            }}
+            onApproveThankYou={handleApproveThankYou}
+            onDeleteThankYou={handleDeleteThankYou}
+            onClearAuditLogs={handleClearAuditLogs}
+            onImportArtisansCsv={(imported, skipped) => {
+              void handleImportArtisansCsv(imported, skipped);
+            }}
+            onRestoreBackupJson={(backup) => {
+              void handleRestoreBackupJson(backup);
+            }}
+            onCreateAdminAccount={(payload) =>
+              handleCreateAdminAccount(payload)
+            }
+            onUpdateAdminAccount={(id, payload) =>
+              handleUpdateAdminAccount(id, payload)
+            }
+            onResetAccountPassword={(id, newPassword) =>
+              handleResetAccountPassword(id, newPassword)
+            }
+            onBulkCreateAdminAccounts={(accounts, skipped, duplicates) => {
+              void handleBulkCreateAdminAccounts(accounts, skipped, duplicates);
+            }}
+            onDeleteAdminAccount={(id) => handleDeleteAdminAccount(id)}
+            onNotify={showToast}
+          />
+
+          {toastMessage && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="fixed top-20 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
+            >
+              <div className="bg-[#1F2933] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#7CD4B2] shrink-0" />
+                <span>{toastMessage}</span>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // Chưa đăng nhập hoặc tài khoản user thường khi truy cập /quan-tri
     return (
-      <>
-        <AdminDashboard
-          currentAdmin={currentUser}
-          artisans={artisans}
-          articles={articles}
-          pendingSuggestions={pendingSuggestions}
-          statusReports={statusReports}
-          thankYouNotes={thankYouNotes}
-          auditLogs={auditLogs}
-          adminAccounts={adminAccounts}
-          revivedCount={revivedCount}
-          isSupabaseMode={isSupabaseConfigured}
-          supabaseWarning={supabaseConfigWarning}
-          isLoadingAdminData={isLoadingAdminData}
-          isSeedingDb={isSeedingDb}
-          isSeedingArticles={isSeedingArticles}
-          isDbArtisansEmpty={isDbArtisansEmpty}
-          dbError={adminDbError}
-          onRefreshAdminData={() => void loadAdminData()}
-          onSeedInitialArtisans={() => void handleSeedInitialArtisans()}
-          onSeedInitialArticles={() => handleSeedInitialArticles()}
-          onSaveArticle={(article) => handleSaveArticle(article)}
-          onToggleArticleStatus={(id, nextStatus) =>
-            handleToggleArticleStatus(id, nextStatus)
-          }
-          onDeleteArticle={(id) => handleDeleteArticle(id)}
-          onExitToMap={handleExitAdminToMap}
-          onLogout={handleLogout}
-          onSaveArtisan={(artisan, pendingId) => {
-            void handleSaveArtisan(artisan, pendingId);
-          }}
-          onVerifyArtisanToday={(id) => {
-            void handleVerifyArtisanToday(id);
-          }}
-          onToggleArtisanVisibility={(id) => {
-            void handleToggleArtisanVisibility(id);
-          }}
-          onDeleteArtisan={(id) => {
-            void handleDeleteArtisan(id);
-          }}
-          onRejectPending={(id) => {
-            void handleRejectPending(id);
-          }}
-          onApplyReportStatus={(report) => {
-            void handleApplyReportStatus(report);
-          }}
-          onResolveReport={(id) => {
-            void handleResolveReport(id);
-          }}
-          onApproveThankYou={handleApproveThankYou}
-          onDeleteThankYou={handleDeleteThankYou}
-          onClearAuditLogs={handleClearAuditLogs}
-          onImportArtisansCsv={(imported, skipped) => {
-            void handleImportArtisansCsv(imported, skipped);
-          }}
-          onRestoreBackupJson={(backup) => {
-            void handleRestoreBackupJson(backup);
-          }}
-          onCreateAdminAccount={(payload) => handleCreateAdminAccount(payload)}
-          onUpdateAdminAccount={(id, payload) =>
-            handleUpdateAdminAccount(id, payload)
-          }
-          onResetAccountPassword={(id, newPassword) =>
-            handleResetAccountPassword(id, newPassword)
-          }
-          onBulkCreateAdminAccounts={(accounts, skipped, duplicates) => {
-            void handleBulkCreateAdminAccounts(accounts, skipped, duplicates);
-          }}
-          onDeleteAdminAccount={(id) => handleDeleteAdminAccount(id)}
-          onNotify={showToast}
+      <div className="min-h-[100dvh] bg-[#FAF8F5] text-[#1F2933] flex flex-col items-center justify-center p-5 sm:p-8">
+        <div className="w-full max-w-md rounded-3xl bg-white border border-stone-200/90 shadow-[0_12px_36px_rgba(31,41,51,0.06)] p-7 sm:p-9 text-center space-y-6">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#3A6B5C]/10 text-[#3A6B5C] flex items-center justify-center">
+            {currentUser ? (
+              <ShieldAlert className="w-7 h-7 text-[#D96B38]" />
+            ) : (
+              <ShieldCheck className="w-7 h-7" />
+            )}
+          </div>
+
+          {currentUser ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#D96B38]">
+                Quản trị · Góc Thợ Quanh Ta
+              </p>
+              <h1 className="text-xl font-bold text-[#1F2933] tracking-tight">
+                Tài khoản của bạn chưa có quyền truy cập trang Quản trị
+              </h1>
+              <p className="text-sm text-[#52606D] leading-relaxed">
+                Bạn đang đăng nhập với tài khoản{' '}
+                <strong className="font-semibold text-[#1F2933]">
+                  {currentUser.displayName || currentUser.name}
+                </strong>
+                . Trang này chỉ dành cho Super Admin hoặc Cộng tác viên.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#3A6B5C]">
+                Quản trị · Góc Thợ Quanh Ta
+              </p>
+              <h1 className="text-xl font-bold text-[#1F2933] tracking-tight">
+                Đăng nhập tài khoản Quản trị / CTV
+              </h1>
+              <p className="text-sm text-[#52606D] leading-relaxed">
+                Vui lòng đăng nhập bằng tài khoản Super Admin hoặc Cộng tác viên
+                để tiếp tục quản lý bản đồ và Bản tin.
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2.5 pt-1">
+            {!currentUser ? (
+              <button
+                type="button"
+                onClick={() =>
+                  openAuthModal(
+                    'Vui lòng đăng nhập bằng tài khoản Quản trị viên hoặc Cộng tác viên để truy cập trang Quản trị.',
+                    'login'
+                  )
+                }
+                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Đăng nhập Quản trị / CTV</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  persistAuthSession(null);
+                  setCurrentUser(null);
+                  setUserContributions([]);
+                  adminAuthPromptedRef.current = true;
+                  openAuthModal(
+                    'Vui lòng đăng nhập bằng tài khoản Quản trị viên hoặc Cộng tác viên để truy cập trang Quản trị.',
+                    'login'
+                  );
+                }}
+                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-[#1F2933] text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors"
+              >
+                <LogOut className="w-4 h-4 text-[#52606D]" />
+                <span>Đăng xuất để đổi tài khoản</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigateToTab('home')}
+              className="w-full min-h-[44px] px-5 py-2.5 rounded-full border border-stone-200/90 hover:border-stone-300 bg-white hover:bg-[#FAF8F5] text-[#52606D] hover:text-[#1F2933] text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Quay về trang chủ</span>
+            </button>
+          </div>
+        </div>
+
+        <AuthModal
+          isOpen={authModalState.open}
+          defaultMode={authModalState.defaultMode}
+          promptMessage={authModalState.prompt}
+          onClose={closeAuthModal}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onAuthSuccess={handleAuthSuccess}
         />
 
         {toastMessage && (
           <div
             role="status"
             aria-live="polite"
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
           >
             <div className="bg-[#1F2933] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#7CD4B2] shrink-0" />
@@ -2646,7 +2930,7 @@ export default function App() {
             </div>
           </div>
         )}
-      </>
+      </div>
     );
   }
 
@@ -2706,7 +2990,7 @@ export default function App() {
           favoritesCount={savedArtisans.length}
           contributionsCount={userContributions.length}
           badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
-          onGoHome={() => setActiveTab('home')}
+          onGoHome={() => navigateToTab('home')}
           onSuggestArtisan={() => handleNavigateTab('suggest')}
           onOpenAuth={() => openAuthModal()}
           onOpenBadge={handleOpenBadgeModal}
@@ -2743,7 +3027,10 @@ export default function App() {
       {/* Nội dung chính */}
       <main className="flex-1 min-h-0 relative overflow-hidden">
         {activeTab === 'home' && (
-          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
             <div className="flex-1">
               <HomeDiscoveryView
                 artisans={publicArtisans}
@@ -2782,7 +3069,7 @@ export default function App() {
                 <div className="px-4 py-2 bg-[#3A6B5C]/10 border-b border-[#3A6B5C]/15 flex items-center justify-between gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('home')}
+                    onClick={() => navigateToTab('home')}
                     className="inline-flex items-center gap-1 text-xs font-bold text-[#1F2933] hover:text-[#D96B38] transition-colors whitespace-nowrap shrink-0"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -3031,7 +3318,7 @@ export default function App() {
                     currentUserDisplayName={
                       currentUser?.displayName || currentUser?.name || ''
                     }
-                    onBack={() => setSelectedArtisanId(null)}
+                    onBack={handleCloseSelectedArtisan}
                     onShare={handleShareArtisan}
                     onToggleFavorite={(id) => void handleToggleFavorite(id)}
                     onMarkRevived={handleMarkRevived}
@@ -3056,7 +3343,7 @@ export default function App() {
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('home')}
+                    onClick={() => navigateToTab('home')}
                     className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-sm text-xs font-bold text-[#1F2933] hover:text-[#D96B38] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -3382,7 +3669,7 @@ export default function App() {
                             </h3>
                             <button
                               type="button"
-                              onClick={() => setSelectedArtisanId(null)}
+                              onClick={handleCloseSelectedArtisan}
                               aria-label="Đóng thẻ xem nhanh"
                               className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#7B8794] flex items-center justify-center shrink-0"
                             >
@@ -3515,20 +3802,22 @@ export default function App() {
         )}
 
         {activeTab === 'news' && (
-          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
             <div className="flex-1">
               <NewsView
                 articles={articles}
                 artisans={publicArtisans}
+                selectedArticleKey={readingArticleKey}
+                onSelectArticle={handleSelectArticle}
                 isLoading={isLoadingArticles}
                 error={articlesDbError}
                 onRefresh={() => void loadPublicArticles()}
-                onOpenArtisanOnMap={(artisanId) => {
-                  setActiveTab('explore');
-                  setSelectedArtisanId(artisanId);
-                  setMobileViewMode('map');
-                  setMobileDetailOpen(true);
-                }}
+                onOpenArtisanOnMap={(artisanId) =>
+                  navigateToTab('explore', { artisanId, skipScroll: true })
+                }
               />
             </div>
             <SiteFooter
@@ -3541,13 +3830,18 @@ export default function App() {
         )}
 
         {activeTab === 'suggest' && (
-          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
             <div className="flex-1">
               <SuggestArtisanView
                 currentUser={currentUser}
                 onRequestAuth={(prompt) => openAuthModal(prompt)}
                 onSubmitPendingSuggestion={handleSubmitPendingSuggestion}
-                onBackToExplore={() => setActiveTab('explore')}
+                onBackToExplore={() =>
+                  navigateToTab('explore', { skipScroll: true })
+                }
               />
             </div>
             <SiteFooter
@@ -3560,7 +3854,10 @@ export default function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="h-full overflow-y-auto thin-scrollbar flex flex-col">
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
             <div className="flex-1">
               <AboutView
                 totalArtisans={publicArtisans.length}
@@ -3616,10 +3913,11 @@ export default function App() {
         <SavedArtisansModal
           savedArtisans={savedArtisans}
           onSelectArtisan={(artisan) => {
-            setActiveTab('explore');
-            setSelectedArtisanId(artisan.id);
-            setMobileViewMode('map');
-            setMobileDetailOpen(true);
+            setSavedModalOpen(false);
+            navigateToTab('explore', {
+              artisanId: artisan.id,
+              skipScroll: true,
+            });
           }}
           onRemoveFavorite={(id) => void handleToggleFavorite(id)}
           onClose={() => setSavedModalOpen(false)}
@@ -3632,10 +3930,8 @@ export default function App() {
           isLoading={isLoadingContributions}
           onRefresh={() => void loadUserContributions(currentUser)}
           onOpenApprovedArtisan={(artisanId) => {
-            setActiveTab('explore');
-            setSelectedArtisanId(artisanId);
-            setMobileViewMode('map');
-            setMobileDetailOpen(true);
+            setContributionsModalOpen(false);
+            navigateToTab('explore', { artisanId, skipScroll: true });
           }}
           onSuggestNew={() => handleNavigateTab('suggest')}
           onClose={() => setContributionsModalOpen(false)}
