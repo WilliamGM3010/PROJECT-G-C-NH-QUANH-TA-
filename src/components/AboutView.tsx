@@ -241,6 +241,15 @@ export function AboutView({
   const [selectedDepartment, setSelectedDepartment] = useState<
     TeamDepartment | 'Tất cả'
   >('Tất cả');
+  const [aboutGifSrc, setAboutGifSrc] = useState<string>('/about-gtqt.gif');
+
+  const handleAboutGifError = () => {
+    setAboutGifSrc((prev) => {
+      if (prev === '/about-gtqt.gif') return '/cover-gtqt.jpg';
+      if (prev === '/cover-gtqt.jpg') return GTQT_COVER_SRC;
+      return prev;
+    });
+  };
 
   const chapterProjectRef = useRef<HTMLElement | null>(null);
   const chapterJourneyRef = useRef<HTMLDivElement | null>(null);
@@ -516,14 +525,14 @@ export function AboutView({
               </header>
 
               <figure className="lg:col-span-6">
-                <div className="group rounded-3xl overflow-hidden bg-white border border-[#E8DFD1] p-2.5 shadow-[0_12px_32px_rgba(37,41,46,0.06)]">
-                  <div className="rounded-2xl overflow-hidden bg-[#F7F2E8]">
-                    <img
-                      src={GTQT_COVER_SRC}
-                      alt="Bộ nhận diện chính thức Góc Thợ Quanh Ta — Hỏng đâu sửa liền, thợ giỏi gần bên"
-                      className="w-full h-auto block object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
-                    />
-                  </div>
+                <div className="rounded-3xl border border-[#E8DFD1] p-1.5 bg-white shadow-sm overflow-hidden">
+                  <img
+                    src={aboutGifSrc}
+                    alt="Câu chuyện Góc Thợ Quanh Ta"
+                    decoding="async"
+                    onError={handleAboutGifError}
+                    className="w-full h-auto object-cover rounded-[20px] block bg-[#F7F2E8]"
+                  />
                 </div>
               </figure>
             </div>

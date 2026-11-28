@@ -166,7 +166,16 @@ export function HomeDiscoveryView({
 }: HomeDiscoveryViewProps) {
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [bannerSrc, setBannerSrc] = useState<string>('/cover-gtqt.gif');
   const resultsSectionRef = useRef<HTMLElement | null>(null);
+
+  const handleBannerError = () => {
+    setBannerSrc((prev) => {
+      if (prev === '/cover-gtqt.gif') return '/cover-gtqt.jpg';
+      if (prev === '/cover-gtqt.jpg') return GTQT_COVER_SRC;
+      return prev;
+    });
+  };
 
   const hasRealGps =
     gpsStatus === 'granted' && userLocation?.source === 'gps';
@@ -346,180 +355,187 @@ export function HomeDiscoveryView({
   }, [articles, visiblePublicArtisans]);
 
   return (
-    <div className="bg-[#F7F2E8] text-[#25292E]">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10 md:py-16 space-y-20 md:space-y-28">
-        {/* ============================================================
-            1. HERO EDITORIAL — 2 CỘT THOÁNG SẠCH
-           ============================================================ */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Cột trái (7 cột): 4 tầng nội dung tinh gọn */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="space-y-3.5">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#D46534]">
-                THE NEIGHBORHOOD CRAFT · SÀI GÒN
-              </p>
+    <div className="bg-[#F7F2E8] text-[#25292E] overflow-x-hidden">
+      {/* ============================================================
+          1. HERO EDITORIAL — BANNER GIF TRÀN VIỀN FULL-BLEED + TÌM KIẾM CĂN GIỮA
+         ============================================================ */}
+      <section>
+        {/* Banner GIF tràn viền toàn màn hình sát ngay dưới thanh Header, không đè chữ/lớp tối */}
+        <div className="w-full relative overflow-hidden bg-[#FDF2E6]">
+          <img
+            src={bannerSrc}
+            alt="Góc Thợ Quanh Ta"
+            fetchPriority="high"
+            decoding="async"
+            onError={handleBannerError}
+            className="w-full h-auto max-h-[480px] xl:max-h-[560px] object-cover object-center block"
+          />
+          <div
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-12 md:h-20 bg-gradient-to-t from-[#F7F2E8] via-[#F7F2E8]/45 to-transparent"
+            aria-hidden="true"
+          />
+        </div>
 
-              <h1
-                className="font-display text-3xl sm:text-4xl lg:text-[46px] font-extrabold text-[#25292E] tracking-tight leading-[1.14]"
-                style={{ textWrap: 'balance' }}
-              >
-                Tìm lại những góc nghề bình dị ngay quanh bạn.
-              </h1>
+        {/* Nội dung Hero căn giữa ngay bên dưới banner */}
+        <div className="max-w-3xl mx-auto px-5 text-center mt-6 md:mt-8 space-y-6">
+          <div className="space-y-3.5">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#D46534]">
+              THE NEIGHBORHOOD CRAFT · SÀI GÒN
+            </p>
 
-              <p className="font-serif-editorial italic text-base sm:text-lg text-[#615D57] leading-relaxed">
-                Hỏng đâu sửa liền — Thợ giỏi gần bên.
-              </p>
-            </div>
-
-            {/* Thanh tìm kiếm trung tâm gọn gàng tích hợp GPS / Quận + nút Tìm ngay */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSearchSubmit();
-              }}
-              className="rounded-2xl bg-white border border-[#E8DFD1] shadow-[0_8px_28px_rgba(37,41,46,0.06)] focus-within:border-[#1B3B82] focus-within:ring-2 focus-within:ring-[#1B3B82]/12 p-2 transition-all"
+            <h1
+              className="font-display text-3xl sm:text-4xl lg:text-[46px] font-extrabold text-[#25292E] tracking-tight leading-[1.14]"
+              style={{ textWrap: 'balance' }}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <div className="flex items-center gap-2.5 flex-1 min-w-0 pl-2.5 pr-1">
-                  <Search className="w-4.5 h-4.5 text-[#1B3B82]/75 shrink-0 pointer-events-none" />
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => onSearchQueryChange(e.target.value)}
-                    placeholder="VD: hở keo giày, lên lai quần, sửa khóa..."
-                    aria-label="Tìm lỗi hỏng cần sửa"
-                    className="flex-1 min-w-0 h-11 bg-transparent text-sm sm:text-[15px] text-[#25292E] placeholder:text-[#8E877E] focus:outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => onSearchQueryChange('')}
-                      aria-label="Xóa từ khóa tìm kiếm"
-                      className="w-7 h-7 rounded-full text-[#615D57] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+              Tìm lại những góc nghề bình dị ngay quanh bạn.
+            </h1>
 
-                <div className="flex items-center justify-between sm:justify-end gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-dashed border-[#E8DFD1] sm:pl-2.5">
-                  {gpsStatus === 'locating' ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F7F2E8] text-xs font-medium text-[#615D57] whitespace-nowrap">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D46534]" />
-                      <span>Định vị...</span>
-                    </span>
-                  ) : hasRealGps ? (
+            <p className="font-serif-editorial italic text-base sm:text-lg text-[#615D57] leading-relaxed">
+              Hỏng đâu sửa liền — Thợ giỏi gần bên.
+            </p>
+          </div>
+
+          {/* Thanh tìm kiếm trung tâm + GPS + nút Tìm ngay */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearchSubmit();
+            }}
+            className="max-w-2xl mx-auto text-left rounded-2xl bg-white border border-[#E8DFD1] shadow-[0_8px_28px_rgba(37,41,46,0.06)] focus-within:border-[#1B3B82] focus-within:ring-2 focus-within:ring-[#1B3B82]/12 p-2 transition-all"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0 pl-2.5 pr-1">
+                <Search className="w-4.5 h-4.5 text-[#1B3B82]/75 shrink-0 pointer-events-none" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => onSearchQueryChange(e.target.value)}
+                  placeholder="VD: hở keo giày, lên lai quần, sửa khóa..."
+                  aria-label="Tìm lỗi hỏng cần sửa"
+                  className="flex-1 min-w-0 h-11 bg-transparent text-sm sm:text-[15px] text-[#25292E] placeholder:text-[#8E877E] focus:outline-none"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => onSearchQueryChange('')}
+                    aria-label="Xóa từ khóa tìm kiếm"
+                    className="w-7 h-7 rounded-full text-[#615D57] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between sm:justify-end gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-dashed border-[#E8DFD1] sm:pl-2.5">
+                {gpsStatus === 'locating' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F7F2E8] text-xs font-medium text-[#615D57] whitespace-nowrap">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D46534]" />
+                    <span>Định vị...</span>
+                  </span>
+                ) : hasRealGps ? (
+                  <button
+                    type="button"
+                    onClick={onRequestGps}
+                    title="Bấm để định vị lại GPS"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#EDF3EE] text-xs font-semibold text-[#4F6B54] hover:bg-[#4F6B54]/15 whitespace-nowrap transition-colors"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    <span>Gần bạn</span>
+                  </button>
+                ) : (
+                  <div className="inline-flex items-center gap-1">
+                    <div className="relative flex items-center">
+                      <select
+                        aria-label="Chọn khu vực"
+                        value={selectedDistrict}
+                        onChange={(e) =>
+                          onSelectedDistrictChange(
+                            e.target.value as District | 'Tất cả khu vực'
+                          )
+                        }
+                        className="appearance-none h-9 pl-2.5 pr-6 rounded-xl bg-[#F7F2E8] hover:bg-[#EFE7D8] text-xs font-medium text-[#25292E] cursor-pointer focus:outline-none"
+                      >
+                        <option value="Tất cả khu vực">Tất cả quận</option>
+                        {availableDistricts.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 text-[#615D57] absolute right-2 pointer-events-none" />
+                    </div>
                     <button
                       type="button"
                       onClick={onRequestGps}
-                      title="Bấm để định vị lại GPS"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#EDF3EE] text-xs font-semibold text-[#4F6B54] hover:bg-[#4F6B54]/15 whitespace-nowrap transition-colors"
+                      title="Bật định vị GPS"
+                      aria-label="Bật định vị GPS"
+                      className="w-9 h-9 rounded-xl text-[#1B3B82] hover:bg-[#EEF2FA] flex items-center justify-center shrink-0 transition-colors"
                     >
-                      <LocateFixed className="w-3.5 h-3.5" />
-                      <span>Gần bạn</span>
+                      <LocateFixed className="w-4 h-4" />
                     </button>
-                  ) : (
-                    <div className="inline-flex items-center gap-1">
-                      <div className="relative flex items-center">
-                        <select
-                          aria-label="Chọn khu vực"
-                          value={selectedDistrict}
-                          onChange={(e) =>
-                            onSelectedDistrictChange(
-                              e.target.value as District | 'Tất cả khu vực'
-                            )
-                          }
-                          className="appearance-none h-9 pl-2.5 pr-6 rounded-xl bg-[#F7F2E8] hover:bg-[#EFE7D8] text-xs font-medium text-[#25292E] cursor-pointer focus:outline-none"
-                        >
-                          <option value="Tất cả khu vực">Tất cả quận</option>
-                          {availableDistricts.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-[#615D57] absolute right-2 pointer-events-none" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={onRequestGps}
-                        title="Bật định vị GPS"
-                        aria-label="Bật định vị GPS"
-                        className="w-9 h-9 rounded-xl text-[#1B3B82] hover:bg-[#EEF2FA] flex items-center justify-center shrink-0 transition-colors"
-                      >
-                        <LocateFixed className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
+                  </div>
+                )}
 
-                  <button
-                    type="submit"
-                    className="min-h-[42px] px-5 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-colors"
-                  >
-                    Tìm ngay
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {/* 1 dòng tiện ích tinh gọn */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-[13px] text-[#615D57]">
-              <button
-                type="button"
-                onClick={() => setPriceModalOpen(true)}
-                className="inline-flex items-center gap-1.5 font-semibold text-[#615D57] hover:text-[#D46534] transition-colors py-1"
-              >
-                <Tag className="w-3.5 h-3.5 text-[#D46534]" />
-                <span>So sánh giá sửa vs mua mới</span>
-              </button>
-
-              <span className="text-[#D9CBB8] select-none" aria-hidden="true">
-                ·
-              </span>
-
-              <button
-                type="button"
-                onClick={onOpenFullMap}
-                className="inline-flex items-center gap-1 font-semibold text-[#1B3B82] hover:text-[#D46534] transition-colors py-1"
-              >
-                <span>Mở bản đồ</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Cột phải (5 cột): Ảnh bìa gốc sạch sẽ + 1 dải số liệu live tinh tế ở cạnh dưới */}
-          <div className="lg:col-span-5">
-            <div className="rounded-3xl bg-white border border-[#E8DFD1] p-2.5 shadow-[0_14px_38px_rgba(37,41,46,0.07)]">
-              <div className="rounded-2xl overflow-hidden bg-[#F7F2E8]">
-                <img
-                  src={GTQT_COVER_SRC}
-                  alt="Góc Thợ Quanh Ta — Hỏng đâu sửa liền, thợ giỏi gần bên"
-                  className="w-full h-auto block object-cover"
-                />
-              </div>
-
-              <div className="mt-2.5 px-3 py-2.5 rounded-xl bg-[#F7F2E8]/85 flex flex-wrap items-center justify-between gap-2 text-xs text-[#615D57]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-[#1B3B82] tabular-nums">
-                    {visiblePublicArtisans.length}
-                  </span>
-                  <span>góc thợ đã xác thực</span>
-                </span>
-                <span className="text-[#D9CBB8]" aria-hidden="true">
-                  ·
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-[#4F6B54] tabular-nums">
-                    {revivedCount}
-                  </span>
-                  <span>món đồ hồi sinh</span>
-                </span>
+                <button
+                  type="submit"
+                  className="min-h-[42px] px-5 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-colors"
+                >
+                  Tìm ngay
+                </button>
               </div>
             </div>
-          </div>
-        </section>
+          </form>
 
+          {/* 1 dòng tiện ích & chỉ số live tinh gọn */}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs sm:text-[13px] text-[#615D57]">
+            <button
+              type="button"
+              onClick={() => setPriceModalOpen(true)}
+              className="inline-flex items-center gap-1.5 font-semibold text-[#615D57] hover:text-[#D46534] transition-colors py-0.5"
+            >
+              <Tag className="w-3.5 h-3.5 text-[#D46534]" />
+              <span>So sánh giá sửa vs mua mới</span>
+            </button>
+
+            <span className="text-[#D9CBB8] select-none" aria-hidden="true">
+              ·
+            </span>
+
+            <button
+              type="button"
+              onClick={onOpenFullMap}
+              className="inline-flex items-center gap-1 font-semibold text-[#1B3B82] hover:text-[#D46534] transition-colors py-0.5"
+            >
+              <span>Mở bản đồ</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+
+            <span className="text-[#D9CBB8] select-none" aria-hidden="true">
+              ·
+            </span>
+
+            <span className="inline-flex items-center gap-1">
+              <strong className="font-mono font-bold text-[#1B3B82] tabular-nums">
+                {visiblePublicArtisans.length}
+              </strong>
+              <span>góc thợ đã xác thực</span>
+            </span>
+
+            <span className="text-[#D9CBB8] select-none" aria-hidden="true">
+              ·
+            </span>
+
+            <span className="inline-flex items-center gap-1">
+              <strong className="font-mono font-bold text-[#4F6B54] tabular-nums">
+                {revivedCount}
+              </strong>
+              <span>món đồ hồi sinh</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 pt-16 md:pt-20 pb-12 md:pb-16 space-y-20 md:space-y-28">
         {/* ============================================================
             2. DẢI 6 NHÓM NGHỀ SỬA CHỮA (CÓ SỐ LƯỢNG LIVE TỪ SUPABASE)
            ============================================================ */}
