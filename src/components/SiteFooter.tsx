@@ -61,7 +61,7 @@ export function SiteFooter({
               </span>
               <div className="leading-snug">
                 <p className="text-[11px] font-bold tracking-[0.08em] text-[#1F2933] uppercase">
-                  Team WHO · Lớp K65F
+                  Team WHO · Lớp Học phần KDO441
                 </p>
                 <p className="text-[11px] text-[#616E7C]">
                   Phân hiệu Trường ĐH Ngoại thương tại TP.HCM
@@ -180,7 +180,7 @@ export function SiteFooter({
         {/* Dòng bản quyền & nguyên tắc cộng đồng */}
         <div className="mt-9 pt-5 border-t border-stone-200/75 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11.5px] text-[#7B8794]">
           <p>
-            © 2026 Góc Thợ Quanh Ta · Dự án cộng đồng bởi Team WHO (K65F — FTU
+            © 2026 Góc Thợ Quanh Ta · Dự án cộng đồng bởi Team WHO (KDO441 — FTU
             HCMC).
           </p>
           <p className="text-[#616E7C]">
