@@ -71,26 +71,26 @@ export function PraiseCorner({
   return (
     <section
       aria-labelledby="praise-corner-heading"
-      className="pt-5 border-t border-[#EBE5DC] space-y-4"
+      className="pt-5 border-t border-dashed border-[#D8C3AE] space-y-4"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <HeartHandshake className="w-4 h-4 text-[#D96B38]" />
+          <HeartHandshake className="w-4 h-4 text-[#E86F2C]" />
           <h3
             id="praise-corner-heading"
-            className="text-sm font-bold text-[#1F2933]"
+            className="font-display text-sm font-bold text-[#162442]"
           >
             Cộng đồng khen ngợi
           </h3>
         </div>
-        <span className="text-xs text-[#52606D] tabular-nums">
+        <span className="font-mono text-[11px] font-medium text-[#5C564E] tabular-nums">
           {totalKudos} lượt khen · {artisan.praises.length} chia sẻ
         </span>
       </div>
 
-      {/* 4 nút khen nhanh 1 chạm (Quick Kudos pill buttons) */}
+      {/* 4 nút khen nhanh 1 chạm (Quick Kudos buttons) */}
       <div>
-        <p className="text-xs text-[#52606D] mb-2.5">
+        <p className="text-xs text-[#5C564E] mb-2.5">
           Chạm để tặng lời khen nhanh cho cô chú (bấm lại để bỏ chọn):
         </p>
         <div className="flex flex-wrap gap-2">
@@ -103,19 +103,19 @@ export function PraiseCorner({
                 type="button"
                 onClick={() => onToggleKudos(artisan.id, item.key)}
                 aria-pressed={isReacted}
-                className={`min-h-[40px] px-3.5 py-2 rounded-full border text-xs font-semibold inline-flex items-center gap-2 transition-all duration-150 active:scale-[0.97] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] ${
+                className={`min-h-[40px] px-3.5 py-2 rounded-full border text-xs font-semibold inline-flex items-center gap-2 transition-all duration-150 active:scale-[0.97] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E86F2C] ${
                   isReacted
-                    ? 'bg-[#D96B38] border-[#D96B38] text-white shadow-sm'
-                    : 'bg-white border-[#E5DFD5] text-[#1F2933] hover:border-[#D96B38]/60 hover:bg-[#FAF8F5]'
+                    ? 'bg-[#E86F2C] border-[#162442] text-white shadow-[2px_2px_0px_#162442]'
+                    : 'bg-white border-[#DFCBB5] text-[#162442] hover:border-[#1B3B82] hover:bg-[#FDF8F2]'
                 }`}
               >
                 <span aria-hidden="true">{item.emoji}</span>
                 <span>{item.label}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums ${
+                  className={`font-mono px-1.5 py-0.5 rounded-full text-[11px] font-bold tabular-nums ${
                     isReacted
                       ? 'bg-white/20 text-white'
-                      : 'bg-[#F3EEE6] text-[#52606D]'
+                      : 'bg-[#FDF8F2] border border-[#E6D5C3] text-[#1B3B82]'
                   }`}
                 >
                   {count}
@@ -129,10 +129,10 @@ export function PraiseCorner({
       {/* Form gửi bình luận ngắn */}
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl bg-[#FAF8F5] border border-[#EBE5DC] p-3.5 space-y-3"
+        className="rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-3.5 space-y-3"
       >
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1F2933]">
-          <MessageSquarePlus className="w-3.5 h-3.5 text-[#3A6B5C]" />
+        <div className="flex items-center gap-1.5 text-xs font-bold text-[#162442]">
+          <MessageSquarePlus className="w-3.5 h-3.5 text-[#1B3B82]" />
           <span>Góc khen ngợi — Chia sẻ trải nghiệm sửa đồ</span>
         </div>
 
@@ -144,10 +144,10 @@ export function PraiseCorner({
                 key={item.key}
                 type="button"
                 onClick={() => setSelectedTag(item.key)}
-                className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors whitespace-nowrap ${
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-colors whitespace-nowrap ${
                   active
-                    ? 'bg-[#3A6B5C] text-white'
-                    : 'bg-white border border-[#E5DFD5] text-[#52606D] hover:text-[#1F2933]'
+                    ? 'bg-[#1B3B82] text-white'
+                    : 'bg-white border border-[#E6D5C3] text-[#5C564E] hover:border-[#1B3B82]/50 hover:text-[#162442]'
                 }`}
               >
                 {item.emoji} {item.label}
@@ -156,9 +156,9 @@ export function PraiseCorner({
           })}
         </div>
 
-        <div className="flex items-center justify-between gap-2 text-[11px] text-[#52606D] bg-white border border-[#EBE5DC] rounded-xl px-3 py-2">
+        <div className="flex items-center justify-between gap-2 text-[11px] text-[#5C564E] bg-white border border-dashed border-[#D8C3AE] rounded-xl px-3 py-2">
           <span>Đang gửi lời khen với tên:</span>
-          <strong className="text-[#3A6B5C] truncate">
+          <strong className="text-[#1B3B82] truncate">
             {currentUserDisplayName}
           </strong>
         </div>
@@ -173,20 +173,20 @@ export function PraiseCorner({
             }}
             maxLength={240}
             placeholder="VD: Chú sửa nhanh, đường may chắc chắn, giá rất sinh viên..."
-            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E5DFD5] text-xs text-[#1F2933] placeholder:text-[#7B8794] resize-none focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+            className="w-full px-3 py-2 rounded-xl bg-white border border-[#DFCBB5] text-xs text-[#162442] placeholder:text-[#8A8177] resize-none focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
           />
-          <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="mt-1.5 flex items-center justify-between gap-2">
             {errorMsg ? (
-              <p className="text-[11px] text-[#C84B31] font-medium">{errorMsg}</p>
+              <p className="text-[11px] text-[#B93818] font-semibold">{errorMsg}</p>
             ) : (
-              <span className="text-[11px] text-[#7B8794] tabular-nums">
+              <span className="font-mono text-[11px] text-[#8A8177] tabular-nums">
                 {comment.length}/240 ký tự
               </span>
             )}
 
             <button
               type="submit"
-              className="min-h-[36px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-bold shadow-[2px_2px_0px_#162442] active:translate-y-0.5 transition-all whitespace-nowrap shrink-0"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Gửi lời khen</span>
@@ -198,7 +198,7 @@ export function PraiseCorner({
       {/* Danh sách lời khen từ cộng đồng */}
       <div className="space-y-2.5">
         {artisan.praises.length === 0 ? (
-          <p className="text-xs text-[#52606D] italic py-2">
+          <p className="text-xs text-[#5C564E] italic py-2">
             Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ trải nghiệm nhé!
           </p>
         ) : (
@@ -207,17 +207,17 @@ export function PraiseCorner({
             return (
               <div
                 key={entry.id}
-                className="rounded-xl bg-white border border-[#EBE5DC] p-3 space-y-1.5"
+                className="rounded-xl bg-white border border-[#E6D5C3] p-3 space-y-1.5"
               >
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-[#1F2933] truncate">
+                  <span className="font-bold text-[#162442] truncate">
                     {entry.author}
                   </span>
-                  <span className="text-[11px] text-[#7B8794] whitespace-nowrap shrink-0">
+                  <span className="font-mono text-[10px] text-[#5C564E] whitespace-nowrap shrink-0">
                     {tag.emoji} {tag.label} · {entry.createdAt}
                   </span>
                 </div>
-                <p className="text-xs text-[#52606D] leading-relaxed">
+                <p className="text-xs text-[#5C564E] leading-relaxed">
                   {entry.comment}
                 </p>
               </div>

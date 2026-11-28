@@ -40,14 +40,14 @@ function ArticleCoverImage({
   if (!safeSrc || failed) {
     return (
       <div
-        className={`w-full h-full bg-gradient-to-br from-[#F4EDE3] via-[#EFE5D7] to-[#E5D7C5] flex flex-col items-center justify-center gap-2 text-[#8C6D53] px-4 text-center ${className}`}
+        className={`w-full h-full bg-gradient-to-br from-[#F7EFE4] via-[#EFE3D2] to-[#E6D5C3] flex flex-col items-center justify-center gap-2 text-[#1B3B82]/70 px-4 text-center ${className}`}
       >
         <Newspaper
           className={compact ? 'w-6 h-6 opacity-70' : 'w-10 h-10 opacity-65'}
           strokeWidth={1.6}
         />
         {!compact && (
-          <span className="text-xs font-medium text-[#6B5744] max-w-[220px] line-clamp-2">
+          <span className="text-xs font-medium text-[#5C564E] max-w-[220px] line-clamp-2">
             {alt}
           </span>
         )}
@@ -98,7 +98,7 @@ export function ArticleDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="mb-6 min-h-[40px] inline-flex items-center gap-2 text-sm font-semibold text-[#52606D] hover:text-[#D96B38] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] rounded-lg px-1"
+          className="mb-6 min-h-[40px] inline-flex items-center gap-2 text-sm font-semibold text-[#5C564E] hover:text-[#1B3B82] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] rounded-lg px-1"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại Bản tin</span>
@@ -107,47 +107,49 @@ export function ArticleDetailView({
 
       {/* Kicker & Metadata sạch theo phong cách biên tập */}
       <header className="space-y-4">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#616E7C]">
-          <span className="font-semibold text-[#D96B38]">{article.category}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#5C564E]">
+          <span className="font-mono font-bold uppercase tracking-wider text-[#E86F2C]">
+            {article.category}
+          </span>
           <span aria-hidden="true">·</span>
-          <time className="tabular-nums">{article.publishedAt}</time>
+          <time className="font-mono tabular-nums">{article.publishedAt}</time>
           <span aria-hidden="true">·</span>
           <span>
             {article.sourceType === 'external_link' ? 'Nguồn: ' : 'Tác giả: '}
-            <strong className="font-semibold text-[#1F2933]">{displaySource}</strong>
+            <strong className="font-semibold text-[#162442]">{displaySource}</strong>
           </span>
           {stats.words > 20 && (
             <>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center gap-1 tabular-nums">
-                <Clock className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+                <Clock className="w-3.5 h-3.5 text-[#1B3B82]" />
                 {stats.readMinutes} phút đọc
               </span>
             </>
           )}
         </div>
 
-        <h1 className="text-2xl sm:text-4xl font-bold text-[#1F2933] tracking-tight leading-[1.22] [text-wrap:balance]">
+        <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-[#162442] tracking-tight leading-[1.2] [text-wrap:balance]">
           {article.title || 'Bài viết chưa có tiêu đề'}
         </h1>
 
         {article.subtitle && (
-          <p className="text-base sm:text-lg text-[#52606D] leading-relaxed font-normal">
+          <p className="text-base sm:text-lg text-[#5C564E] leading-relaxed font-normal">
             {article.subtitle}
           </p>
         )}
 
-        <div className="pt-2 border-b border-[#E5DFD5]" />
+        <div className="pt-2 border-b border-dashed border-[#D8C3AE]" />
       </header>
 
       {/* Ảnh bìa + Chú thích ảnh */}
       {article.imageUrl && (
         <figure className="my-7 space-y-2.5">
-          <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden border border-[#E8E2D9] bg-[#F4EFE6]">
+          <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden border-[1.5px] border-[#1B3B82]/15 shadow-[4px_4px_0px_rgba(27,59,130,0.08)] bg-[#F3ECE2]">
             <ArticleCoverImage src={article.imageUrl} alt={article.title} />
           </div>
           {article.imageCaption && (
-            <figcaption className="text-xs sm:text-[13px] text-[#616E7C] italic text-center px-3 leading-relaxed">
+            <figcaption className="text-xs sm:text-[13px] text-[#5C564E] italic text-center px-3 leading-relaxed">
               {article.imageCaption}
             </figcaption>
           )}
@@ -159,22 +161,22 @@ export function ArticleDetailView({
         {article.content.trim() ? (
           <RichTextRenderer html={article.content} />
         ) : article.subtitle ? (
-          <p className="my-4 text-base leading-[1.85] text-[#2D3748]">
+          <p className="my-4 text-base leading-[1.85] text-[#353D4D]">
             {article.subtitle}
           </p>
         ) : null}
 
         {/* Nút đọc bài viết gốc nếu là bài nhập từ link báo */}
         {article.sourceType === 'external_link' && safeExternalUrl && (
-          <div className="mt-8 rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="mt-8 rounded-2xl bg-white border border-[#E6D5C3] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1 min-w-0">
-              <p className="text-xs font-semibold text-[#616E7C]">
-                Bài viết được tổng hợp từ báo chí
+              <p className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#5C564E]">
+                Bài viết tổng hợp từ báo chí
               </p>
-              <p className="text-sm font-bold text-[#1F2933] truncate">
+              <p className="font-display text-base font-bold text-[#162442] truncate">
                 {article.sourceName || 'Trang báo gốc'}
               </p>
-              <p className="text-xs text-[#52606D] leading-relaxed">
+              <p className="text-xs text-[#5C564E] leading-relaxed">
                 Nhấn nút bên cạnh để đọc toàn văn bài viết trên trang xuất bản gốc.
               </p>
             </div>
@@ -182,7 +184,7 @@ export function ArticleDetailView({
               href={safeExternalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+              className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#162442] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm font-bold inline-flex items-center justify-center gap-2 transition-all whitespace-nowrap shrink-0"
             >
               <span>
                 Đọc bài viết gốc tại {article.sourceName || 'trang nguồn'}
@@ -194,12 +196,12 @@ export function ArticleDetailView({
 
         {/* Thẻ "Gặp nhân vật trong bài viết" kết nối trực tiếp tới bản đồ Leaflet */}
         {relatedArtisan && (
-          <section className="mt-10 pt-8 border-t border-[#E5DFD5]">
-            <p className="text-xs font-semibold text-[#3A6B5C] mb-3">
+          <section className="mt-10 pt-8 border-t border-dashed border-[#D8C3AE]">
+            <p className="font-mono text-xs font-bold uppercase tracking-wider text-[#1B3B82] mb-3">
               Gặp nhân vật trong bài viết
             </p>
-            <div className="rounded-2xl bg-white border border-[#E5DFD5] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-xs">
-              <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#F4EFE6] shrink-0">
+            <div className="rounded-2xl bg-white border-[1.5px] border-[#1B3B82]/20 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-[4px_4px_0px_rgba(27,59,130,0.08)]">
+              <div className="w-20 h-20 rounded-xl overflow-hidden bg-[#F3ECE2] shrink-0">
                 <ArtisanIllustration
                   variant={relatedArtisan.illustrationVariant}
                   customImageUrl={relatedArtisan.customImageUrl}
@@ -208,13 +210,13 @@ export function ArticleDetailView({
               </div>
 
               <div className="min-w-0 flex-1 space-y-1">
-                <h2 className="text-base font-bold text-[#1F2933] leading-snug">
+                <h2 className="font-display text-base font-bold text-[#162442] leading-snug">
                   {relatedArtisan.name}
                 </h2>
-                <p className="text-xs text-[#52606D]">
+                <p className="text-xs text-[#5C564E]">
                   {relatedArtisan.categories.join(' · ')} · {relatedArtisan.district}
                 </p>
-                <p className="text-xs text-[#616E7C] line-clamp-2">
+                <p className="text-xs text-[#5C564E] line-clamp-2">
                   {relatedArtisan.addressLandmark} ({relatedArtisan.hours})
                 </p>
               </div>
@@ -223,7 +225,7 @@ export function ArticleDetailView({
                 <button
                   type="button"
                   onClick={() => onOpenArtisanOnMap(relatedArtisan.id)}
-                  className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0"
+                  className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#E86F2C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all whitespace-nowrap shrink-0"
                 >
                   <MapPin className="w-4 h-4" />
                   <span>Xem trên bản đồ</span>
@@ -343,10 +345,10 @@ export function NewsView({
 
   if (readingArticleKey && isLoading && !activeArticle) {
     return (
-      <div className="min-h-full bg-[#FAF8F5] flex items-center justify-center px-4 py-20">
-        <div className="rounded-2xl bg-white border border-[#EBE5DC] px-8 py-10 text-center space-y-3 max-w-md w-full">
-          <Loader2 className="w-7 h-7 text-[#D96B38] animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-[#1F2933]">
+      <div className="min-h-full bg-[#FDF8F2] flex items-center justify-center px-4 py-20">
+        <div className="rounded-2xl bg-white border border-[#E6D5C3] px-8 py-10 text-center space-y-3 max-w-md w-full">
+          <Loader2 className="w-7 h-7 text-[#1B3B82] animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-[#162442]">
             Đang tải bài viết...
           </p>
         </div>
@@ -356,14 +358,14 @@ export function NewsView({
 
   if (readingArticleKey && !isLoading && !activeArticle) {
     return (
-      <div className="min-h-full bg-[#FAF8F5] flex items-center justify-center px-4 py-20">
-        <div className="rounded-2xl bg-white border border-[#EBE5DC] px-8 py-10 text-center space-y-4 max-w-md w-full">
-          <BookOpen className="w-9 h-9 text-[#D96B38]/65 mx-auto" />
+      <div className="min-h-full bg-[#FDF8F2] flex items-center justify-center px-4 py-20">
+        <div className="rounded-2xl bg-white border border-[#E6D5C3] px-8 py-10 text-center space-y-4 max-w-md w-full">
+          <BookOpen className="w-9 h-9 text-[#E86F2C]/70 mx-auto" />
           <div className="space-y-1.5">
-            <h2 className="text-base font-bold text-[#1F2933]">
+            <h2 className="font-display text-base font-bold text-[#162442]">
               Không tìm thấy bài viết này
             </h2>
-            <p className="text-xs sm:text-sm text-[#52606D] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#5C564E] leading-relaxed">
               Bài viết có thể đã được chuyển về bản nháp hoặc đường dẫn không
               còn tồn tại.
             </p>
@@ -371,7 +373,7 @@ export function NewsView({
           <button
             type="button"
             onClick={() => handleSetReadingArticle(null)}
-            className="min-h-[42px] px-5 py-2 rounded-full bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+            className="min-h-[42px] px-5 py-2 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#E86F2C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Quay lại Bản tin</span>
@@ -386,7 +388,7 @@ export function NewsView({
       ? relatedArtisanMap.get(activeArticle.relatedArtisanId) ?? null
       : null;
     return (
-      <div className="min-h-full bg-[#FAF8F5]">
+      <div className="min-h-full bg-[#FDF8F2]">
         <ArticleDetailView
           article={activeArticle}
           relatedArtisan={linkedArtisan}
@@ -400,31 +402,31 @@ export function NewsView({
   }
 
   return (
-    <div className="min-h-full bg-[#FAF8F5]">
+    <div className="min-h-full bg-[#FDF8F2]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-10 pb-24 lg:pb-16 space-y-8">
         {/* Đầu trang Bản tin */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E5DFD5]">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-dashed border-[#D8C3AE]">
           <div className="space-y-2 max-w-2xl">
-            <p className="text-xs font-semibold text-[#3A6B5C]">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#E86F2C]">
               Bản tin Góc Thợ Quanh Ta
             </p>
-            <h1 className="text-2xl sm:text-4xl font-bold text-[#1F2933] tracking-tight leading-tight [text-wrap:balance]">
+            <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-[#162442] tracking-tight leading-tight [text-wrap:balance]">
               Chuyện nghề vỉa hè &amp; nhịp sống bền vững
             </h1>
-            <p className="text-sm sm:text-base text-[#52606D] leading-relaxed">
+            <p className="text-sm sm:text-base text-[#5C564E] leading-relaxed">
               Ghi chép những câu chuyện ấm áp bên góc đường, mẹo giữ đồ bền lâu và
               tin tức cộng đồng quanh bản đồ thợ thủ công Sài Gòn.
             </p>
           </div>
 
           <div className="w-full md:w-72 relative shrink-0">
-            <Search className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#1B3B82]/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm bài viết, chuyên mục..."
-              className="w-full h-11 pl-10 pr-4 rounded-xl border border-[#E5DFD5] bg-white text-sm text-[#1F2933] placeholder:text-[#9AA5B1] focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+              className="w-full h-11 pl-10 pr-4 rounded-xl border-[1.5px] border-[#1B3B82]/20 bg-white text-sm text-[#162442] placeholder:text-[#8E8579] focus:outline-none focus:border-[#1B3B82] focus:shadow-[3px_3px_0px_#1B3B82] transition-all"
             />
           </div>
         </header>
@@ -444,10 +446,10 @@ export function NewsView({
                 role="tab"
                 aria-selected={active}
                 onClick={() => setSelectedCategory(cat)}
-                className={`min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38] ${
+                className={`min-h-[40px] px-4 py-2 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 transition-all border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] ${
                   active
-                    ? 'bg-[#1F2933] text-white shadow-xs'
-                    : 'bg-white border border-[#E5DFD5] text-[#52606D] hover:text-[#1F2933] hover:border-[#CFC7BB]'
+                    ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[2px_2px_0px_#E86F2C]'
+                    : 'bg-white border-[#E6D5C3] text-[#5C564E] hover:text-[#162442] hover:border-[#1B3B82]/50'
                 }`}
               >
                 {cat}
@@ -458,29 +460,29 @@ export function NewsView({
 
         {/* Trạng thái đang tải / lỗi */}
         {isLoading ? (
-          <div className="rounded-2xl bg-white border border-[#EBE5DC] p-12 text-center space-y-3">
-            <Loader2 className="w-7 h-7 text-[#D96B38] animate-spin mx-auto" />
-            <p className="text-sm font-semibold text-[#1F2933]">
+          <div className="rounded-2xl bg-white border border-[#E6D5C3] p-12 text-center space-y-3">
+            <Loader2 className="w-7 h-7 text-[#1B3B82] animate-spin mx-auto" />
+            <p className="text-sm font-semibold text-[#162442]">
               Đang tải Bản tin cộng đồng...
             </p>
           </div>
         ) : error ? (
           <div
             role="alert"
-            className="rounded-2xl bg-[#C84B31]/8 border border-[#C84B31]/25 p-8 text-center space-y-3"
+            className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/25 p-8 text-center space-y-3"
           >
-            <WifiOff className="w-7 h-7 text-[#C84B31] mx-auto" />
-            <p className="text-sm font-bold text-[#A3361F]">
+            <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
+            <p className="text-sm font-bold text-[#9C2E13]">
               Chưa thể tải danh sách bài viết
             </p>
-            <p className="text-xs text-[#7A2B1B] max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[#7F240E] max-w-md mx-auto leading-relaxed">
               {error}
             </p>
             {onRefresh && (
               <button
                 type="button"
                 onClick={onRefresh}
-                className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#9C2E13] text-[#FDF8F2] text-xs font-semibold inline-flex items-center gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Thử tải lại</span>
@@ -488,12 +490,12 @@ export function NewsView({
             )}
           </div>
         ) : publishedArticles.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-[#EBE5DC] p-12 text-center space-y-3">
-            <BookOpen className="w-9 h-9 text-[#D96B38]/60 mx-auto" />
-            <h2 className="text-base font-bold text-[#1F2933]">
+          <div className="rounded-2xl bg-white border border-[#E6D5C3] p-12 text-center space-y-3">
+            <BookOpen className="w-9 h-9 text-[#E86F2C]/65 mx-auto" />
+            <h2 className="font-display text-base font-bold text-[#162442]">
               Chưa có bài viết nào được xuất bản
             </h2>
-            <p className="text-xs sm:text-sm text-[#52606D] max-w-md mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#5C564E] max-w-md mx-auto leading-relaxed">
               Quản trị viên hoặc Cộng tác viên có thể vào mục Quản lý Bản tin trong
               Trang Quản trị để đăng bài viết đầu tiên.
             </p>
@@ -513,9 +515,9 @@ export function NewsView({
                   }}
                   role="button"
                   tabIndex={0}
-                  className="group grid grid-cols-1 lg:grid-cols-12 items-stretch rounded-2xl bg-white border border-[#E8E2D9] overflow-hidden shadow-xs hover:shadow-md transition-shadow cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38]"
+                  className="group grid grid-cols-1 lg:grid-cols-12 items-stretch rounded-3xl bg-white border-[1.5px] border-[#1B3B82]/22 overflow-hidden hover:border-[#1B3B82] hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_#1B3B82] transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
                 >
-                  <div className="lg:col-span-7 aspect-[16/10] lg:aspect-auto lg:min-h-[360px] bg-[#F4EFE6] overflow-hidden">
+                  <div className="lg:col-span-7 aspect-[16/10] lg:aspect-auto lg:min-h-[360px] bg-[#F3ECE2] overflow-hidden">
                     <ArticleCoverImage
                       src={spotlightArticle.imageUrl}
                       alt={spotlightArticle.title}
@@ -525,37 +527,39 @@ export function NewsView({
 
                   <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between gap-6">
                     <div className="space-y-3.5">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#616E7C]">
-                        <span className="font-semibold text-[#D96B38]">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-[#5C564E]">
+                        <span className="font-mono font-bold uppercase tracking-wider text-[#B93818]">
                           Tin tiêu điểm
                         </span>
                         <span aria-hidden="true">·</span>
-                        <span>{spotlightArticle.category}</span>
+                        <span className="font-semibold text-[#1B3B82]">
+                          {spotlightArticle.category}
+                        </span>
                         <span aria-hidden="true">·</span>
-                        <time className="tabular-nums">
+                        <time className="font-mono tabular-nums">
                           {spotlightArticle.publishedAt}
                         </time>
                       </div>
 
-                      <h2 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-[#1F2933] leading-snug group-hover:text-[#D96B38] transition-colors [text-wrap:balance]">
+                      <h2 className="font-display text-xl sm:text-2xl lg:text-[26px] font-extrabold text-[#162442] leading-snug group-hover:text-[#1B3B82] transition-colors [text-wrap:balance]">
                         {spotlightArticle.title}
                       </h2>
 
                       {spotlightArticle.subtitle && (
-                        <p className="text-sm sm:text-[15px] text-[#52606D] leading-relaxed line-clamp-4">
+                        <p className="text-sm sm:text-[15px] text-[#5C564E] leading-relaxed line-clamp-4">
                           {spotlightArticle.subtitle}
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-4 border-t border-[#F0EAE1] flex items-center justify-between gap-3">
-                      <span className="text-xs text-[#616E7C] truncate">
+                    <div className="pt-4 border-t border-dashed border-[#DFCBB5] flex items-center justify-between gap-3">
+                      <span className="text-xs text-[#5C564E] truncate">
                         {spotlightArticle.sourceType === 'external_link'
                           ? `Nguồn: ${spotlightArticle.sourceName || 'Báo chí'}`
                           : spotlightArticle.authorName || 'Góc Thợ Quanh Ta'}
                       </span>
 
-                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#D96B38] whitespace-nowrap shrink-0">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E86F2C] whitespace-nowrap shrink-0">
                         <span>Đọc câu chuyện</span>
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                       </span>
@@ -568,11 +572,11 @@ export function NewsView({
             {/* Lưới thẻ bài viết */}
             <section aria-label="Danh sách bài viết" className="space-y-5">
               {filteredGridArticles.length === 0 ? (
-                <div className="rounded-2xl bg-white border border-[#EBE5DC] p-10 text-center space-y-2">
-                  <p className="text-sm font-bold text-[#1F2933]">
+                <div className="rounded-2xl bg-white border border-[#E6D5C3] p-10 text-center space-y-2">
+                  <p className="font-display text-sm font-bold text-[#162442]">
                     Chưa có bài viết nào trong mục này
                   </p>
-                  <p className="text-xs text-[#52606D]">
+                  <p className="text-xs text-[#5C564E]">
                     Hãy thử chọn chuyên mục khác hoặc xóa từ khóa tìm kiếm nhé.
                   </p>
                 </div>
@@ -595,9 +599,9 @@ export function NewsView({
                         }}
                         role="button"
                         tabIndex={0}
-                        className="group flex flex-col rounded-2xl bg-white border border-[#E8E2D9] overflow-hidden hover:border-[#D96B38]/45 hover:shadow-sm transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B38]"
+                        className="group flex flex-col rounded-2xl bg-white border border-[#E6D5C3] overflow-hidden hover:border-[#1B3B82] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1B3B82] transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
                       >
-                        <div className="aspect-[4/3] w-full bg-[#F4EFE6] overflow-hidden">
+                        <div className="aspect-[4/3] w-full bg-[#F3ECE2] overflow-hidden">
                           <ArticleCoverImage
                             src={article.imageUrl}
                             alt={article.title}
@@ -607,47 +611,47 @@ export function NewsView({
 
                         <div className="flex-1 p-5 flex flex-col justify-between gap-4">
                           <div className="space-y-2.5">
-                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[#616E7C]">
-                              <span className="font-semibold text-[#3A6B5C]">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[#5C564E]">
+                              <span className="font-mono text-[11px] font-bold text-[#1B3B82]">
                                 {article.category}
                               </span>
                               <span aria-hidden="true">·</span>
-                              <time className="tabular-nums">
+                              <time className="font-mono text-[11px] tabular-nums">
                                 {article.publishedAt}
                               </time>
                               {article.sourceType === 'external_link' &&
                                 article.sourceName && (
                                   <>
                                     <span aria-hidden="true">·</span>
-                                    <span className="font-medium text-[#D96B38]">
+                                    <span className="font-semibold text-[#E86F2C]">
                                       {article.sourceName}
                                     </span>
                                   </>
                                 )}
                             </div>
 
-                            <h3 className="text-base sm:text-[17px] font-bold text-[#1F2933] leading-snug line-clamp-2 group-hover:text-[#D96B38] transition-colors">
+                            <h3 className="font-display text-base sm:text-[17px] font-bold text-[#162442] leading-snug line-clamp-2 group-hover:text-[#1B3B82] transition-colors">
                               {article.title}
                             </h3>
 
                             {article.subtitle && (
-                              <p className="text-xs sm:text-[13.5px] text-[#52606D] leading-relaxed line-clamp-3">
+                              <p className="text-xs sm:text-[13.5px] text-[#5C564E] leading-relaxed line-clamp-3">
                                 {article.subtitle}
                               </p>
                             )}
                           </div>
 
-                          <div className="pt-3 border-t border-[#F2ECE3] flex items-center justify-between gap-2 text-xs">
-                            <span className="text-[#616E7C] truncate">
+                          <div className="pt-3 border-t border-dashed border-[#DFCBB5] flex items-center justify-between gap-2 text-xs">
+                            <span className="text-[#5C564E] truncate">
                               {linkedArtisan ? (
-                                <span className="inline-flex items-center gap-1 text-[#3A6B5C] font-medium">
+                                <span className="inline-flex items-center gap-1 text-[#1B3B82] font-semibold">
                                   <MapPin className="w-3.5 h-3.5 shrink-0" />
                                   <span className="truncate">
                                     {linkedArtisan.name}
                                   </span>
                                 </span>
                               ) : article.sourceType === 'external_link' ? (
-                                <span className="inline-flex items-center gap-1 text-[#616E7C]">
+                                <span className="inline-flex items-center gap-1 text-[#5C564E]">
                                   <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                                   <span>Tin báo chí</span>
                                 </span>
@@ -656,8 +660,8 @@ export function NewsView({
                               )}
                             </span>
 
-                            <span className="font-semibold text-[#D96B38] whitespace-nowrap shrink-0">
-                              Đọc tiếp
+                            <span className="font-bold text-[#E86F2C] whitespace-nowrap shrink-0">
+                              Đọc tiếp →
                             </span>
                           </div>
                         </div>

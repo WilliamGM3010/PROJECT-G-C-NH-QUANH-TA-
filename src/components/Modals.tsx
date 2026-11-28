@@ -50,17 +50,17 @@ export function QrDirectionsModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="qr-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/50 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white shadow-xl border border-[#EBE5DC] overflow-hidden"
+        className="w-full max-w-sm rounded-2xl bg-white shadow-[6px_6px_0px_#162442] border-2 border-[#162442] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5DC]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dashed border-[#D8C3AE] bg-[#FDF8F2]">
           <div className="flex items-center gap-2">
-            <QrCode className="w-4 h-4 text-[#D96B38]" />
-            <h3 id="qr-modal-title" className="text-sm font-bold text-[#1F2933]">
+            <QrCode className="w-4 h-4 text-[#1B3B82]" />
+            <h3 id="qr-modal-title" className="font-display text-sm font-bold text-[#162442]">
               Quét mã QR chỉ đường
             </h3>
           </div>
@@ -68,7 +68,7 @@ export function QrDirectionsModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-xl text-[#52606D] hover:bg-[#FAF8F5] hover:text-[#1F2933] flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl text-[#5C564E] hover:bg-white hover:text-[#162442] flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -76,13 +76,13 @@ export function QrDirectionsModal({
 
         <div className="p-5 text-center space-y-4">
           <div className="space-y-1">
-            <p className="text-sm font-bold text-[#1F2933]">{artisan.name}</p>
-            <p className="text-xs text-[#52606D] leading-relaxed">
+            <p className="font-display text-sm font-bold text-[#162442]">{artisan.name}</p>
+            <p className="text-xs text-[#5C564E] leading-relaxed">
               Mở camera điện thoại quét mã bên dưới để mở thẳng chỉ đường Google Maps.
             </p>
           </div>
 
-          <div className="mx-auto w-[216px] h-[216px] rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] p-2 flex items-center justify-center">
+          <div className="mx-auto w-[216px] h-[216px] rounded-2xl bg-[#FDF8F2] border border-dashed border-[#D8C3AE] p-2 flex items-center justify-center">
             {!qrFailed ? (
               <img
                 src={qrImgUrl}
@@ -94,8 +94,8 @@ export function QrDirectionsModal({
                 className="w-[200px] h-[200px] rounded-xl bg-white"
               />
             ) : (
-              <div className="p-4 text-xs text-[#52606D] space-y-2">
-                <QrCode className="w-10 h-10 mx-auto text-[#D96B38]/60" />
+              <div className="p-4 text-xs text-[#5C564E] space-y-2">
+                <QrCode className="w-10 h-10 mx-auto text-[#1B3B82]/60" />
                 <p>Không tải được ảnh QR lúc này. Bạn có thể sao chép liên kết bên dưới.</p>
               </div>
             )}
@@ -105,16 +105,16 @@ export function QrDirectionsModal({
             <button
               type="button"
               onClick={handleCopy}
-              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:bg-[#F1EAE0] text-xs font-semibold text-[#1F2933] inline-flex items-center justify-center gap-1.5 transition-colors"
+              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:border-[#1B3B82] text-xs font-bold text-[#162442] inline-flex items-center justify-center gap-1.5 transition-colors"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-[#3A6B5C]" />
+                  <Check className="w-4 h-4 text-[#15803D]" />
                   <span>Đã sao chép</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-4 h-4 text-[#1B3B82]" />
                   <span>Sao chép link</span>
                 </>
               )}
@@ -124,7 +124,7 @@ export function QrDirectionsModal({
               href={mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+              className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-[2px_2px_0px_#162442] transition-all"
             >
               <span>Mở bản đồ</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -158,21 +158,21 @@ const STATUS_CHOICES: {
     icon: '🟢',
     title: 'Vẫn đang làm',
     desc: 'Cô chú đang ngồi đúng góc phố quen thuộc',
-    activeBorder: 'border-[#3A6B5C] bg-[#3A6B5C]/8',
+    activeBorder: 'border-[#15803D] bg-[#15803D]/8',
   },
   {
     value: 'off_today',
     icon: '🟡',
     title: 'Hôm nay nghỉ',
     desc: 'Tạm vắng hôm nay do thời tiết hoặc việc riêng',
-    activeBorder: 'border-[#E9A825] bg-[#E9A825]/12',
+    activeBorder: 'border-[#B45309] bg-[#FEF3C7]/60',
   },
   {
     value: 'relocated',
     icon: '🔴',
     title: 'Đã chuyển chỗ / Sai thông tin',
     desc: 'Vị trí hoặc khung giờ cần cộng đồng kiểm tra lại',
-    activeBorder: 'border-[#C84B31] bg-[#C84B31]/10',
+    activeBorder: 'border-[#B93818] bg-[#B93818]/10',
   },
 ];
 
@@ -205,28 +205,28 @@ export function StatusReportModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="report-modal-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#1F2933]/50 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[#162442]/55 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl bg-white shadow-xl border border-[#EBE5DC] overflow-hidden"
+        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl bg-white shadow-[6px_6px_0px_#162442] border-2 border-[#162442] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5DC]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dashed border-[#D8C3AE] bg-[#FDF8F2]">
           <div>
             <h3
               id="report-modal-title"
-              className="text-sm font-bold text-[#1F2933]"
+              className="font-display text-sm font-bold text-[#162442]"
             >
               Báo tình trạng hiện tại
             </h3>
-            <p className="text-xs text-[#52606D] truncate">{artisan.name}</p>
+            <p className="text-xs text-[#5C564E] truncate">{artisan.name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-xl text-[#52606D] hover:bg-[#FAF8F5] hover:text-[#1F2933] flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl text-[#5C564E] hover:bg-white hover:text-[#162442] flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -234,13 +234,13 @@ export function StatusReportModal({
 
         {submitted ? (
           <div className="p-8 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#3A6B5C]/12 text-[#3A6B5C] mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#EEF2FA] text-[#1B3B82] mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-7 h-7" />
             </div>
-            <h4 className="text-base font-bold text-[#1F2933]">
+            <h4 className="font-display text-base font-bold text-[#162442]">
               Cảm ơn bạn đã cập nhật!
             </h4>
-            <p className="text-xs text-[#52606D] leading-relaxed">
+            <p className="text-xs text-[#5C564E] leading-relaxed">
               Thông tin từ cộng đồng giúp người đến sau tìm đúng lúc cô chú đang làm việc.
             </p>
           </div>
@@ -257,17 +257,17 @@ export function StatusReportModal({
                     className={`w-full min-h-[52px] p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
                       isSelected
                         ? option.activeBorder
-                        : 'border-[#E5DFD5] bg-white hover:bg-[#FAF8F5]'
+                        : 'border-[#E6D5C3] bg-white hover:bg-[#FDF8F2]'
                     }`}
                   >
                     <span className="text-base leading-none mt-0.5" aria-hidden="true">
                       {option.icon}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#1F2933]">
+                      <p className="text-sm font-bold text-[#162442]">
                         {option.title}
                       </p>
-                      <p className="text-xs text-[#52606D]">{option.desc}</p>
+                      <p className="text-xs text-[#5C564E]">{option.desc}</p>
                     </div>
                   </button>
                 );
@@ -277,7 +277,7 @@ export function StatusReportModal({
             <div>
               <label
                 htmlFor="status-report-note"
-                className="block text-xs font-semibold text-[#1F2933] mb-1.5"
+                className="block text-xs font-bold text-[#162442] mb-1.5"
               >
                 Ghi chú thêm (không bắt buộc)
               </label>
@@ -288,7 +288,7 @@ export function StatusReportModal({
                 onChange={(e) => setNote(e.target.value)}
                 maxLength={140}
                 placeholder="VD: Chú dời qua bên kia đường tránh nắng..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:bg-white focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8A8177] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
               />
             </div>
 
@@ -296,13 +296,13 @@ export function StatusReportModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium text-[#52606D] hover:bg-[#FAF8F5] transition-colors"
+                className="min-h-[44px] px-4 py-2 rounded-xl text-sm font-semibold text-[#5C564E] hover:bg-[#FDF8F2] transition-colors"
               >
                 Hủy
               </button>
               <button
                 type="submit"
-                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm transition-colors"
+                className="min-h-[44px] px-5 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-sm font-bold shadow-[3px_3px_0px_#162442] active:translate-y-0.5 transition-all"
               >
                 Gửi cập nhật
               </button>

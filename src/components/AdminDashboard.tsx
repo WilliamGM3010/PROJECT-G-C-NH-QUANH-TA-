@@ -38,6 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import { CRAFT_CATEGORIES, DISTRICTS } from '../data/artisans';
+import { GTQT_LOGO_SRC } from '../data/team';
 import type {
   AdminAccount,
   AdminRole,
@@ -161,7 +162,7 @@ const REPORT_STATUS_LABEL: Record<
   working: {
     icon: '🟢',
     label: 'Vẫn đang làm',
-    colorClass: 'text-[#3A6B5C] bg-[#3A6B5C]/10',
+    colorClass: 'text-[#15803D] bg-[#15803D]/10',
   },
   off_today: {
     icon: '🟡',
@@ -171,7 +172,7 @@ const REPORT_STATUS_LABEL: Record<
   relocated: {
     icon: '🔴',
     label: 'Đã chuyển chỗ / Sai thông tin',
-    colorClass: 'text-[#C84B31] bg-[#C84B31]/12',
+    colorClass: 'text-[#B93818] bg-[#B93818]/12',
   },
 };
 
@@ -179,13 +180,13 @@ const AUDIT_CATEGORY_LABEL: Record<
   AuditCategory,
   { label: string; badgeClass: string }
 > = {
-  artisan: { label: 'Hồ sơ thợ', badgeClass: 'bg-[#3A6B5C]/12 text-[#3A6B5C]' },
-  pending: { label: 'Duyệt đề xuất', badgeClass: 'bg-[#D96B38]/12 text-[#D96B38]' },
+  artisan: { label: 'Hồ sơ thợ', badgeClass: 'bg-[#1B3B82]/12 text-[#1B3B82]' },
+  pending: { label: 'Duyệt đề xuất', badgeClass: 'bg-[#E86F2C]/12 text-[#E86F2C]' },
   report: { label: 'Báo cáo', badgeClass: 'bg-[#E9A825]/20 text-[#9A6807]' },
-  thanks: { label: 'Lưu bút', badgeClass: 'bg-[#D96B38]/15 text-[#B85427]' },
-  article: { label: 'Bản tin', badgeClass: 'bg-[#3A6B5C]/15 text-[#2E574A]' },
-  account: { label: 'Tài khoản', badgeClass: 'bg-[#1F2933]/10 text-[#1F2933]' },
-  data: { label: 'Dữ liệu', badgeClass: 'bg-[#52606D]/12 text-[#52606D]' },
+  thanks: { label: 'Lưu bút', badgeClass: 'bg-[#E86F2C]/15 text-[#B93818]' },
+  article: { label: 'Bản tin', badgeClass: 'bg-[#1B3B82]/15 text-[#142D66]' },
+  account: { label: 'Tài khoản', badgeClass: 'bg-[#162442]/10 text-[#162442]' },
+  data: { label: 'Dữ liệu', badgeClass: 'bg-[#5C564E]/12 text-[#5C564E]' },
 };
 
 export function AdminDashboard({
@@ -715,16 +716,16 @@ export function AdminDashboard({
 
   if (!hasAdminAccess) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#FAF8F5] p-6">
-        <div className="max-w-md w-full rounded-3xl bg-white border border-[#EBE5DC] shadow-lg p-7 text-center space-y-4">
-          <span className="w-12 h-12 rounded-2xl bg-[#C84B31]/10 text-[#C84B31] flex items-center justify-center mx-auto">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-[#FDF8F2] p-6">
+        <div className="max-w-md w-full rounded-3xl bg-white border border-[#E6D5C3] shadow-lg p-7 text-center space-y-4">
+          <span className="w-12 h-12 rounded-2xl bg-[#B93818]/10 text-[#B93818] flex items-center justify-center mx-auto">
             <Shield className="w-6 h-6" />
           </span>
           <div className="space-y-1.5">
-            <h1 className="text-lg font-bold text-[#1F2933]">
+            <h1 className="text-lg font-bold text-[#162442]">
               Khu vực chỉ dành cho quản trị viên
             </h1>
-            <p className="text-xs text-[#52606D] leading-relaxed">
+            <p className="text-xs text-[#5C564E] leading-relaxed">
               Chỉ tài khoản có vai trò <strong>Super Admin</strong> hoặc{' '}
               <strong>Cộng tác viên</strong> mới có quyền truy cập Khu Quản Trị.
             </p>
@@ -732,7 +733,7 @@ export function AdminDashboard({
           <button
             type="button"
             onClick={onExitToMap}
-            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold"
+            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-sm font-semibold"
           >
             Quay về bản đồ Góc Thợ
           </button>
@@ -742,7 +743,7 @@ export function AdminDashboard({
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-[#FAF8F5] text-[#1F2933]">
+    <div className="min-h-[100dvh] flex flex-col bg-[#FDF8F2] text-[#162442]">
       {/* Hidden file inputs cho CSV & JSON */}
       <input
         ref={csvArtisanInputRef}
@@ -767,18 +768,24 @@ export function AdminDashboard({
       />
 
       {/* Top Bar Khu Quản Trị */}
-      <header className="sticky top-0 z-30 h-16 px-4 sm:px-6 bg-white border-b border-[#E8E2D9] flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-30 h-16 px-4 sm:px-6 bg-white border-b border-[#E6D5C3] flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="w-9 h-9 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5" />
+          <span className="relative w-10 h-10 rounded-full overflow-hidden bg-white ring-2 ring-[#1B3B82]/20 shadow-sm shrink-0">
+            <img
+              src={GTQT_LOGO_SRC}
+              alt="Góc Thợ Quanh Ta"
+              className="w-full h-full object-cover scale-[1.07]"
+            />
           </span>
           <div className="min-w-0">
-            <p className="text-sm sm:text-base font-bold text-[#1F2933] truncate">
+            <p className="font-display text-sm sm:text-base font-bold text-[#162442] truncate">
               Khu Quản Trị · Góc Thợ Quanh Ta
             </p>
-            <p className="text-[11px] text-[#52606D] truncate">
-              {currentAdmin.displayName || currentAdmin.name} ·{' '}
-              <span className="font-semibold text-[#3A6B5C]">
+            <p className="text-[11px] text-[#5C564E] truncate inline-flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1B3B82] shrink-0" />
+              <span>{currentAdmin.displayName || currentAdmin.name}</span>
+              <span>·</span>
+              <span className="font-bold text-[#1B3B82]">
                 {getRoleDisplayLabel(currentNormalizedRole)}
               </span>
             </p>
@@ -792,7 +799,7 @@ export function AdminDashboard({
               onClick={onRefreshAdminData}
               disabled={isLoadingAdminData}
               title="Đồng bộ lại dữ liệu mới nhất từ Supabase"
-              className="min-h-[40px] px-3 py-2 rounded-xl border border-[#3A6B5C]/25 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 disabled:opacity-60 text-xs font-semibold text-[#3A6B5C] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+              className="min-h-[40px] px-3 py-2 rounded-xl border border-[#1B3B82]/25 bg-[#1B3B82]/8 hover:bg-[#1B3B82]/15 disabled:opacity-60 text-xs font-semibold text-[#1B3B82] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${isLoadingAdminData ? 'animate-spin' : ''}`}
@@ -804,9 +811,9 @@ export function AdminDashboard({
           <button
             type="button"
             onClick={onExitToMap}
-            className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:bg-[#F2ECE2] text-xs font-semibold text-[#1F2933] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+            className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:bg-[#F3EAE0] text-xs font-semibold text-[#162442] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
           >
-            <MapPin className="w-3.5 h-3.5 text-[#D96B38]" />
+            <MapPin className="w-3.5 h-3.5 text-[#E86F2C]" />
             <span className="hidden sm:inline">Về trang bản đồ</span>
             <span className="sm:hidden">Bản đồ</span>
           </button>
@@ -814,7 +821,7 @@ export function AdminDashboard({
           <button
             type="button"
             onClick={onLogout}
-            className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-xs font-semibold text-[#C84B31] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+            className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#B93818]/25 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-xs font-semibold text-[#B93818] inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Đăng xuất</span>
@@ -825,7 +832,7 @@ export function AdminDashboard({
       {/* Mobile Tab Bar trượt ngang */}
       <nav
         aria-label="Điều hướng quản trị di động"
-        className="lg:hidden sticky top-16 z-20 bg-white border-b border-[#E8E2D9] px-3 py-2 overflow-x-auto no-scrollbar"
+        className="lg:hidden sticky top-16 z-20 bg-white border-b border-[#E6D5C3] px-3 py-2 overflow-x-auto no-scrollbar"
       >
         <div className="flex items-center gap-1.5">
           {navItems.map(({ id, label, Icon, badge, badgeHighlight }) => {
@@ -837,8 +844,8 @@ export function AdminDashboard({
                 onClick={() => setActiveTab(id)}
                 className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${
                   active
-                    ? 'bg-[#D96B38] text-white shadow-xs'
-                    : 'bg-[#FAF8F5] text-[#52606D] hover:text-[#1F2933]'
+                    ? 'bg-[#E86F2C] text-white shadow-xs'
+                    : 'bg-[#FDF8F2] text-[#5C564E] hover:text-[#162442]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -849,8 +856,8 @@ export function AdminDashboard({
                       active
                         ? 'bg-white/25 text-white'
                         : badgeHighlight
-                          ? 'bg-[#D96B38] text-white'
-                          : 'bg-[#EBE5DC] text-[#52606D]'
+                          ? 'bg-[#E86F2C] text-white'
+                          : 'bg-[#E6D5C3] text-[#5C564E]'
                     }`}
                   >
                     {badge}
@@ -864,7 +871,7 @@ export function AdminDashboard({
 
       {/* Thân trang: Sidebar trái (Desktop) + Nội dung */}
       <div className="flex-1 flex min-h-0">
-        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white border-r border-[#E8E2D9] p-4 justify-between">
+        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white border-r border-[#E6D5C3] p-4 justify-between">
           <nav aria-label="Điều hướng quản trị" className="space-y-1.5">
             {navItems.map(({ id, label, Icon, badge, badgeHighlight }) => {
               const active = activeTab === id;
@@ -875,8 +882,8 @@ export function AdminDashboard({
                   onClick={() => setActiveTab(id)}
                   className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-between gap-2 transition-colors ${
                     active
-                      ? 'bg-[#D96B38] text-white shadow-sm'
-                      : 'text-[#52606D] hover:bg-[#FAF8F5] hover:text-[#1F2933]'
+                      ? 'bg-[#E86F2C] text-white shadow-sm'
+                      : 'text-[#5C564E] hover:bg-[#FDF8F2] hover:text-[#162442]'
                   }`}
                 >
                   <span className="flex items-center gap-2.5 truncate">
@@ -889,8 +896,8 @@ export function AdminDashboard({
                         active
                           ? 'bg-white/25 text-white'
                           : badgeHighlight
-                            ? 'bg-[#D96B38] text-white'
-                            : 'bg-[#F0EAE1] text-[#52606D]'
+                            ? 'bg-[#E86F2C] text-white'
+                            : 'bg-[#F3EAE0] text-[#5C564E]'
                       }`}
                     >
                       {badge}
@@ -901,8 +908,8 @@ export function AdminDashboard({
             })}
           </nav>
 
-          <div className="rounded-2xl bg-[#FAF8F5] border border-[#EBE5DC] p-3.5 text-xs text-[#52606D] space-y-1">
-            <p className="font-bold text-[#3A6B5C]">
+          <div className="rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-3.5 text-xs text-[#5C564E] space-y-1">
+            <p className="font-bold text-[#1B3B82]">
               {isSupabaseMode
                 ? 'Đồng bộ Supabase trực tuyến'
                 : 'Chế độ dữ liệu mẫu cục bộ'}
@@ -928,7 +935,7 @@ export function AdminDashboard({
 
             {/* Trạng thái Loading nhẹ khi đang đồng bộ từ Supabase */}
             {isLoadingAdminData && (
-              <div className="rounded-2xl bg-white border border-[#EBE5DC] px-4 py-3 flex items-center gap-2.5 text-xs font-semibold text-[#3A6B5C] shadow-xs">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] px-4 py-3 flex items-center gap-2.5 text-xs font-semibold text-[#1B3B82] shadow-xs">
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 <span>Đang tải dữ liệu mới nhất từ Supabase...</span>
               </div>
@@ -938,7 +945,7 @@ export function AdminDashboard({
             {dbError && (
               <div
                 role="alert"
-                className="rounded-2xl bg-[#C84B31]/10 border border-[#C84B31]/30 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-[#A3361F]"
+                className="rounded-2xl bg-[#B93818]/10 border border-[#B93818]/30 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-[#992C12]"
               >
                 <div className="flex items-start gap-2.5">
                   <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
@@ -948,7 +955,7 @@ export function AdminDashboard({
                   <button
                     type="button"
                     onClick={onRefreshAdminData}
-                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] text-white font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+                    className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[#B93818] hover:bg-[#992C12] text-white font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Thử lại</span>
@@ -962,14 +969,14 @@ export function AdminDashboard({
               isDbArtisansEmpty &&
               !isLoadingAdminData &&
               onSeedInitialArtisans && (
-                <div className="rounded-2xl bg-[#3A6B5C]/8 border border-[#3A6B5C]/30 p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="rounded-2xl bg-[#1B3B82]/8 border border-[#1B3B82]/30 p-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-start gap-2.5">
-                    <Sparkles className="w-5 h-5 text-[#3A6B5C] shrink-0 mt-0.5" />
+                    <Sparkles className="w-5 h-5 text-[#1B3B82] shrink-0 mt-0.5" />
                     <div className="text-xs sm:text-sm">
-                      <p className="font-bold text-[#1F2933]">
+                      <p className="font-bold text-[#162442]">
                         Bảng dữ liệu cô chú thợ trên Supabase đang trống
                       </p>
-                      <p className="text-[#52606D]">
+                      <p className="text-[#5C564E]">
                         Bạn có thể bấm 1 lần để đẩy sẵn 6 cô chú thợ mẫu khu vực Bình Thạnh, Quận 1, Quận 3 lên Database.
                       </p>
                     </div>
@@ -978,7 +985,7 @@ export function AdminDashboard({
                     type="button"
                     disabled={isSeedingDb}
                     onClick={onSeedInitialArtisans}
-                    className="min-h-[42px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-xs font-semibold shadow-sm inline-flex items-center gap-2 whitespace-nowrap transition-colors"
+                    className="min-h-[42px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-60 text-white text-xs font-semibold shadow-sm inline-flex items-center gap-2 whitespace-nowrap transition-colors"
                   >
                     {isSeedingDb ? (
                       <>
@@ -1002,10 +1009,10 @@ export function AdminDashboard({
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                       Tổng quan vận hành cộng đồng
                     </h1>
-                    <p className="text-xs sm:text-sm text-[#52606D]">
+                    <p className="text-xs sm:text-sm text-[#5C564E]">
                       Theo dõi bản đồ Góc Thợ Quanh Ta, dữ liệu quá hạn xác minh và công cụ nhập/sao lưu dữ liệu.
                     </p>
                   </div>
@@ -1013,7 +1020,7 @@ export function AdminDashboard({
                   <button
                     type="button"
                     onClick={() => exportArtisansToCsv(artisans)}
-                    className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] text-white text-xs sm:text-sm font-semibold shadow-sm inline-flex items-center gap-2 transition-colors whitespace-nowrap"
+                    className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs sm:text-sm font-semibold shadow-sm inline-flex items-center gap-2 transition-colors whitespace-nowrap"
                   >
                     <Download className="w-4 h-4" />
                     <span>Xuất dữ liệu (CSV)</span>
@@ -1040,7 +1047,7 @@ export function AdminDashboard({
                         setOnlyStaleVerification(true);
                         setActiveTab('artisans');
                       }}
-                      className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold whitespace-nowrap"
+                      className="min-h-[40px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-semibold whitespace-nowrap"
                     >
                       Xem hồ sơ cần xác minh →
                     </button>
@@ -1049,15 +1056,15 @@ export function AdminDashboard({
 
                 {/* 5 Thẻ thống kê nhanh */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 space-y-2">
-                    <div className="flex items-center justify-between text-xs text-[#52606D]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-[#5C564E]">
                       <span className="font-medium">Thợ đang hiển thị</span>
-                      <Wrench className="w-4 h-4 text-[#3A6B5C]" />
+                      <Wrench className="w-4 h-4 text-[#1B3B82]" />
                     </div>
-                    <p className="text-3xl font-bold text-[#1F2933] tabular-nums">
+                    <p className="text-3xl font-bold text-[#162442] tabular-nums">
                       {visibleArtisans.length}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">
+                    <p className="text-[11px] text-[#5C564E]">
                       Tổng lưu trữ: {artisans.length} hồ sơ
                     </p>
                   </div>
@@ -1067,30 +1074,30 @@ export function AdminDashboard({
                     onClick={() => setActiveTab('pending')}
                     className={`rounded-2xl border shadow-sm p-4 space-y-2 text-left transition-all ${
                       pendingSuggestions.length > 0
-                        ? 'bg-[#D96B38]/8 border-[#D96B38]/40 hover:border-[#D96B38]'
-                        : 'bg-white border-[#EBE5DC]'
+                        ? 'bg-[#E86F2C]/8 border-[#E86F2C]/40 hover:border-[#E86F2C]'
+                        : 'bg-white border-[#E6D5C3]'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-xs text-[#52606D]">
+                    <div className="flex items-center justify-between text-xs text-[#5C564E]">
                       <span className="font-medium">Đề xuất chờ duyệt</span>
                       <ClipboardCheck
                         className={`w-4 h-4 ${
                           pendingSuggestions.length > 0
-                            ? 'text-[#D96B38]'
-                            : 'text-[#7B8794]'
+                            ? 'text-[#E86F2C]'
+                            : 'text-[#8A8177]'
                         }`}
                       />
                     </div>
                     <p
                       className={`text-3xl font-bold tabular-nums ${
                         pendingSuggestions.length > 0
-                          ? 'text-[#D96B38]'
-                          : 'text-[#1F2933]'
+                          ? 'text-[#E86F2C]'
+                          : 'text-[#162442]'
                       }`}
                     >
                       {pendingSuggestions.length}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">
+                    <p className="text-[11px] text-[#5C564E]">
                       {pendingSuggestions.length > 0
                         ? 'Bấm để xem & duyệt ngay →'
                         : 'Đã xử lý toàn bộ'}
@@ -1100,22 +1107,22 @@ export function AdminDashboard({
                   <button
                     type="button"
                     onClick={() => setActiveTab('reports')}
-                    className="rounded-2xl bg-white border border-[#EBE5DC] hover:border-[#E9A825] shadow-sm p-4 space-y-2 text-left transition-colors"
+                    className="rounded-2xl bg-white border border-[#E6D5C3] hover:border-[#E9A825] shadow-sm p-4 space-y-2 text-left transition-colors"
                   >
-                    <div className="flex items-center justify-between text-xs text-[#52606D]">
+                    <div className="flex items-center justify-between text-xs text-[#5C564E]">
                       <span className="font-medium">Báo cáo chưa xử lý</span>
                       <AlertTriangle
                         className={`w-4 h-4 ${
                           unresolvedReportsCount > 0
                             ? 'text-[#E9A825]'
-                            : 'text-[#7B8794]'
+                            : 'text-[#8A8177]'
                         }`}
                       />
                     </div>
-                    <p className="text-3xl font-bold text-[#1F2933] tabular-nums">
+                    <p className="text-3xl font-bold text-[#162442] tabular-nums">
                       {unresolvedReportsCount}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">
+                    <p className="text-[11px] text-[#5C564E]">
                       Lưu bút chờ duyệt: {pendingThanks.length}
                     </p>
                   </button>
@@ -1123,24 +1130,24 @@ export function AdminDashboard({
                   <button
                     type="button"
                     onClick={() => setActiveTab('accounts')}
-                    className="rounded-2xl bg-white border border-[#EBE5DC] hover:border-[#3A6B5C]/40 shadow-sm p-4 space-y-2 text-left transition-colors"
+                    className="rounded-2xl bg-white border border-[#E6D5C3] hover:border-[#1B3B82]/40 shadow-sm p-4 space-y-2 text-left transition-colors"
                   >
-                    <div className="flex items-center justify-between text-xs text-[#52606D]">
+                    <div className="flex items-center justify-between text-xs text-[#5C564E]">
                       <span className="font-medium">Tài khoản hệ thống</span>
-                      <Users className="w-4 h-4 text-[#52606D]" />
+                      <Users className="w-4 h-4 text-[#5C564E]" />
                     </div>
-                    <p className="text-3xl font-bold text-[#1F2933] tabular-nums">
+                    <p className="text-3xl font-bold text-[#162442] tabular-nums">
                       {adminAccounts.length}
                     </p>
-                    <p className="text-[11px] text-[#52606D] tabular-nums">
+                    <p className="text-[11px] text-[#5C564E] tabular-nums">
                       {accountCounts.superAdmins} Admin · {accountCounts.collaborators} CTV · {accountCounts.users} TV
                     </p>
                   </button>
 
-                  <div className="rounded-2xl bg-[#3A6B5C] text-white shadow-sm p-4 space-y-2">
+                  <div className="rounded-2xl bg-[#1B3B82] text-white shadow-sm p-4 space-y-2">
                     <div className="flex items-center justify-between text-xs text-white/85">
                       <span className="font-medium">Món đồ được hồi sinh</span>
-                      <Recycle className="w-4 h-4 text-[#A7E6D0]" />
+                      <Recycle className="w-4 h-4 text-[#FDBA8C]" />
                     </div>
                     <p className="text-3xl font-bold tabular-nums">
                       {revivedCount}
@@ -1152,23 +1159,23 @@ export function AdminDashboard({
                 </div>
 
                 {/* Cụm công cụ Nhập CSV & Sao lưu/Khôi phục JSON */}
-                <section className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-5 space-y-4">
+                <section className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-[#D96B38]" />
-                    <h2 className="text-sm font-bold text-[#1F2933]">
+                    <Database className="w-4 h-4 text-[#E86F2C]" />
+                    <h2 className="text-sm font-bold text-[#162442]">
                       Công cụ Dữ liệu hàng loạt &amp; Sao lưu hệ thống
                     </h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Nhập cô chú thợ từ CSV */}
-                    <div className="rounded-2xl bg-[#FAF8F5] border border-[#EBE5DC] p-4 space-y-3">
+                    <div className="rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-4 space-y-3">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-[#1F2933] inline-flex items-center gap-1.5">
-                          <FileSpreadsheet className="w-4 h-4 text-[#3A6B5C]" />
+                        <p className="text-xs font-bold text-[#162442] inline-flex items-center gap-1.5">
+                          <FileSpreadsheet className="w-4 h-4 text-[#1B3B82]" />
                           <span>Nhập danh sách cô chú thợ từ CSV</span>
                         </p>
-                        <p className="text-xs text-[#52606D] leading-relaxed">
+                        <p className="text-xs text-[#5C564E] leading-relaxed">
                           Tải file CSV mẫu chuẩn tiếng Việt, điền danh sách khảo sát rồi tải lên để nạp hàng loạt vào bản đồ.
                         </p>
                       </div>
@@ -1176,7 +1183,7 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={() => csvArtisanInputRef.current?.click()}
-                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-semibold inline-flex items-center gap-1.5"
                         >
                           <Upload className="w-3.5 h-3.5" />
                           <span>Nhập từ CSV</span>
@@ -1184,22 +1191,22 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={downloadArtisansCsvTemplate}
-                          className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-white hover:bg-[#F3EEE6] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1.5"
+                          className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#F6EFE6] text-[#162442] text-xs font-semibold inline-flex items-center gap-1.5"
                         >
-                          <Download className="w-3.5 h-3.5 text-[#3A6B5C]" />
+                          <Download className="w-3.5 h-3.5 text-[#1B3B82]" />
                           <span>Tải file CSV mẫu</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Sao lưu & Khôi phục JSON */}
-                    <div className="rounded-2xl bg-[#FAF8F5] border border-[#EBE5DC] p-4 space-y-3">
+                    <div className="rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-4 space-y-3">
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-[#1F2933] inline-flex items-center gap-1.5">
-                          <RefreshCw className="w-4 h-4 text-[#D96B38]" />
+                        <p className="text-xs font-bold text-[#162442] inline-flex items-center gap-1.5">
+                          <RefreshCw className="w-4 h-4 text-[#E86F2C]" />
                           <span>Sao lưu &amp; Khôi phục toàn bộ dữ liệu (JSON)</span>
                         </p>
-                        <p className="text-xs text-[#52606D] leading-relaxed">
+                        <p className="text-xs text-[#5C564E] leading-relaxed">
                           Gồm toàn bộ cô chú thợ, đề xuất, báo cáo, sổ lưu bút, nhật ký hoạt động và tài khoản để chuyển máy an toàn.
                         </p>
                       </div>
@@ -1207,7 +1214,7 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={handleExportJsonBackup}
-                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-semibold inline-flex items-center gap-1.5"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>Sao lưu (Export JSON)</span>
@@ -1215,9 +1222,9 @@ export function AdminDashboard({
                         <button
                           type="button"
                           onClick={() => jsonBackupInputRef.current?.click()}
-                          className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-white hover:bg-[#F3EEE6] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1.5"
+                          className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#F6EFE6] text-[#162442] text-xs font-semibold inline-flex items-center gap-1.5"
                         >
-                          <Upload className="w-3.5 h-3.5 text-[#D96B38]" />
+                          <Upload className="w-3.5 h-3.5 text-[#E86F2C]" />
                           <span>Khôi phục (Import JSON)</span>
                         </button>
                       </div>
@@ -1227,24 +1234,24 @@ export function AdminDashboard({
 
                 {/* Biểu đồ thanh ngang CSS thuần */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-5 space-y-4">
-                    <h2 className="text-sm font-bold text-[#1F2933]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-5 space-y-4">
+                    <h2 className="text-sm font-bold text-[#162442]">
                       Phân bố cô chú thợ theo Khu vực
                     </h2>
                     <div className="space-y-3.5">
                       {districtStats.map((item) => (
                         <div key={item.label} className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-[#1F2933]">
+                            <span className="font-semibold text-[#162442]">
                               {item.label}
                             </span>
-                            <span className="font-bold text-[#D96B38] tabular-nums">
+                            <span className="font-bold text-[#E86F2C] tabular-nums">
                               {item.count} góc thợ
                             </span>
                           </div>
-                          <div className="h-3 rounded-full bg-[#F3EEE6] overflow-hidden">
+                          <div className="h-3 rounded-full bg-[#F6EFE6] overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-[#D96B38] transition-all duration-300"
+                              className="h-full rounded-full bg-[#E86F2C] transition-all duration-300"
                               style={{
                                 width: `${Math.max(item.percent, item.count > 0 ? 8 : 0)}%`,
                               }}
@@ -1255,24 +1262,24 @@ export function AdminDashboard({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-5 space-y-4">
-                    <h2 className="text-sm font-bold text-[#1F2933]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-5 space-y-4">
+                    <h2 className="text-sm font-bold text-[#162442]">
                       Phân bố theo Loại dịch vụ
                     </h2>
                     <div className="space-y-3">
                       {categoryStats.map((item) => (
                         <div key={item.label} className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-[#1F2933]">
+                            <span className="font-semibold text-[#162442]">
                               {item.label}
                             </span>
-                            <span className="font-bold text-[#3A6B5C] tabular-nums">
+                            <span className="font-bold text-[#1B3B82] tabular-nums">
                               {item.count} địa điểm
                             </span>
                           </div>
-                          <div className="h-3 rounded-full bg-[#EEF3F0] overflow-hidden">
+                          <div className="h-3 rounded-full bg-[#EEF2FA] overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-[#3A6B5C] transition-all duration-300"
+                              className="h-full rounded-full bg-[#1B3B82] transition-all duration-300"
                               style={{
                                 width: `${Math.max(item.percent, item.count > 0 ? 8 : 0)}%`,
                               }}
@@ -1292,21 +1299,21 @@ export function AdminDashboard({
             {activeTab === 'pending' && (
               <div className="space-y-5">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                     Đề xuất chờ duyệt ({pendingSuggestions.length})
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#52606D]">
+                  <p className="text-xs sm:text-sm text-[#5C564E]">
                     Hệ thống tự động kiểm tra trùng lặp theo khoảng cách Haversine (bán kính 200m) &amp; tên gọi trước khi đưa lên bản đồ.
                   </p>
                 </div>
 
                 {pendingSuggestions.length === 0 ? (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-10 text-center space-y-2">
-                    <CheckCircle2 className="w-10 h-10 text-[#3A6B5C] mx-auto" />
-                    <p className="text-sm font-bold text-[#1F2933]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] p-10 text-center space-y-2">
+                    <CheckCircle2 className="w-10 h-10 text-[#1B3B82] mx-auto" />
+                    <p className="text-sm font-bold text-[#162442]">
                       Không còn đề xuất nào đang chờ duyệt
                     </p>
-                    <p className="text-xs text-[#52606D]">
+                    <p className="text-xs text-[#5C564E]">
                       Khi người dùng gửi đề xuất mới từ mục &ldquo;Gợi ý thợ&rdquo;, hồ sơ sẽ tự động hiển thị tại đây.
                     </p>
                   </div>
@@ -1322,7 +1329,7 @@ export function AdminDashboard({
                           className={`rounded-2xl bg-white border shadow-sm p-5 flex flex-col justify-between gap-4 ${
                             topMatch
                               ? 'border-[#E9A825] ring-1 ring-[#E9A825]/35'
-                              : 'border-[#EBE5DC]'
+                              : 'border-[#E6D5C3]'
                           }`}
                         >
                           <div className="space-y-3">
@@ -1344,7 +1351,7 @@ export function AdminDashboard({
                                   onClick={() =>
                                     setQuickViewArtisan(topMatch.artisan)
                                   }
-                                  className="min-h-[34px] px-3 py-1 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E9A825]/50 text-[11px] font-bold text-[#8A5A00] inline-flex items-center gap-1.5"
+                                  className="min-h-[34px] px-3 py-1 rounded-lg bg-white hover:bg-[#FDF8F2] border border-[#E9A825]/50 text-[11px] font-bold text-[#8A5A00] inline-flex items-center gap-1.5"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                   <span>Xem nhanh hồ sơ cũ để đối chiếu</span>
@@ -1354,20 +1361,20 @@ export function AdminDashboard({
 
                             <div className="flex items-start justify-between gap-3">
                               <div>
-                                <h3 className="text-base font-bold text-[#1F2933]">
+                                <h3 className="text-base font-bold text-[#162442]">
                                   {item.name}
                                 </h3>
-                                <p className="text-xs text-[#3A6B5C] font-semibold mt-0.5">
+                                <p className="text-xs text-[#1B3B82] font-semibold mt-0.5">
                                   {item.categories.join(' · ')} · {item.district}
                                 </p>
                               </div>
-                              <span className="text-[11px] font-semibold text-[#D96B38] bg-[#D96B38]/10 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              <span className="text-[11px] font-semibold text-[#E86F2C] bg-[#E86F2C]/10 px-2.5 py-1 rounded-full whitespace-nowrap">
                                 Chờ duyệt
                               </span>
                             </div>
 
                             {item.customImageUrl && (
-                              <div className="aspect-[16/9] rounded-xl overflow-hidden border border-[#EBE5DC]">
+                              <div className="aspect-[16/9] rounded-xl overflow-hidden border border-[#E6D5C3]">
                                 <img
                                   src={item.customImageUrl}
                                   alt={item.name}
@@ -1376,49 +1383,49 @@ export function AdminDashboard({
                               </div>
                             )}
 
-                            <div className="space-y-1.5 text-xs text-[#52606D]">
+                            <div className="space-y-1.5 text-xs text-[#5C564E]">
                               <p>
-                                <strong className="text-[#1F2933]">
+                                <strong className="text-[#162442]">
                                   Mốc góc phố:
                                 </strong>{' '}
                                 {item.addressLandmark}
                               </p>
                               {item.coordinates && (
-                                <p className="tabular-nums text-[11px] text-[#7B8794]">
+                                <p className="tabular-nums text-[11px] text-[#8A8177]">
                                   GPS ước tính: {item.coordinates.lat.toFixed(4)},{' '}
                                   {item.coordinates.lng.toFixed(4)}
                                 </p>
                               )}
                               <p>
-                                <strong className="text-[#1F2933]">
+                                <strong className="text-[#162442]">
                                   Khung giờ:
                                 </strong>{' '}
                                 {item.hours} ·{' '}
-                                <strong className="text-[#1F2933]">Giá:</strong>{' '}
+                                <strong className="text-[#162442]">Giá:</strong>{' '}
                                 {item.minPriceLabel}
                               </p>
                               <p>
-                                <strong className="text-[#1F2933]">
+                                <strong className="text-[#162442]">
                                   Tiện ích:
                                 </strong>{' '}
                                 {item.paymentMethod} · {item.parkingInfo}
                               </p>
                               <p>
-                                <strong className="text-[#1F2933]">
+                                <strong className="text-[#162442]">
                                   Lỗi nhận sửa:
                                 </strong>{' '}
                                 {item.problems.join(', ')}
                               </p>
                               {item.story && (
-                                <p className="italic text-[#52606D] pt-1">
+                                <p className="italic text-[#5C564E] pt-1">
                                   &ldquo;{item.story}&rdquo;
                                 </p>
                               )}
                             </div>
 
-                            <p className="text-[11px] text-[#7B8794] pt-2 border-t border-[#F0EAE1]">
+                            <p className="text-[11px] text-[#8A8177] pt-2 border-t border-[#F3EAE0]">
                               Gửi bởi{' '}
-                              <strong className="text-[#52606D]">
+                              <strong className="text-[#5C564E]">
                                 {item.submittedBy}
                               </strong>{' '}
                               · {item.submittedAt}
@@ -1435,7 +1442,7 @@ export function AdminDashboard({
                                   pending: item,
                                 })
                               }
-                              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               <span>Chỉnh sửa &amp; Duyệt</span>
@@ -1444,7 +1451,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => onRejectPending(item.id)}
-                              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#B93818]/25 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-[#B93818] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               <span>Từ chối</span>
@@ -1465,10 +1472,10 @@ export function AdminDashboard({
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                       Quản lý cô chú thợ ({artisans.length})
                     </h1>
-                    <p className="text-xs sm:text-sm text-[#52606D]">
+                    <p className="text-xs sm:text-sm text-[#5C564E]">
                       Quản lý hồ sơ, Người phụ trách (PIC), nhắc xác minh quá 30 ngày, in Thẻ QR và Thiệp cảm ơn.
                     </p>
                   </div>
@@ -1477,9 +1484,9 @@ export function AdminDashboard({
                     <button
                       type="button"
                       onClick={() => csvArtisanInputRef.current?.click()}
-                      className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-white hover:bg-[#FAF8F5] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+                      className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#FDF8F2] text-[#162442] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
                     >
-                      <Upload className="w-3.5 h-3.5 text-[#3A6B5C]" />
+                      <Upload className="w-3.5 h-3.5 text-[#1B3B82]" />
                       <span>Nhập từ CSV</span>
                     </button>
 
@@ -1492,7 +1499,7 @@ export function AdminDashboard({
                           artisan: null,
                         })
                       }
-                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs sm:text-sm font-semibold shadow-sm inline-flex items-center gap-2 whitespace-nowrap"
+                      className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs sm:text-sm font-semibold shadow-sm inline-flex items-center gap-2 whitespace-nowrap"
                     >
                       <Plus className="w-4 h-4" />
                       <span>Thêm cô chú thợ</span>
@@ -1501,15 +1508,15 @@ export function AdminDashboard({
                 </div>
 
                 {/* Bộ lọc tìm kiếm + trạng thái + lọc hồ sơ cần xác minh lại */}
-                <div className="rounded-2xl bg-white border border-[#EBE5DC] p-3.5 flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+                <div className="rounded-2xl bg-white border border-[#E6D5C3] p-3.5 flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
                   <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-[#8A8177] absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="search"
                       value={artisanSearch}
                       onChange={(e) => setArtisanSearch(e.target.value)}
                       placeholder="Tìm theo tên, quận, dịch vụ, PIC hoặc mốc đường..."
-                      className="w-full min-h-[42px] pl-10 pr-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                      className="w-full min-h-[42px] pl-10 pr-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                     />
                   </div>
 
@@ -1521,7 +1528,7 @@ export function AdminDashboard({
                           e.target.value as 'all' | ArtisanStatus | 'hidden'
                         )
                       }
-                      className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs font-semibold text-[#1F2933]"
+                      className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-semibold text-[#162442]"
                     >
                       <option value="all">Tất cả trạng thái</option>
                       <option value="working">Đang làm việc</option>
@@ -1534,7 +1541,7 @@ export function AdminDashboard({
                       className={`min-h-[42px] px-3.5 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-2 cursor-pointer select-none transition-colors ${
                         onlyStaleVerification
                           ? 'bg-[#E9A825]/20 border-[#E9A825] text-[#8A5A00]'
-                          : 'bg-[#FAF8F5] border-[#E5DFD5] text-[#52606D]'
+                          : 'bg-[#FDF8F2] border-[#DFCBB5] text-[#5C564E]'
                       }`}
                     >
                       <input
@@ -1543,7 +1550,7 @@ export function AdminDashboard({
                         onChange={(e) =>
                           setOnlyStaleVerification(e.target.checked)
                         }
-                        className="w-4 h-4 rounded accent-[#D96B38]"
+                        className="w-4 h-4 rounded accent-[#E86F2C]"
                       />
                       <span>
                         Chỉ hiện hồ sơ cần xác minh ({staleArtisansCount})
@@ -1554,8 +1561,8 @@ export function AdminDashboard({
 
                 {/* Danh sách quản lý */}
                 {filteredArtisans.length === 0 ? (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-8 text-center space-y-3">
-                    <p className="text-xs text-[#52606D]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] p-8 text-center space-y-3">
+                    <p className="text-xs text-[#5C564E]">
                       {artisans.length === 0 && isSupabaseMode
                         ? 'Chưa có hồ sơ cô chú thợ nào trên Supabase.'
                         : 'Không tìm thấy hồ sơ cô chú thợ phù hợp với bộ lọc hiện tại.'}
@@ -1567,7 +1574,7 @@ export function AdminDashboard({
                           type="button"
                           disabled={isSeedingDb}
                           onClick={onSeedInitialArtisans}
-                          className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                          className="min-h-[40px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5"
                         >
                           {isSeedingDb ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1595,12 +1602,12 @@ export function AdminDashboard({
                             stale
                               ? 'border-[#E9A825]/70'
                               : artisan.isHidden
-                                ? 'border-[#E5DFD5] opacity-75'
-                                : 'border-[#EBE5DC]'
+                                ? 'border-[#DFCBB5] opacity-75'
+                                : 'border-[#E6D5C3]'
                           }`}
                         >
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-[#F4EFE6]">
+                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-[#F6EFE6]">
                               <ArtisanIllustration
                                 variant={artisan.illustrationVariant}
                                 customImageUrl={artisan.customImageUrl}
@@ -1609,7 +1616,7 @@ export function AdminDashboard({
                             </div>
                             <div className="min-w-0 space-y-1.5">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-sm font-bold text-[#1F2933]">
+                                <h3 className="text-sm font-bold text-[#162442]">
                                   {artisan.name}
                                 </h3>
                                 <span
@@ -1623,34 +1630,34 @@ export function AdminDashboard({
                                   </span>
                                 )}
                                 {artisan.isHidden && (
-                                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#52606D]/15 text-[#52606D]">
+                                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#5C564E]/15 text-[#5C564E]">
                                     Đang ẩn
                                   </span>
                                 )}
                               </div>
 
-                              <p className="text-xs text-[#52606D]">
+                              <p className="text-xs text-[#5C564E]">
                                 {artisan.district} · {artisan.addressLandmark}
                               </p>
 
                               {/* Người phụ trách (PIC) & Ghi chú nội bộ (chỉ hiện trong Admin) */}
                               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
-                                <span className="inline-flex items-center gap-1 font-semibold text-[#3A6B5C] bg-[#3A6B5C]/10 px-2 py-0.5 rounded-md">
+                                <span className="inline-flex items-center gap-1 font-semibold text-[#1B3B82] bg-[#1B3B82]/10 px-2 py-0.5 rounded-md">
                                   <UserCheck className="w-3 h-3" />
                                   PIC: {artisan.pic || 'Chưa phân công'}
                                 </span>
-                                <span className="inline-flex items-center gap-1 text-[#7B8794] tabular-nums">
+                                <span className="inline-flex items-center gap-1 text-[#8A8177] tabular-nums">
                                   <Clock className="w-3 h-3" />
                                   Xác minh: {artisan.verifiedDate}
                                 </span>
-                                <span className="text-[#7B8794]">
+                                <span className="text-[#8A8177]">
                                   {artisan.paymentMethod} · {artisan.parkingInfo}
                                 </span>
                               </div>
 
                               {artisan.internalNotes && (
-                                <p className="text-[11px] text-[#52606D] bg-[#FAF8F5] border border-[#EBE5DC] rounded-lg px-2.5 py-1.5 leading-relaxed">
-                                  <strong className="text-[#1F2933]">
+                                <p className="text-[11px] text-[#5C564E] bg-[#FDF8F2] border border-[#E6D5C3] rounded-lg px-2.5 py-1.5 leading-relaxed">
+                                  <strong className="text-[#162442]">
                                     Ghi chú nội bộ:
                                   </strong>{' '}
                                   {artisan.internalNotes}
@@ -1665,8 +1672,8 @@ export function AdminDashboard({
                               onClick={() => onVerifyArtisanToday(artisan.id)}
                               className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap ${
                                 stale
-                                  ? 'bg-[#3A6B5C] hover:bg-[#2F594C] text-white shadow-xs'
-                                  : 'border border-[#3A6B5C]/30 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 text-[#3A6B5C]'
+                                  ? 'bg-[#1B3B82] hover:bg-[#142D66] text-white shadow-xs'
+                                  : 'border border-[#1B3B82]/30 bg-[#1B3B82]/8 hover:bg-[#1B3B82]/15 text-[#1B3B82]'
                               }`}
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1677,7 +1684,7 @@ export function AdminDashboard({
                               type="button"
                               onClick={() => setThanksCardArtisan(artisan)}
                               title="In thiệp cảm ơn cộng đồng tặng cô chú"
-                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#D96B38]/30 bg-[#FFFBF2] hover:bg-[#D96B38]/12 text-[#B85427] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E86F2C]/30 bg-[#FDF8F2] hover:bg-[#E86F2C]/12 text-[#B93818] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
                             >
                               <Printer className="w-3.5 h-3.5" />
                               <span>
@@ -1688,7 +1695,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => setQrCardArtisan(artisan)}
-                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#D96B38]/35 bg-[#D96B38]/8 hover:bg-[#D96B38]/15 text-[#D96B38] text-xs font-semibold inline-flex items-center gap-1.5"
+                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E86F2C]/35 bg-[#E86F2C]/8 hover:bg-[#E86F2C]/15 text-[#E86F2C] text-xs font-semibold inline-flex items-center gap-1.5"
                             >
                               <QrCode className="w-3.5 h-3.5" />
                               <span>Thẻ QR</span>
@@ -1703,7 +1710,7 @@ export function AdminDashboard({
                                   artisan,
                                 })
                               }
-                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:bg-[#F1EAE0] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1.5"
+                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:bg-[#F3EAE0] text-[#162442] text-xs font-semibold inline-flex items-center gap-1.5"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               <span>Sửa</span>
@@ -1714,11 +1721,11 @@ export function AdminDashboard({
                               onClick={() =>
                                 onToggleArtisanVisibility(artisan.id)
                               }
-                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-white hover:bg-[#FAF8F5] text-[#52606D] text-xs font-semibold inline-flex items-center gap-1.5"
+                              className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#FDF8F2] text-[#5C564E] text-xs font-semibold inline-flex items-center gap-1.5"
                             >
                               {artisan.isHidden ? (
                                 <>
-                                  <Eye className="w-3.5 h-3.5 text-[#3A6B5C]" />
+                                  <Eye className="w-3.5 h-3.5 text-[#1B3B82]" />
                                   <span>Hiện</span>
                                 </>
                               ) : (
@@ -1733,7 +1740,7 @@ export function AdminDashboard({
                               type="button"
                               onClick={() => onDeleteArtisan(artisan.id)}
                               aria-label={`Xóa ${artisan.name}`}
-                              className="min-h-[40px] px-2.5 py-1.5 rounded-xl border border-[#C84B31]/20 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1"
+                              className="min-h-[40px] px-2.5 py-1.5 rounded-xl border border-[#B93818]/20 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-[#B93818] text-xs font-semibold inline-flex items-center gap-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1752,27 +1759,27 @@ export function AdminDashboard({
             {activeTab === 'thanks' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                     Duyệt Sổ lưu bút cảm ơn ({pendingThanks.length} chờ duyệt)
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#52606D]">
+                  <p className="text-xs sm:text-sm text-[#5C564E]">
                     Kiểm duyệt lời nhắn ấm áp từ cộng đồng trước khi hiển thị công khai và in thiệp tri ân gửi tận tay cô chú thợ.
                   </p>
                 </div>
 
                 {/* Phần 1: Lời cảm ơn chờ duyệt */}
                 <section className="space-y-3">
-                  <h2 className="text-sm font-bold text-[#1F2933]">
+                  <h2 className="text-sm font-bold text-[#162442]">
                     Lời nhắn đang chờ duyệt ({pendingThanks.length})
                   </h2>
 
                   {pendingThanks.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-7 text-center space-y-1.5">
-                      <CheckCircle2 className="w-8 h-8 text-[#3A6B5C] mx-auto" />
-                      <p className="text-sm font-bold text-[#1F2933]">
+                    <div className="rounded-2xl bg-white border border-[#E6D5C3] p-7 text-center space-y-1.5">
+                      <CheckCircle2 className="w-8 h-8 text-[#1B3B82] mx-auto" />
+                      <p className="text-sm font-bold text-[#162442]">
                         Không có lời cảm ơn nào đang chờ duyệt
                       </p>
-                      <p className="text-xs text-[#52606D]">
+                      <p className="text-xs text-[#5C564E]">
                         Khi người dùng viết lời nhắn trong mục &ldquo;Sổ lưu bút cảm ơn&rdquo;, lời nhắn sẽ hiển thị tại đây.
                       </p>
                     </div>
@@ -1781,27 +1788,27 @@ export function AdminDashboard({
                       {pendingThanks.map((note) => (
                         <article
                           key={note.id}
-                          className="rounded-2xl bg-[#FFFBF2] border border-[#EEDCB9] shadow-sm p-4 space-y-3 flex flex-col justify-between"
+                          className="rounded-2xl bg-[#FDF8F2] border border-[#EEDCB9] shadow-sm p-4 space-y-3 flex flex-col justify-between"
                         >
                           <div className="space-y-2">
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <p className="text-xs font-bold text-[#D96B38]">
+                                <p className="text-xs font-bold text-[#E86F2C]">
                                   Gửi tới: {note.artisanName}
                                 </p>
-                                <p className="text-xs font-semibold text-[#1F2933] mt-0.5">
+                                <p className="text-xs font-semibold text-[#162442] mt-0.5">
                                   Từ: {note.author} ·{' '}
-                                  <span className="font-normal text-[#7B8794] tabular-nums">
+                                  <span className="font-normal text-[#8A8177] tabular-nums">
                                     {note.createdAt}
                                   </span>
                                 </p>
                               </div>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D96B38]/12 text-[#D96B38]">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E86F2C]/12 text-[#E86F2C]">
                                 Chờ duyệt
                               </span>
                             </div>
 
-                            <p className="text-xs text-[#1F2933] leading-relaxed italic bg-white/80 rounded-xl p-3 border border-[#F0E4CC]">
+                            <p className="text-xs text-[#162442] leading-relaxed italic bg-white/80 rounded-xl p-3 border border-[#F0E4CC]">
                               &ldquo;{note.message}&rdquo;
                             </p>
                           </div>
@@ -1810,7 +1817,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => onApproveThankYou(note.id)}
-                              className="flex-1 min-h-[40px] px-3.5 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+                              className="flex-1 min-h-[40px] px-3.5 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Duyệt hiển thị</span>
@@ -1818,7 +1825,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => onDeleteThankYou(note.id)}
-                              className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1.5"
+                              className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#B93818]/25 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-[#B93818] text-xs font-semibold inline-flex items-center gap-1.5"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               <span>Từ chối</span>
@@ -1831,9 +1838,9 @@ export function AdminDashboard({
                 </section>
 
                 {/* Phần 2: In thiệp cảm ơn theo từng cô chú thợ */}
-                <section className="space-y-3 pt-4 border-t border-[#E8E2D9]">
+                <section className="space-y-3 pt-4 border-t border-[#E6D5C3]">
                   <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-sm font-bold text-[#1F2933]">
+                    <h2 className="text-sm font-bold text-[#162442]">
                       Thiệp cảm ơn đã duyệt theo từng cô chú ({approvedThanks.length} lời nhắn)
                     </h2>
                   </div>
@@ -1846,21 +1853,21 @@ export function AdminDashboard({
                       return (
                         <div
                           key={artisan.id}
-                          className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 space-y-3"
+                          className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-4 space-y-3"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <h3 className="text-sm font-bold text-[#1F2933] truncate">
+                              <h3 className="text-sm font-bold text-[#162442] truncate">
                                 {artisan.name}
                               </h3>
-                              <p className="text-xs text-[#52606D]">
+                              <p className="text-xs text-[#5C564E]">
                                 {list.length} lời cảm ơn đã duyệt · {artisan.district}
                               </p>
                             </div>
                             <button
                               type="button"
                               onClick={() => setThanksCardArtisan(artisan)}
-                              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                              className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                             >
                               <Printer className="w-3.5 h-3.5" />
                               <span>🖨️ In thiệp cảm ơn</span>
@@ -1872,16 +1879,16 @@ export function AdminDashboard({
                               {list.map((n) => (
                                 <div
                                   key={n.id}
-                                  className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5 flex items-start justify-between gap-2 text-xs"
+                                  className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5 flex items-start justify-between gap-2 text-xs"
                                 >
                                   <div className="min-w-0 space-y-0.5">
-                                    <p className="font-semibold text-[#1F2933]">
+                                    <p className="font-semibold text-[#162442]">
                                       {n.author}{' '}
-                                      <span className="font-normal text-[#7B8794] text-[11px]">
+                                      <span className="font-normal text-[#8A8177] text-[11px]">
                                         · {n.createdAt}
                                       </span>
                                     </p>
-                                    <p className="text-[#52606D] italic line-clamp-2">
+                                    <p className="text-[#5C564E] italic line-clamp-2">
                                       &ldquo;{n.message}&rdquo;
                                     </p>
                                   </div>
@@ -1889,7 +1896,7 @@ export function AdminDashboard({
                                     type="button"
                                     onClick={() => onDeleteThankYou(n.id)}
                                     aria-label="Xóa lời cảm ơn"
-                                    className="w-7 h-7 rounded-lg text-[#C84B31]/75 hover:text-[#C84B31] hover:bg-[#C84B31]/10 flex items-center justify-center shrink-0"
+                                    className="w-7 h-7 rounded-lg text-[#B93818]/75 hover:text-[#B93818] hover:bg-[#B93818]/10 flex items-center justify-center shrink-0"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -1911,18 +1918,18 @@ export function AdminDashboard({
             {activeTab === 'reports' && (
               <div className="space-y-5">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                     Báo cáo tình trạng ({unresolvedReportsCount} chưa xử lý)
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#52606D]">
+                  <p className="text-xs sm:text-sm text-[#5C564E]">
                     Kết nối trực tiếp với nút &ldquo;Báo tình trạng&rdquo; từ người dùng ngoài trang bản đồ.
                   </p>
                 </div>
 
                 {statusReports.length === 0 ? (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-10 text-center space-y-2">
-                    <CheckCircle2 className="w-10 h-10 text-[#3A6B5C] mx-auto" />
-                    <p className="text-sm font-bold text-[#1F2933]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] p-10 text-center space-y-2">
+                    <CheckCircle2 className="w-10 h-10 text-[#1B3B82] mx-auto" />
+                    <p className="text-sm font-bold text-[#162442]">
                       Chưa có báo cáo tình trạng nào
                     </p>
                   </div>
@@ -1935,13 +1942,13 @@ export function AdminDashboard({
                           key={report.id}
                           className={`rounded-2xl bg-white border shadow-sm p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
                             report.resolved
-                              ? 'border-[#EBE5DC] opacity-70'
+                              ? 'border-[#E6D5C3] opacity-70'
                               : 'border-[#E9A825]/50'
                           }`}
                         >
                           <div className="space-y-1.5 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-sm font-bold text-[#1F2933]">
+                              <h3 className="text-sm font-bold text-[#162442]">
                                 {report.artisanName}
                               </h3>
                               <span
@@ -1950,7 +1957,7 @@ export function AdminDashboard({
                                 {badge.icon} {badge.label}
                               </span>
                               {report.resolved && (
-                                <span className="text-[11px] font-semibold text-[#3A6B5C] inline-flex items-center gap-1">
+                                <span className="text-[11px] font-semibold text-[#1B3B82] inline-flex items-center gap-1">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Đã xử lý
                                 </span>
@@ -1958,16 +1965,16 @@ export function AdminDashboard({
                             </div>
 
                             {report.note ? (
-                              <p className="text-xs text-[#1F2933] leading-relaxed">
+                              <p className="text-xs text-[#162442] leading-relaxed">
                                 Ghi chú: &ldquo;{report.note}&rdquo;
                               </p>
                             ) : (
-                              <p className="text-xs text-[#7B8794] italic">
+                              <p className="text-xs text-[#8A8177] italic">
                                 Người dùng không để lại ghi chú thêm.
                               </p>
                             )}
 
-                            <p className="text-[11px] text-[#7B8794] tabular-nums">
+                            <p className="text-[11px] text-[#8A8177] tabular-nums">
                               Thời gian gửi: {report.createdAt}
                             </p>
                           </div>
@@ -1976,7 +1983,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => onApplyReportStatus(report)}
-                              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold transition-colors whitespace-nowrap"
+                              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-semibold transition-colors whitespace-nowrap"
                             >
                               Cập nhật trạng thái thợ
                             </button>
@@ -1985,7 +1992,7 @@ export function AdminDashboard({
                               <button
                                 type="button"
                                 onClick={() => onResolveReport(report.id)}
-                                className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#3A6B5C]/30 bg-[#3A6B5C]/10 hover:bg-[#3A6B5C]/15 text-[#3A6B5C] text-xs font-semibold transition-colors whitespace-nowrap"
+                                className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#1B3B82]/30 bg-[#1B3B82]/10 hover:bg-[#1B3B82]/15 text-[#1B3B82] text-xs font-semibold transition-colors whitespace-nowrap"
                               >
                                 Đánh dấu đã xử lý
                               </button>
@@ -2006,10 +2013,10 @@ export function AdminDashboard({
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                       Nhật ký hoạt động ({filteredAuditLogs.length})
                     </h1>
-                    <p className="text-xs sm:text-sm text-[#52606D]">
+                    <p className="text-xs sm:text-sm text-[#5C564E]">
                       Ghi nhận tự động mọi thao tác duyệt, chỉnh sửa, cập nhật và quản trị trong hệ thống.
                     </p>
                   </div>
@@ -2019,7 +2026,7 @@ export function AdminDashboard({
                       aria-label="Lọc nhật ký theo người thực hiện"
                       value={auditActorFilter}
                       onChange={(e) => setAuditActorFilter(e.target.value)}
-                      className="min-h-[40px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#1F2933]"
+                      className="min-h-[40px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs font-semibold text-[#162442]"
                     >
                       <option value="all">Tất cả người thực hiện</option>
                       {auditActors.map((actor) => (
@@ -2033,7 +2040,7 @@ export function AdminDashboard({
                       <button
                         type="button"
                         onClick={onClearAuditLogs}
-                        className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
+                        className="min-h-[40px] px-3.5 py-2 rounded-xl border border-[#B93818]/25 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-[#B93818] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Xóa nhật ký</span>
@@ -2043,20 +2050,20 @@ export function AdminDashboard({
                 </div>
 
                 {filteredAuditLogs.length === 0 ? (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] p-10 text-center space-y-2">
-                    <History className="w-10 h-10 text-[#7B8794]/50 mx-auto" />
-                    <p className="text-sm font-bold text-[#1F2933]">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] p-10 text-center space-y-2">
+                    <History className="w-10 h-10 text-[#8A8177]/50 mx-auto" />
+                    <p className="text-sm font-bold text-[#162442]">
                       Chưa có nhật ký hoạt động nào
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm divide-y divide-[#F0EAE1] overflow-hidden">
+                  <div className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm divide-y divide-[#F3EAE0] overflow-hidden">
                     {filteredAuditLogs.map((log) => {
                       const cat = AUDIT_CATEGORY_LABEL[log.category];
                       return (
                         <div
                           key={log.id}
-                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-[#FAF8F5]/70 transition-colors"
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-[#FDF8F2]/70 transition-colors"
                         >
                           <div className="space-y-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
@@ -2065,15 +2072,15 @@ export function AdminDashboard({
                               >
                                 {cat.label}
                               </span>
-                              <span className="text-xs font-bold text-[#1F2933]">
+                              <span className="text-xs font-bold text-[#162442]">
                                 {log.actorName}
                               </span>
                             </div>
-                            <p className="text-xs sm:text-sm text-[#3E4C59] leading-relaxed">
+                            <p className="text-xs sm:text-sm text-[#3A455C] leading-relaxed">
                               {log.action}
                             </p>
                           </div>
-                          <span className="text-[11px] font-medium text-[#7B8794] tabular-nums whitespace-nowrap shrink-0">
+                          <span className="text-[11px] font-medium text-[#8A8177] tabular-nums whitespace-nowrap shrink-0">
                             {log.timestamp}
                           </span>
                         </div>
@@ -2091,18 +2098,18 @@ export function AdminDashboard({
               <div className="space-y-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#1F2933]">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[#162442]">
                       Quản lý tài khoản ({adminAccounts.length})
                     </h1>
-                    <p className="text-xs sm:text-sm text-[#52606D]">
+                    <p className="text-xs sm:text-sm text-[#5C564E]">
                       Quản lý toàn bộ tài khoản Super Admin, Cộng tác viên và Người dùng trên bảng{' '}
-                      <code className="font-semibold text-[#3A6B5C]">admin_accounts</code>.
+                      <code className="font-semibold text-[#1B3B82]">admin_accounts</code>.
                     </p>
                   </div>
                 </div>
 
                 {/* Bộ lọc theo vai trò & Ô tìm kiếm */}
-                <div className="rounded-2xl bg-white border border-[#EBE5DC] shadow-xs p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="rounded-2xl bg-white border border-[#E6D5C3] shadow-xs p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                     {(
                       [
@@ -2129,8 +2136,8 @@ export function AdminDashboard({
                           onClick={() => setAccountRoleFilter(tab.id)}
                           className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
                             active
-                              ? 'bg-[#D96B38] text-white shadow-xs'
-                              : 'bg-[#FAF8F5] border border-[#E5DFD5] text-[#52606D] hover:text-[#1F2933]'
+                              ? 'bg-[#E86F2C] text-white shadow-xs'
+                              : 'bg-[#FDF8F2] border border-[#DFCBB5] text-[#5C564E] hover:text-[#162442]'
                           }`}
                         >
                           {tab.label}
@@ -2140,13 +2147,13 @@ export function AdminDashboard({
                   </div>
 
                   <div className="relative w-full md:w-64 shrink-0">
-                    <Search className="w-4 h-4 text-[#7B8794] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-[#8A8177] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="search"
                       value={accountSearch}
                       onChange={(e) => setAccountSearch(e.target.value)}
                       placeholder="Tìm theo tên, username, email..."
-                      className="w-full h-9 pl-9 pr-3 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs text-[#1F2933] focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                      className="w-full h-9 pl-9 pr-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs text-[#162442] focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                     />
                   </div>
                 </div>
@@ -2155,12 +2162,12 @@ export function AdminDashboard({
                   {/* Danh sách tài khoản */}
                   <div className="lg:col-span-7 space-y-3">
                     {filteredAccounts.length === 0 ? (
-                      <div className="rounded-2xl bg-white border border-[#EBE5DC] p-8 text-center space-y-1.5">
-                        <Users className="w-8 h-8 text-[#7B8794]/50 mx-auto" />
-                        <p className="text-sm font-bold text-[#1F2933]">
+                      <div className="rounded-2xl bg-white border border-[#E6D5C3] p-8 text-center space-y-1.5">
+                        <Users className="w-8 h-8 text-[#8A8177]/50 mx-auto" />
+                        <p className="text-sm font-bold text-[#162442]">
                           Không tìm thấy tài khoản phù hợp
                         </p>
-                        <p className="text-xs text-[#52606D]">
+                        <p className="text-xs text-[#5C564E]">
                           Thử đổi bộ lọc vai trò hoặc từ khóa tìm kiếm khác.
                         </p>
                       </div>
@@ -2173,34 +2180,34 @@ export function AdminDashboard({
                         return (
                           <div
                             key={acc.id}
-                            className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                            className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                           >
                             <div className="min-w-0 space-y-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-sm font-bold text-[#1F2933] truncate">
+                                <p className="text-sm font-bold text-[#162442] truncate">
                                   {displayName}
                                 </p>
                                 <span
                                   className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                                     roleNorm === 'Super Admin'
-                                      ? 'bg-[#D96B38]/12 text-[#D96B38]'
+                                      ? 'bg-[#E86F2C]/12 text-[#E86F2C]'
                                       : roleNorm === 'Cộng tác viên'
-                                        ? 'bg-[#3A6B5C]/12 text-[#3A6B5C]'
-                                        : 'bg-[#EBE5DC] text-[#52606D]'
+                                        ? 'bg-[#1B3B82]/12 text-[#1B3B82]'
+                                        : 'bg-[#E6D5C3] text-[#5C564E]'
                                   }`}
                                 >
                                   {getRoleDisplayLabel(roleNorm)}
                                 </span>
                                 {isSelf && (
-                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1F2933] text-white">
+                                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#162442] text-white">
                                     Đang đăng nhập
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-[#52606D] truncate">
+                              <p className="text-xs text-[#5C564E] truncate">
                                 @{handle} · Tạo ngày {acc.createdAt}
                               </p>
-                              <p className="text-[11px] text-[#7B8794] tabular-nums">
+                              <p className="text-[11px] text-[#8A8177] tabular-nums">
                                 ♻️ {acc.revivedCount ?? 0} lần sửa đồ · ❤️{' '}
                                 {acc.favoriteArtisanIds?.length ?? 0} góc thợ đã lưu
                               </p>
@@ -2212,9 +2219,9 @@ export function AdminDashboard({
                                   type="button"
                                   onClick={() => openEditAccountModal(acc)}
                                   title="Chỉnh sửa tên hiển thị, tên đăng nhập & vai trò"
-                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:border-[#D96B38] text-[#1F2933] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:border-[#E86F2C] text-[#162442] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 text-[#D96B38]" />
+                                  <Edit3 className="w-3.5 h-3.5 text-[#E86F2C]" />
                                   <span>Sửa</span>
                                 </button>
 
@@ -2222,7 +2229,7 @@ export function AdminDashboard({
                                   type="button"
                                   onClick={() => openResetPwdModal(acc)}
                                   title="Đặt lại mật khẩu mới cho tài khoản này"
-                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#3A6B5C]/25 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 text-[#3A6B5C] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                  className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#1B3B82]/25 bg-[#1B3B82]/8 hover:bg-[#1B3B82]/15 text-[#1B3B82] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                                 >
                                   <KeyRound className="w-3.5 h-3.5" />
                                   <span>Đổi MK</span>
@@ -2233,7 +2240,7 @@ export function AdminDashboard({
                                     type="button"
                                     onClick={() => setDeletingAccount(acc)}
                                     aria-label={`Xóa tài khoản ${displayName}`}
-                                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#C84B31]/20 bg-[#C84B31]/8 hover:bg-[#C84B31]/15 text-[#C84B31] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#B93818]/20 bg-[#B93818]/8 hover:bg-[#B93818]/15 text-[#B93818] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                     <span>Xóa</span>
@@ -2254,17 +2261,17 @@ export function AdminDashboard({
                         {/* Form tạo 1 tài khoản */}
                         <form
                           onSubmit={handleCreateAdminSubmit}
-                          className="rounded-2xl bg-white border border-[#EBE5DC] shadow-sm p-5 space-y-4"
+                          className="rounded-2xl bg-white border border-[#E6D5C3] shadow-sm p-5 space-y-4"
                         >
                           <div className="flex items-center gap-2">
-                            <UserPlus className="w-4 h-4 text-[#D96B38]" />
-                            <h2 className="text-sm font-bold text-[#1F2933]">
+                            <UserPlus className="w-4 h-4 text-[#E86F2C]" />
+                            <h2 className="text-sm font-bold text-[#162442]">
                               Tạo tài khoản mới
                             </h2>
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                            <label className="block text-xs font-semibold text-[#162442] mb-1">
                               Tên hiển thị
                             </label>
                             <input
@@ -2276,12 +2283,12 @@ export function AdminDashboard({
                                 if (adminFormError) setAdminFormError('');
                               }}
                               placeholder="VD: Minh Anh (CTV Bình Thạnh)"
-                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                            <label className="block text-xs font-semibold text-[#162442] mb-1">
                               Tên đăng nhập hoặc Email (không khoảng trắng)
                             </label>
                             <input
@@ -2295,12 +2302,12 @@ export function AdminDashboard({
                                 if (adminFormError) setAdminFormError('');
                               }}
                               placeholder="VD: ctv2@goctho.vn hoặc minhanh"
-                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                            <label className="block text-xs font-semibold text-[#162442] mb-1">
                               Mật khẩu
                             </label>
                             <input
@@ -2312,12 +2319,12 @@ export function AdminDashboard({
                                 if (adminFormError) setAdminFormError('');
                               }}
                               placeholder="Tối thiểu 4 ký tự"
-                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                             />
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                            <label className="block text-xs font-semibold text-[#162442] mb-1">
                               Vai trò phân quyền
                             </label>
                             <select
@@ -2325,7 +2332,7 @@ export function AdminDashboard({
                               onChange={(e) =>
                                 setNewAdminRole(e.target.value as AdminRole)
                               }
-                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                              className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                             >
                               <option value="Cộng tác viên">
                                 Cộng tác viên (Duyệt &amp; cập nhật thợ)
@@ -2340,7 +2347,7 @@ export function AdminDashboard({
                           </div>
 
                           {adminFormError && (
-                            <p className="text-xs font-semibold text-[#C84B31]">
+                            <p className="text-xs font-semibold text-[#B93818]">
                               {adminFormError}
                             </p>
                           )}
@@ -2348,7 +2355,7 @@ export function AdminDashboard({
                           <button
                             type="submit"
                             disabled={isCreatingAccount}
-                            className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2"
+                            className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2"
                           >
                             {isCreatingAccount && (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2358,14 +2365,14 @@ export function AdminDashboard({
                         </form>
 
                         {/* Nhập danh sách tạo tài khoản hàng loạt từ CSV */}
-                        <div className="rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] p-5 space-y-3">
+                        <div className="rounded-2xl bg-[#FDF8F2] border border-[#DFCBB5] p-5 space-y-3">
                           <div className="flex items-center gap-2">
-                            <FileSpreadsheet className="w-4 h-4 text-[#3A6B5C]" />
-                            <h3 className="text-sm font-bold text-[#1F2933]">
+                            <FileSpreadsheet className="w-4 h-4 text-[#1B3B82]" />
+                            <h3 className="text-sm font-bold text-[#162442]">
                               Nhập hàng loạt tài khoản từ CSV
                             </h3>
                           </div>
-                          <p className="text-xs text-[#52606D] leading-relaxed">
+                          <p className="text-xs text-[#5C564E] leading-relaxed">
                             Tải file CSV mẫu (gồm các cột:{' '}
                             <strong>Tên hiển thị, Tên đăng nhập / Email, Mật khẩu, Vai trò</strong>) để tạo nhanh nhiều tài khoản{' '}
                             <strong>Super Admin</strong>, <strong>Cộng tác viên</strong> hoặc{' '}
@@ -2375,7 +2382,7 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={() => csvAdminInputRef.current?.click()}
-                              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                              className="flex-1 min-h-[42px] px-3.5 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                             >
                               <Upload className="w-3.5 h-3.5" />
                               <span>Nhập CSV tài khoản</span>
@@ -2383,18 +2390,18 @@ export function AdminDashboard({
                             <button
                               type="button"
                               onClick={downloadAdminAccountsCsvTemplate}
-                              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#E5DFD5] bg-white hover:bg-[#F3EEE6] text-[#1F2933] text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+                              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#F6EFE6] text-[#162442] text-xs font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
                             >
-                              <Download className="w-3.5 h-3.5 text-[#D96B38]" />
+                              <Download className="w-3.5 h-3.5 text-[#E86F2C]" />
                               <span>Tải CSV mẫu</span>
                             </button>
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="rounded-2xl bg-white border border-[#EBE5DC] p-5 space-y-2 text-xs text-[#52606D]">
-                        <div className="flex items-center gap-2 text-[#1F2933] font-bold">
-                          <Shield className="w-4 h-4 text-[#3A6B5C]" />
+                      <div className="rounded-2xl bg-white border border-[#E6D5C3] p-5 space-y-2 text-xs text-[#5C564E]">
+                        <div className="flex items-center gap-2 text-[#162442] font-bold">
+                          <Shield className="w-4 h-4 text-[#1B3B82]" />
                           <span>Giới hạn phân quyền Cộng tác viên</span>
                         </div>
                         <p className="leading-relaxed">
@@ -2465,17 +2472,17 @@ export function AdminDashboard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="quick-view-dup-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
           onClick={() => setQuickViewArtisan(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E6D5C3] bg-[#FDF8F2]">
               <h3
                 id="quick-view-dup-title"
-                className="text-sm font-bold text-[#1F2933]"
+                className="text-sm font-bold text-[#162442]"
               >
                 Đối chiếu hồ sơ đã có trên bản đồ
               </h3>
@@ -2483,41 +2490,41 @@ export function AdminDashboard({
                 type="button"
                 onClick={() => setQuickViewArtisan(null)}
                 aria-label="Đóng"
-                className="w-8 h-8 rounded-lg text-[#52606D] hover:bg-white flex items-center justify-center"
+                className="w-8 h-8 rounded-lg text-[#5C564E] hover:bg-white flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-5 space-y-3 text-xs text-[#52606D]">
+            <div className="p-5 space-y-3 text-xs text-[#5C564E]">
               <div>
-                <p className="text-base font-bold text-[#1F2933]">
+                <p className="text-base font-bold text-[#162442]">
                   {quickViewArtisan.name}
                 </p>
-                <p className="text-[#3A6B5C] font-semibold mt-0.5">
+                <p className="text-[#1B3B82] font-semibold mt-0.5">
                   {quickViewArtisan.categories.join(' · ')} ·{' '}
                   {quickViewArtisan.district}
                 </p>
               </div>
               <p>
-                <strong className="text-[#1F2933]">Mốc góc phố:</strong>{' '}
+                <strong className="text-[#162442]">Mốc góc phố:</strong>{' '}
                 {quickViewArtisan.addressLandmark}
               </p>
               <p className="tabular-nums">
-                <strong className="text-[#1F2933]">Tọa độ GPS:</strong>{' '}
+                <strong className="text-[#162442]">Tọa độ GPS:</strong>{' '}
                 {quickViewArtisan.coordinates.lat.toFixed(5)},{' '}
                 {quickViewArtisan.coordinates.lng.toFixed(5)}
               </p>
               <p>
-                <strong className="text-[#1F2933]">Giờ hoạt động:</strong>{' '}
+                <strong className="text-[#162442]">Giờ hoạt động:</strong>{' '}
                 {quickViewArtisan.hours} · {quickViewArtisan.minPriceLabel}
               </p>
               <p>
-                <strong className="text-[#1F2933]">Người phụ trách (PIC):</strong>{' '}
+                <strong className="text-[#162442]">Người phụ trách (PIC):</strong>{' '}
                 {quickViewArtisan.pic || 'Chưa phân công'}
               </p>
               {quickViewArtisan.internalNotes && (
-                <p className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5">
-                  <strong className="text-[#1F2933]">Ghi chú nội bộ:</strong>{' '}
+                <p className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5">
+                  <strong className="text-[#162442]">Ghi chú nội bộ:</strong>{' '}
                   {quickViewArtisan.internalNotes}
                 </p>
               )}
@@ -2525,7 +2532,7 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={() => setQuickViewArtisan(null)}
-                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold"
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#E86F2C] text-white text-xs font-semibold"
                 >
                   Đã đối chiếu xong
                 </button>
@@ -2541,17 +2548,17 @@ export function AdminDashboard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-account-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
           onClick={() => setEditingAccount(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E6D5C3] bg-[#FDF8F2]">
               <h3
                 id="edit-account-title"
-                className="text-sm font-bold text-[#1F2933]"
+                className="text-sm font-bold text-[#162442]"
               >
                 Chỉnh sửa tài khoản
               </h3>
@@ -2559,14 +2566,14 @@ export function AdminDashboard({
                 type="button"
                 onClick={() => setEditingAccount(null)}
                 aria-label="Đóng"
-                className="w-8 h-8 rounded-lg text-[#52606D] hover:bg-white flex items-center justify-center"
+                className="w-8 h-8 rounded-lg text-[#5C564E] hover:bg-white flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleSaveAccountEdit} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Tên hiển thị
                 </label>
                 <input
@@ -2577,12 +2584,12 @@ export function AdminDashboard({
                     setEditDisplayName(e.target.value);
                     if (editAccountError) setEditAccountError('');
                   }}
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Tên đăng nhập / Email
                 </label>
                 <input
@@ -2593,19 +2600,19 @@ export function AdminDashboard({
                     setEditUsername(e.target.value.replace(/\s+/g, ''));
                     if (editAccountError) setEditAccountError('');
                   }}
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Vai trò phân quyền
                 </label>
                 <select
                   value={editRole}
                   disabled={editingAccount.id === currentAdmin.id}
                   onChange={(e) => setEditRole(e.target.value as AdminRole)}
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm disabled:opacity-60 focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm disabled:opacity-60 focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                 >
                   <option value="user">Người dùng (Thành viên bản đồ)</option>
                   <option value="Cộng tác viên">
@@ -2616,7 +2623,7 @@ export function AdminDashboard({
                   </option>
                 </select>
                 {editingAccount.id === currentAdmin.id && (
-                  <p className="text-[11px] text-[#7B8794] mt-1">
+                  <p className="text-[11px] text-[#8A8177] mt-1">
                     Không thể hạ quyền của chính tài khoản Super Admin đang đăng nhập.
                   </p>
                 )}
@@ -2625,7 +2632,7 @@ export function AdminDashboard({
               {editAccountError && (
                 <p
                   role="alert"
-                  className="text-xs font-semibold text-[#C84B31]"
+                  className="text-xs font-semibold text-[#B93818]"
                 >
                   {editAccountError}
                 </p>
@@ -2635,14 +2642,14 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={() => setEditingAccount(null)}
-                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs font-semibold text-[#5C564E]"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingAccountEdit}
-                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
                 >
                   {isSavingAccountEdit && (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2661,26 +2668,26 @@ export function AdminDashboard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="reset-pwd-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
           onClick={() => setResetPwdAccount(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E6D5C3] bg-[#FDF8F2]">
               <h3
                 id="reset-pwd-title"
-                className="text-sm font-bold text-[#1F2933] inline-flex items-center gap-2"
+                className="text-sm font-bold text-[#162442] inline-flex items-center gap-2"
               >
-                <KeyRound className="w-4 h-4 text-[#3A6B5C]" />
+                <KeyRound className="w-4 h-4 text-[#1B3B82]" />
                 <span>Đặt lại mật khẩu</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setResetPwdAccount(null)}
                 aria-label="Đóng"
-                className="w-8 h-8 rounded-lg text-[#52606D] hover:bg-white flex items-center justify-center"
+                className="w-8 h-8 rounded-lg text-[#5C564E] hover:bg-white flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2689,16 +2696,16 @@ export function AdminDashboard({
               onSubmit={handleConfirmResetPassword}
               className="p-5 space-y-4"
             >
-              <p className="text-xs text-[#52606D] leading-relaxed">
+              <p className="text-xs text-[#5C564E] leading-relaxed">
                 Đặt mật khẩu mới cho tài khoản{' '}
-                <strong className="text-[#1F2933]">
+                <strong className="text-[#162442]">
                   {resetPwdAccount.displayName || resetPwdAccount.name}
                 </strong>{' '}
                 (@{resetPwdAccount.username || resetPwdAccount.email}).
               </p>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Mật khẩu mới
                 </label>
                 <input
@@ -2711,14 +2718,14 @@ export function AdminDashboard({
                     if (resetPwdError) setResetPwdError('');
                   }}
                   placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)"
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#3A6B5C]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                 />
               </div>
 
               {resetPwdError && (
                 <p
                   role="alert"
-                  className="text-xs font-semibold text-[#C84B31]"
+                  className="text-xs font-semibold text-[#B93818]"
                 >
                   {resetPwdError}
                 </p>
@@ -2728,14 +2735,14 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={() => setResetPwdAccount(null)}
-                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs font-semibold text-[#5C564E]"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isResettingPwd}
-                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F594C] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
                 >
                   {isResettingPwd && (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2754,28 +2761,28 @@ export function AdminDashboard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-account-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
           onClick={() => setDeletingAccount(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5 space-y-4">
               <div className="flex items-start gap-3">
-                <span className="w-10 h-10 rounded-xl bg-[#C84B31]/12 text-[#C84B31] flex items-center justify-center shrink-0">
+                <span className="w-10 h-10 rounded-xl bg-[#B93818]/12 text-[#B93818] flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-5 h-5" />
                 </span>
                 <div className="space-y-1">
                   <h3
                     id="delete-account-title"
-                    className="text-sm font-bold text-[#1F2933]"
+                    className="text-sm font-bold text-[#162442]"
                   >
                     Xác nhận xóa tài khoản?
                   </h3>
-                  <p className="text-xs text-[#52606D] leading-relaxed">
+                  <p className="text-xs text-[#5C564E] leading-relaxed">
                     Bạn sắp xóa vĩnh viễn tài khoản{' '}
-                    <strong className="text-[#1F2933]">
+                    <strong className="text-[#162442]">
                       {deletingAccount.displayName || deletingAccount.name}
                     </strong>{' '}
                     (@{deletingAccount.username || deletingAccount.email} ·{' '}
@@ -2788,7 +2795,7 @@ export function AdminDashboard({
                 <button
                   type="button"
                   onClick={() => setDeletingAccount(null)}
-                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-xs font-semibold text-[#52606D]"
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs font-semibold text-[#5C564E]"
                 >
                   Hủy
                 </button>
@@ -2796,7 +2803,7 @@ export function AdminDashboard({
                   type="button"
                   disabled={isDeletingAccount}
                   onClick={() => void handleConfirmDeleteAccount()}
-                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#992C12] disabled:opacity-70 text-white text-xs font-semibold inline-flex items-center gap-1.5"
                 >
                   {isDeletingAccount && (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

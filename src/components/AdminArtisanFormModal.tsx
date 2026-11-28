@@ -314,24 +314,24 @@ export function AdminArtisanFormModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="artisan-form-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#162442]/55 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl max-h-[92dvh] flex flex-col rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+        className="w-full max-w-3xl max-h-[92dvh] flex flex-col rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5DC] bg-[#FAF8F5] shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E6D5C3] bg-[#FDF8F2] shrink-0">
           <div>
             <h2
               id="artisan-form-title"
-              className="text-base font-bold text-[#1F2933]"
+              className="text-base font-bold text-[#162442]"
             >
               {titleMap[mode]}
             </h2>
             {pendingSuggestion && (
-              <p className="text-xs text-[#52606D]">
+              <p className="text-xs text-[#5C564E]">
                 Đề xuất bởi {pendingSuggestion.submittedBy} lúc{' '}
                 {pendingSuggestion.submittedAt}
               </p>
@@ -341,7 +341,7 @@ export function AdminArtisanFormModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-xl text-[#52606D] hover:bg-white hover:text-[#1F2933] flex items-center justify-center"
+            className="w-9 h-9 rounded-xl text-[#5C564E] hover:bg-white hover:text-[#162442] flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -372,8 +372,8 @@ export function AdminArtisanFormModal({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                Tên &amp; Nghề hiển thị <span className="text-[#C84B31]">*</span>
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
+                Tên &amp; Nghề hiển thị <span className="text-[#B93818]">*</span>
               </label>
               <input
                 type="text"
@@ -381,13 +381,13 @@ export function AdminArtisanFormModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="VD: Chú Ba – Sửa Giày Dép & Balo"
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div className="md:col-span-2">
-              <span className="block text-xs font-semibold text-[#1F2933] mb-1.5">
-                Danh mục dịch vụ <span className="text-[#C84B31]">*</span>
+              <span className="block text-xs font-semibold text-[#162442] mb-1.5">
+                Danh mục dịch vụ <span className="text-[#B93818]">*</span>
               </span>
               <div className="flex flex-wrap gap-2">
                 {CRAFT_CATEGORIES.map((cat) => {
@@ -399,8 +399,8 @@ export function AdminArtisanFormModal({
                       onClick={() => toggleCategory(cat)}
                       className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                         active
-                          ? 'bg-[#D96B38] text-white'
-                          : 'bg-[#FAF8F5] border border-[#E5DFD5] text-[#52606D]'
+                          ? 'bg-[#E86F2C] text-white'
+                          : 'bg-[#FDF8F2] border border-[#DFCBB5] text-[#5C564E]'
                       }`}
                     >
                       {cat}
@@ -411,13 +411,13 @@ export function AdminArtisanFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Khu vực
               </label>
               <select
                 value={district}
                 onChange={(e) => handleDistrictChange(e.target.value as District)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               >
                 {DISTRICTS.map((d) => (
                   <option key={d} value={d}>
@@ -428,13 +428,13 @@ export function AdminArtisanFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Trạng thái hoạt động
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ArtisanStatus)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               >
                 <option value="working">Đang làm việc</option>
                 <option value="off_today">Hôm nay nghỉ</option>
@@ -443,33 +443,33 @@ export function AdminArtisanFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                Vĩ độ (Lat) <span className="text-[#C84B31]">*</span>
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
+                Vĩ độ (Lat) <span className="text-[#B93818]">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={latStr}
                 onChange={(e) => setLatStr(e.target.value)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                Kinh độ (Lng) <span className="text-[#C84B31]">*</span>
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
+                Kinh độ (Lng) <span className="text-[#B93818]">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={lngStr}
                 onChange={(e) => setLngStr(e.target.value)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Hình thức thanh toán
               </label>
               <select
@@ -477,7 +477,7 @@ export function AdminArtisanFormModal({
                 onChange={(e) =>
                   setPaymentMethod(e.target.value as PaymentMethod)
                 }
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               >
                 <option value="Chỉ tiền mặt">Chỉ tiền mặt</option>
                 <option value="Có chuyển khoản">Có chuyển khoản</option>
@@ -485,13 +485,13 @@ export function AdminArtisanFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Chỗ đậu xe
               </label>
               <select
                 value={parkingInfo}
                 onChange={(e) => setParkingInfo(e.target.value as ParkingInfo)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               >
                 <option value="Dễ đậu xe">Dễ đậu xe</option>
                 <option value="Gửi xe gần đó">Gửi xe gần đó</option>
@@ -499,8 +499,8 @@ export function AdminArtisanFormModal({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
-                Mốc nhận diện góc phố <span className="text-[#C84B31]">*</span>
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
+                Mốc nhận diện góc phố <span className="text-[#B93818]">*</span>
               </label>
               <input
                 type="text"
@@ -508,25 +508,25 @@ export function AdminArtisanFormModal({
                 value={addressLandmark}
                 onChange={(e) => setAddressLandmark(e.target.value)}
                 placeholder="VD: Vỉa hè trước số 124 Nguyễn Gia Trí, cạnh tiệm tạp hóa"
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Khung giờ hoạt động
               </label>
               <input
                 type="text"
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Nhãn giá từ
                 </label>
                 <input
@@ -534,11 +534,11 @@ export function AdminArtisanFormModal({
                   value={minPriceLabel}
                   onChange={(e) => setMinPriceLabel(e.target.value)}
                   placeholder="Từ 15k"
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Ngày xác minh (dd/mm/yyyy)
                 </label>
                 <input
@@ -546,13 +546,13 @@ export function AdminArtisanFormModal({
                   value={verifiedDate}
                   onChange={(e) => setVerifiedDate(e.target.value)}
                   placeholder="25/11/2026"
-                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm tabular-nums focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Danh sách vấn đề nhận sửa (cách nhau bằng dấu phẩy)
               </label>
               <input
@@ -560,31 +560,31 @@ export function AdminArtisanFormModal({
                 value={problemsText}
                 onChange={(e) => setProblemsText(e.target.value)}
                 placeholder="bung đế giày, khâu viền sneaker, thay dây kéo balo"
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+              <label className="block text-xs font-semibold text-[#162442] mb-1">
                 Giới thiệu góc nghề &amp; tay nghề
               </label>
               <textarea
                 rows={2}
                 value={story}
                 onChange={(e) => setStory(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm resize-none focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                className="w-full px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm resize-none focus:bg-white focus:outline-none focus:border-[#E86F2C]"
               />
             </div>
           </div>
 
           {/* Ghi chú nội bộ & Người phụ trách (CHỈ HIỆN TRONG KHU QUẢN TRỊ) */}
-          <div className="rounded-2xl bg-[#FAF8F5] border border-[#DFD6C8] p-4 space-y-3">
+          <div className="rounded-2xl bg-[#FDF8F2] border border-[#DFD6C8] p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold text-[#1F2933] inline-flex items-center gap-1.5">
-                <UserCheck className="w-4 h-4 text-[#D96B38]" />
+              <span className="text-xs font-bold text-[#162442] inline-flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-[#E86F2C]" />
                 <span>Thông tin nội bộ vận hành (PIC &amp; Ghi chú)</span>
               </span>
-              <span className="text-[11px] font-semibold text-[#52606D] inline-flex items-center gap-1 bg-white border border-[#E5DFD5] px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-semibold text-[#5C564E] inline-flex items-center gap-1 bg-white border border-[#DFCBB5] px-2 py-0.5 rounded-full">
                 <EyeOff className="w-3 h-3" />
                 Chỉ hiện trong Admin
               </span>
@@ -592,7 +592,7 @@ export function AdminArtisanFormModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Người phụ trách thực địa (PIC)
                 </label>
                 <input
@@ -600,12 +600,12 @@ export function AdminArtisanFormModal({
                   value={pic}
                   onChange={(e) => setPic(e.target.value)}
                   placeholder="VD: William Gia Minh, Quang Huy..."
-                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-white text-sm focus:outline-none focus:border-[#D96B38]"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-white text-sm focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-[#1F2933] mb-1">
+                <label className="block text-xs font-semibold text-[#162442] mb-1">
                   Ghi chú nội bộ (không hiển thị ra trang công khai)
                 </label>
                 <textarea
@@ -613,16 +613,16 @@ export function AdminArtisanFormModal({
                   value={internalNotes}
                   onChange={(e) => setInternalNotes(e.target.value)}
                   placeholder="VD: Chú không dùng smartphone, liên hệ qua con gái; Đã tặng bảng QR ép nhựa..."
-                  className="w-full px-3 py-2 rounded-xl border border-[#E5DFD5] bg-white text-sm resize-none focus:outline-none focus:border-[#D96B38]"
+                  className="w-full px-3 py-2 rounded-xl border border-[#DFCBB5] bg-white text-sm resize-none focus:outline-none focus:border-[#E86F2C]"
                 />
               </div>
             </div>
           </div>
 
           {/* Bảng giá tham khảo */}
-          <div className="space-y-2 pt-3 border-t border-[#EBE5DC]">
+          <div className="space-y-2 pt-3 border-t border-[#E6D5C3]">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#1F2933]">
+              <span className="text-xs font-bold text-[#162442]">
                 Bảng giá tham khảo
               </span>
               <button
@@ -630,7 +630,7 @@ export function AdminArtisanFormModal({
                 onClick={() =>
                   setPrices((prev) => [...prev, { service: '', priceRange: '' }])
                 }
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#3A6B5C] hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#1B3B82] hover:underline"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm dòng giá</span>
@@ -646,7 +646,7 @@ export function AdminArtisanFormModal({
                       handlePriceChange(idx, 'service', e.target.value)
                     }
                     placeholder="Tên dịch vụ (VD: Dán keo đế giày)"
-                    className="flex-1 min-h-[38px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                    className="flex-1 min-h-[38px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                   />
                   <input
                     type="text"
@@ -655,7 +655,7 @@ export function AdminArtisanFormModal({
                       handlePriceChange(idx, 'priceRange', e.target.value)
                     }
                     placeholder="20.000đ"
-                    className="w-36 min-h-[38px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs tabular-nums focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                    className="w-36 min-h-[38px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs tabular-nums focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                   />
                   {prices.length > 1 && (
                     <button
@@ -664,7 +664,7 @@ export function AdminArtisanFormModal({
                         setPrices((prev) => prev.filter((_, i) => i !== idx))
                       }
                       aria-label="Xóa dòng giá"
-                      className="w-9 h-9 rounded-xl text-[#C84B31] hover:bg-[#C84B31]/10 flex items-center justify-center shrink-0"
+                      className="w-9 h-9 rounded-xl text-[#B93818] hover:bg-[#B93818]/10 flex items-center justify-center shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -675,13 +675,13 @@ export function AdminArtisanFormModal({
           </div>
 
           {/* Ảnh góc nghề */}
-          <div className="space-y-2 pt-3 border-t border-[#EBE5DC]">
-            <span className="block text-xs font-bold text-[#1F2933]">
+          <div className="space-y-2 pt-3 border-t border-[#E6D5C3]">
+            <span className="block text-xs font-bold text-[#162442]">
               Ảnh góc làm việc / đồ nghề (tùy chọn)
             </span>
             <div className="flex flex-wrap items-center gap-3">
               {customImageUrl && (
-                <div className="relative w-28 h-20 rounded-xl overflow-hidden border border-[#E5DFD5]">
+                <div className="relative w-28 h-20 rounded-xl overflow-hidden border border-[#DFCBB5]">
                   <img
                     src={customImageUrl}
                     alt="Xem trước ảnh góc nghề"
@@ -691,14 +691,14 @@ export function AdminArtisanFormModal({
                     type="button"
                     onClick={() => setCustomImageUrl(undefined)}
                     aria-label="Xóa ảnh"
-                    className="absolute top-1 right-1 w-6 h-6 rounded-lg bg-[#1F2933]/80 text-white flex items-center justify-center"
+                    className="absolute top-1 right-1 w-6 h-6 rounded-lg bg-[#162442]/80 text-white flex items-center justify-center"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
-              <label className="min-h-[40px] px-3.5 py-2 rounded-xl border border-dashed border-[#D5CCC0] bg-[#FAF8F5] hover:border-[#D96B38] text-xs font-semibold text-[#1F2933] inline-flex items-center gap-2 cursor-pointer">
-                <Camera className="w-4 h-4 text-[#D96B38]" />
+              <label className="min-h-[40px] px-3.5 py-2 rounded-xl border border-dashed border-[#D5CCC0] bg-[#FDF8F2] hover:border-[#E86F2C] text-xs font-semibold text-[#162442] inline-flex items-center gap-2 cursor-pointer">
+                <Camera className="w-4 h-4 text-[#E86F2C]" />
                 <span>{customImageUrl ? 'Đổi ảnh khác' : 'Tải ảnh lên'}</span>
                 <input
                   type="file"
@@ -711,30 +711,30 @@ export function AdminArtisanFormModal({
           </div>
 
           {/* 2 Checkbox cam kết đồng thuận & ẩn chân dung */}
-          <div className="rounded-2xl bg-[#3A6B5C]/8 border border-[#3A6B5C]/20 p-4 space-y-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#3A6B5C]">
+          <div className="rounded-2xl bg-[#1B3B82]/8 border border-[#1B3B82]/20 p-4 space-y-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#1B3B82]">
               <CheckSquare className="w-4 h-4" />
               <span>Xác nhận tôn trọng quyền riêng tư của cô chú</span>
             </div>
 
-            <label className="flex items-start gap-2.5 text-xs text-[#1F2933] cursor-pointer">
+            <label className="flex items-start gap-2.5 text-xs text-[#162442] cursor-pointer">
               <input
                 type="checkbox"
                 checked={hasConsent}
                 onChange={(e) => setHasConsent(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded accent-[#3A6B5C]"
+                className="mt-0.5 w-4 h-4 rounded accent-[#1B3B82]"
               />
               <span className="font-medium">
                 ✓ Đã xin phép &amp; có sự đồng thuận của cô chú trước khi đưa thông tin lên bản đồ
               </span>
             </label>
 
-            <label className="flex items-start gap-2.5 text-xs text-[#1F2933] cursor-pointer">
+            <label className="flex items-start gap-2.5 text-xs text-[#162442] cursor-pointer">
               <input
                 type="checkbox"
                 checked={hidePortrait}
                 onChange={(e) => setHidePortrait(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded accent-[#3A6B5C]"
+                className="mt-0.5 w-4 h-4 rounded accent-[#1B3B82]"
               />
               <span className="font-medium">
                 Ẩn chân dung (chỉ dùng ảnh đồ nghề / minh họa bàn tay làm nghề)
@@ -745,24 +745,24 @@ export function AdminArtisanFormModal({
           {errorMsg && (
             <div
               role="alert"
-              className="rounded-xl bg-[#C84B31]/10 border border-[#C84B31]/25 px-3.5 py-2.5 text-xs font-semibold text-[#C84B31]"
+              className="rounded-xl bg-[#B93818]/10 border border-[#B93818]/25 px-3.5 py-2.5 text-xs font-semibold text-[#B93818]"
             >
               {errorMsg}
             </div>
           )}
 
           {/* Footer actions */}
-          <div className="pt-2 border-t border-[#EBE5DC] flex items-center justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#E6D5C3] flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[44px] px-4 py-2 rounded-xl border border-[#E5DFD5] bg-white text-sm font-semibold text-[#52606D] hover:bg-[#FAF8F5]"
+              className="min-h-[44px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-white text-sm font-semibold text-[#5C564E] hover:bg-[#FDF8F2]"
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="min-h-[44px] px-5 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-sm font-semibold shadow-sm"
+              className="min-h-[44px] px-5 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-sm font-semibold shadow-sm"
             >
               {mode === 'approve'
                 ? 'Duyệt & đưa lên bản đồ'

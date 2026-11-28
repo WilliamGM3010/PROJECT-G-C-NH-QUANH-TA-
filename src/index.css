@@ -3,22 +3,28 @@
 
 @layer base {
   :root {
-    --color-primary: #D96B38;
-    --color-primary-hover: #C25A2B;
-    --color-secondary: #3A6B5C;
-    --color-bg: #FAF8F5;
+    --color-primary: #1B3B82;
+    --color-primary-hover: #142D66;
+    --color-primary-tint: #EEF2FA;
+    --color-accent: #E86F2C;
+    --color-accent-hover: #D25C1B;
+    --color-accent-tint: #FFF3EB;
+    --color-thread: #B93818;
+    --color-bg: #FDF8F2;
     --color-surface: #FFFFFF;
-    --color-text-primary: #1F2933;
-    --color-text-secondary: #52606D;
-    --color-alert-amber: #E9A825;
-    --color-alert-red: #C84B31;
+    --color-border: #E6D5C3;
+    --color-text-primary: #162442;
+    --color-text-secondary: #5C564E;
+    --color-working: #15803D;
+    --color-alert-amber: #D97706;
+    --color-alert-red: #B93818;
   }
 
   html,
   body {
     font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: #FAF8F5;
-    color: #1F2933;
+    background-color: #FDF8F2;
+    color: #162442;
     margin: 0;
     padding: 0;
   }
@@ -27,6 +33,25 @@
   a[href] {
     cursor: pointer;
   }
+}
+
+.font-display {
+  font-family: 'Bricolage Grotesque', 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Subtle Saigon Risograph / warm paper grain overlay — strictly non-interactive */
+.craft-paper-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='craftNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23craftNoise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
 }
 
 /* Custom thin scrollbars for desktop sidebar & horizontal chips */
@@ -40,12 +65,12 @@
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(82, 96, 109, 0.22);
+  background-color: rgba(27, 59, 130, 0.22);
   border-radius: 9999px;
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(82, 96, 109, 0.38);
+  background-color: rgba(27, 59, 130, 0.38);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -57,11 +82,16 @@
   scrollbar-width: none;
 }
 
-/* Leaflet overrides for clean warm aesthetic & crisp custom divIcon pins */
+/* Leaflet overrides for clean warm-paper craft map & crisp custom divIcon pins */
 .leaflet-container {
   font-family: 'Be Vietnam Pro', sans-serif !important;
-  background-color: #F2EFE9 !important;
+  background-color: #F4EDE4 !important;
   z-index: 1;
+}
+
+/* Vintage warm paper tone applied ONLY to map tiles — never markers or popups */
+.leaflet-tile-pane {
+  filter: sepia(16%) saturate(85%) hue-rotate(-8deg) brightness(101%) contrast(96%);
 }
 
 .artisan-div-icon {
@@ -75,8 +105,8 @@
 }
 
 .leaflet-control-zoom {
-  border: none !important;
-  box-shadow: 0 2px 10px rgba(31, 41, 51, 0.12) !important;
+  border: 1.5px solid rgba(22, 36, 66, 0.16) !important;
+  box-shadow: 3px 3px 0px rgba(27, 59, 130, 0.14) !important;
   border-radius: 12px !important;
   overflow: hidden;
 }
@@ -85,23 +115,23 @@
   width: 38px !important;
   height: 38px !important;
   line-height: 38px !important;
-  color: #1F2933 !important;
+  color: #162442 !important;
   background-color: #FFFFFF !important;
-  border-bottom: 1px solid #EFECE6 !important;
-  font-weight: 600 !important;
+  border-bottom: 1px solid #E6D5C3 !important;
+  font-weight: 700 !important;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
 .leaflet-control-zoom a:hover {
-  background-color: #FAF8F5 !important;
-  color: #D96B38 !important;
+  background-color: #FDF8F2 !important;
+  color: #E86F2C !important;
 }
 
 .leaflet-control-attribution {
-  background: rgba(250, 248, 245, 0.86) !important;
+  background: rgba(253, 248, 242, 0.9) !important;
   backdrop-filter: blur(4px);
   font-size: 10px !important;
-  color: #52606D !important;
+  color: #5C564E !important;
   padding: 2px 6px !important;
 }
 

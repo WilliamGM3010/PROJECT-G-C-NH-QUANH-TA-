@@ -21,6 +21,10 @@ export interface TeamMember {
   accentTone: 'forest' | 'terracotta' | 'stone';
 }
 
+export const GTQT_LOGO_SRC = '/assets/aistudio/Avatar_43e0d175.png';
+
+export const GTQT_COVER_SRC = '/assets/aistudio/_nh_b_a_a384079e.png';
+
 export const FTU_LOGO_SRC = '/assets/aistudio/FTU_logo_2020.svg_da31367b.png';
 
 export const TEAM_WHO_PHOTO_SRC =

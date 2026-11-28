@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { INITIAL_ARTICLES } from './data/articles';
+import { GTQT_LOGO_SRC } from './data/team';
 import {
   CRAFT_CATEGORIES,
   DEFAULT_REVIVED_ITEMS_COUNT,
@@ -2703,12 +2704,17 @@ export default function App() {
   // =======================================================
   if (isRestoringSession) {
     return (
-      <div className="min-h-[100dvh] bg-[#FAF8F5] flex flex-col items-center justify-center p-6 gap-3 text-center">
-        <span className="w-12 h-12 rounded-2xl bg-[#D96B38] text-white flex items-center justify-center shadow-md">
-          <MapPin className="w-6 h-6" />
+      <div className="min-h-[100dvh] bg-[#FDF8F2] text-[#162442] flex flex-col items-center justify-center p-6 gap-4 text-center relative">
+        <div className="craft-paper-grain" aria-hidden="true" />
+        <span className="w-16 h-16 rounded-full overflow-hidden bg-white ring-2 ring-[#1B3B82]/20 shadow-[3px_3px_0px_#1B3B82] flex items-center justify-center">
+          <img
+            src={GTQT_LOGO_SRC}
+            alt="Góc Thợ Quanh Ta"
+            className="w-full h-full object-cover scale-[1.07]"
+          />
         </span>
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#1F2933]">
-          <Loader2 className="w-4 h-4 text-[#D96B38] animate-spin" />
+        <div className="flex items-center gap-2 font-display text-sm font-bold text-[#162442]">
+          <Loader2 className="w-4 h-4 text-[#E86F2C] animate-spin" />
           <span>Đang mở Góc Thợ Quanh Ta...</span>
         </div>
       </div>
@@ -2803,14 +2809,16 @@ export default function App() {
             onNotify={showToast}
           />
 
+          <div className="craft-paper-grain" aria-hidden="true" />
+
           {toastMessage && (
             <div
               role="status"
               aria-live="polite"
               className="fixed top-20 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
             >
-              <div className="bg-[#1F2933] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#7CD4B2] shrink-0" />
+              <div className="bg-[#162442] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#1B3B82] shadow-[3px_3px_0px_#E86F2C] flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#E86F2C] shrink-0" />
                 <span>{toastMessage}</span>
               </div>
             </div>
@@ -2821,27 +2829,45 @@ export default function App() {
 
     // Chưa đăng nhập hoặc tài khoản user thường khi truy cập /quan-tri
     return (
-      <div className="min-h-[100dvh] bg-[#FAF8F5] text-[#1F2933] flex flex-col items-center justify-center p-5 sm:p-8">
-        <div className="w-full max-w-md rounded-3xl bg-white border border-stone-200/90 shadow-[0_12px_36px_rgba(31,41,51,0.06)] p-7 sm:p-9 text-center space-y-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#3A6B5C]/10 text-[#3A6B5C] flex items-center justify-center">
-            {currentUser ? (
-              <ShieldAlert className="w-7 h-7 text-[#D96B38]" />
-            ) : (
-              <ShieldCheck className="w-7 h-7" />
-            )}
+      <div className="min-h-[100dvh] bg-[#FDF8F2] text-[#162442] flex flex-col items-center justify-center p-5 sm:p-8 relative">
+        <div className="craft-paper-grain" aria-hidden="true" />
+        <div className="w-full max-w-md rounded-3xl bg-white border-2 border-[#162442] shadow-[6px_6px_0px_#1B3B82] p-7 sm:p-9 text-center space-y-6 relative z-10">
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-white ring-2 ring-[#1B3B82]/20 shadow-md">
+                <img
+                  src={GTQT_LOGO_SRC}
+                  alt="Góc Thợ Quanh Ta"
+                  className="w-full h-full object-cover scale-[1.07]"
+                />
+              </div>
+              <span
+                className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${
+                  currentUser
+                    ? 'bg-[#FFF3EB] text-[#B93818]'
+                    : 'bg-[#EEF2FA] text-[#1B3B82]'
+                }`}
+              >
+                {currentUser ? (
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                ) : (
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                )}
+              </span>
+            </div>
           </div>
 
           {currentUser ? (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#D96B38]">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#B93818]">
                 Quản trị · Góc Thợ Quanh Ta
               </p>
-              <h1 className="text-xl font-bold text-[#1F2933] tracking-tight">
+              <h1 className="font-display text-xl font-bold text-[#162442] tracking-tight">
                 Tài khoản của bạn chưa có quyền truy cập trang Quản trị
               </h1>
-              <p className="text-sm text-[#52606D] leading-relaxed">
+              <p className="text-sm text-[#5C564E] leading-relaxed">
                 Bạn đang đăng nhập với tài khoản{' '}
-                <strong className="font-semibold text-[#1F2933]">
+                <strong className="font-bold text-[#162442]">
                   {currentUser.displayName || currentUser.name}
                 </strong>
                 . Trang này chỉ dành cho Super Admin hoặc Cộng tác viên.
@@ -2849,13 +2875,13 @@ export default function App() {
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#3A6B5C]">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#1B3B82]">
                 Quản trị · Góc Thợ Quanh Ta
               </p>
-              <h1 className="text-xl font-bold text-[#1F2933] tracking-tight">
+              <h1 className="font-display text-xl font-bold text-[#162442] tracking-tight">
                 Đăng nhập tài khoản Quản trị / CTV
               </h1>
-              <p className="text-sm text-[#52606D] leading-relaxed">
+              <p className="text-sm text-[#5C564E] leading-relaxed">
                 Vui lòng đăng nhập bằng tài khoản Super Admin hoặc Cộng tác viên
                 để tiếp tục quản lý bản đồ và Bản tin.
               </p>
@@ -2872,7 +2898,7 @@ export default function App() {
                     'login'
                   )
                 }
-                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors shadow-xs"
+                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-all shadow-[3px_3px_0px_#E86F2C] active:translate-y-0.5"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Đăng nhập Quản trị / CTV</span>
@@ -2890,9 +2916,9 @@ export default function App() {
                     'login'
                   );
                 }}
-                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#FAF8F5] hover:bg-stone-100 border border-stone-200 text-[#1F2933] text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors"
+                className="w-full min-h-[46px] px-5 py-2.5 rounded-full bg-[#FDF8F2] hover:bg-[#EEF2FA] border border-[#DFCBB5] text-[#162442] text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors"
               >
-                <LogOut className="w-4 h-4 text-[#52606D]" />
+                <LogOut className="w-4 h-4 text-[#5C564E]" />
                 <span>Đăng xuất để đổi tài khoản</span>
               </button>
             )}
@@ -2900,7 +2926,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => navigateToTab('home')}
-              className="w-full min-h-[44px] px-5 py-2.5 rounded-full border border-stone-200/90 hover:border-stone-300 bg-white hover:bg-[#FAF8F5] text-[#52606D] hover:text-[#1F2933] text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors"
+              className="w-full min-h-[44px] px-5 py-2.5 rounded-full border border-[#DFCBB5] hover:border-[#1B3B82] bg-white hover:bg-[#FDF8F2] text-[#5C564E] hover:text-[#162442] text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Quay về trang chủ</span>
@@ -2924,8 +2950,8 @@ export default function App() {
             aria-live="polite"
             className="fixed top-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
           >
-            <div className="bg-[#1F2933] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#7CD4B2] shrink-0" />
+            <div className="bg-[#162442] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#1B3B82] shadow-[3px_3px_0px_#E86F2C] flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#E86F2C] shrink-0" />
               <span>{toastMessage}</span>
             </div>
           </div>
@@ -2961,7 +2987,8 @@ export default function App() {
   };
 
   return (
-    <div className="h-[100dvh] lg:h-screen flex flex-col bg-[#FAF8F5] text-[#1F2933] overflow-hidden">
+    <div className="h-[100dvh] lg:h-screen flex flex-col bg-[#FDF8F2] text-[#162442] overflow-hidden relative">
+      <div className="craft-paper-grain" aria-hidden="true" />
       {/* Desktop Top Navbar cố định (h-16) với nút Đăng nhập / Đăng ký hoặc Tài khoản */}
       <DesktopNavbar
         activeTab={activeTab}
@@ -3063,20 +3090,20 @@ export default function App() {
             {/* =======================================================
                 CỘT TRÁI DESKTOP (440px): Quay lại Tìm lỗi khác, Tác động xanh, Tìm kiếm, Bộ lọc, Danh sách & Chi tiết
                ======================================================= */}
-            <aside className="hidden lg:flex flex-col w-[440px] shrink-0 h-full bg-[#FAF8F5] border-r border-[#E8E2D9] relative overflow-hidden">
+            <aside className="hidden lg:flex flex-col w-[440px] shrink-0 h-full bg-[#FDF8F2] border-r border-dashed border-[#D8C3AE] relative overflow-hidden">
               <div className="flex flex-col h-full">
                 {/* Thanh đếm gọn nhẹ + Nút quay lại trang Tìm lỗi khác */}
-                <div className="px-4 py-2 bg-[#3A6B5C]/10 border-b border-[#3A6B5C]/15 flex items-center justify-between gap-2 shrink-0">
+                <div className="px-4 py-2 bg-[#EEF2FA] border-b border-dashed border-[#1B3B82]/20 flex items-center justify-between gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => navigateToTab('home')}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#1F2933] hover:text-[#D96B38] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#162442] hover:text-[#E86F2C] transition-colors whitespace-nowrap shrink-0"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Tìm lỗi khác</span>
                   </button>
-                  <p className="text-[11px] font-semibold text-[#3A6B5C] flex items-center gap-1 tabular-nums truncate">
-                    <Recycle className="w-3.5 h-3.5 shrink-0" />
+                  <p className="font-mono text-[11px] font-semibold text-[#1B3B82] flex items-center gap-1 tabular-nums truncate">
+                    <Recycle className="w-3.5 h-3.5 shrink-0 text-[#E86F2C]" />
                     <span>
                       <strong className="font-bold">{revivedCount}</strong> món
                       đồ hồi sinh
@@ -3085,32 +3112,32 @@ export default function App() {
                 </div>
 
                 {/* Khối Tìm kiếm theo vấn đề & Bộ lọc thông minh */}
-                <div className="p-4 bg-white border-b border-[#EBE5DC] space-y-3 shrink-0">
+                <div className="p-4 bg-white border-b border-dashed border-[#D8C3AE] space-y-3 shrink-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-[#52606D]">
+                    <p className="text-xs font-medium text-[#5C564E]">
                       Hỏng đâu tìm đó – Gần nhau hơn mỗi ngày!
                     </p>
-                    <span className="text-xs font-semibold text-[#3A6B5C] tabular-nums">
+                    <span className="font-mono text-xs font-bold text-[#1B3B82] tabular-nums">
                       {filteredArtisans.length} góc thợ
                     </span>
                   </div>
 
                   {/* Ô tìm kiếm theo vấn đề */}
                   <div className="relative">
-                    <Search className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-4 h-4 text-[#1B3B82]/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="search"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Bạn cần sửa gì? (VD: bung đế giày, lên lai quần, thay pin...)"
-                      className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#FAF8F5] border border-[#E5DFD5] text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:bg-white focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15 transition-all"
+                      className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#FDF8F2] border border-[#DFCBB5] text-sm text-[#162442] placeholder:text-[#8A8177] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:shadow-[3px_3px_0px_#1B3B82] transition-all"
                     />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery('')}
                         aria-label="Xóa từ khóa"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-[#7B8794] hover:text-[#1F2933] hover:bg-[#EBE5DC] flex items-center justify-center"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-[#8A8177] hover:text-[#162442] hover:bg-[#F3EAE0] flex items-center justify-center"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -3128,10 +3155,10 @@ export default function App() {
                           key={problem}
                           type="button"
                           onClick={() => setSearchQuery(active ? '' : problem)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors ${
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 transition-colors ${
                             active
-                              ? 'bg-[#D96B38] text-white'
-                              : 'bg-[#F3EEE6] text-[#52606D] hover:bg-[#EAE2D6] hover:text-[#1F2933]'
+                              ? 'bg-[#E86F2C] text-white'
+                              : 'bg-[#FDF8F2] border border-[#E6D5C3] text-[#5C564E] hover:border-[#1B3B82] hover:text-[#1B3B82]'
                           }`}
                         >
                           {problem}
@@ -3146,10 +3173,10 @@ export default function App() {
                       type="button"
                       onClick={handleToggleSortByNearest}
                       aria-pressed={sortByNearest}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors ${
                         sortByNearest
-                          ? 'bg-[#D96B38] text-white shadow-xs'
-                          : 'bg-[#D96B38]/10 border border-[#D96B38]/30 text-[#D96B38] hover:bg-[#D96B38]/18'
+                          ? 'bg-[#E86F2C] text-white shadow-[2px_2px_0px_#162442]'
+                          : 'bg-[#FFF3EB] border border-[#E86F2C]/40 text-[#E86F2C] hover:bg-[#FFE6D6]'
                       }`}
                     >
                       {isLocating && sortByNearest ? (
@@ -3170,8 +3197,8 @@ export default function App() {
                             onClick={() => setSelectedCategory(category)}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
                               active
-                                ? 'bg-[#1F2933] text-white shadow-xs'
-                                : 'bg-white border border-[#E5DFD5] text-[#52606D] hover:border-[#1F2933]/35 hover:text-[#1F2933]'
+                                ? 'bg-[#1B3B82] text-white shadow-[2px_2px_0px_#E86F2C]'
+                                : 'bg-white border border-[#DFCBB5] text-[#5C564E] hover:border-[#1B3B82] hover:text-[#1B3B82]'
                             }`}
                           >
                             {category}
@@ -3191,7 +3218,7 @@ export default function App() {
                           e.target.value as District | 'Tất cả khu vực'
                         )
                       }
-                      className="h-9 px-3 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs font-semibold text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                      className="h-9 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442] focus:outline-none focus:border-[#1B3B82]"
                     >
                       <option value="Tất cả khu vực">Tất cả khu vực</option>
                       {DISTRICTS.map((d) => (
@@ -3208,8 +3235,8 @@ export default function App() {
                         onChange={(e) => setOnlyWorking(e.target.checked)}
                         className="sr-only peer"
                       />
-                      <span className="w-9 h-5 rounded-full bg-[#DFD8CE] peer-checked:bg-[#3A6B5C] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:shadow-xs after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
-                      <span className="text-xs font-semibold text-[#1F2933] whitespace-nowrap">
+                      <span className="w-9 h-5 rounded-full bg-[#DFCBB5] peer-checked:bg-[#15803D] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:shadow-xs after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
+                      <span className="text-xs font-bold text-[#162442] whitespace-nowrap">
                         Đang làm việc
                       </span>
                     </label>
@@ -3219,23 +3246,23 @@ export default function App() {
                 {/* Danh sách thẻ người thợ cuộn dọc */}
                 <div className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
                   {isLoadingPublicData ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-2.5 mt-4">
-                      <Loader2 className="w-6 h-6 text-[#D96B38] animate-spin mx-auto" />
-                      <p className="text-sm font-semibold text-[#1F2933]">
+                    <div className="rounded-2xl bg-white border border-[#E6D5C3] p-6 text-center space-y-2.5 mt-4">
+                      <Loader2 className="w-6 h-6 text-[#E86F2C] animate-spin mx-auto" />
+                      <p className="font-display text-sm font-bold text-[#162442]">
                         Đang tải danh sách cô chú thợ...
                       </p>
-                      <p className="text-xs text-[#52606D]">
+                      <p className="text-xs text-[#5C564E]">
                         Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu Supabase.
                       </p>
                     </div>
                   ) : publicDbError ? (
                     <div
                       role="alert"
-                      className="rounded-2xl bg-[#C84B31]/8 border border-[#C84B31]/25 p-5 text-center space-y-3 mt-4"
+                      className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/30 p-5 text-center space-y-3 mt-4"
                     >
-                      <WifiOff className="w-7 h-7 text-[#C84B31] mx-auto" />
+                      <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-[#A3361F]">
+                        <p className="font-display text-sm font-bold text-[#B93818]">
                           Không thể tải dữ liệu
                         </p>
                         <p className="text-xs text-[#7A2B1B] leading-relaxed">
@@ -3245,22 +3272,22 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => void loadPublicArtisans()}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#B03D25] text-white text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#992C12] text-white text-xs font-bold transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Thử tải lại</span>
                       </button>
                     </div>
                   ) : filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3 mt-4">
-                      <MapPin className="w-8 h-8 text-[#D96B38]/60 mx-auto" />
+                    <div className="rounded-2xl bg-white border border-dashed border-[#D8C3AE] p-6 text-center space-y-3 mt-4">
+                      <MapPin className="w-8 h-8 text-[#E86F2C]/65 mx-auto" />
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-[#1F2933]">
+                        <p className="font-display text-sm font-bold text-[#162442]">
                           {publicArtisans.length === 0 && isSupabaseConfigured
                             ? 'Chưa có cô chú thợ nào trên bản đồ'
                             : 'Chưa tìm thấy góc thợ phù hợp'}
                         </p>
-                        <p className="text-xs text-[#52606D] leading-relaxed">
+                        <p className="text-xs text-[#5C564E] leading-relaxed">
                           {publicArtisans.length === 0 && isSupabaseConfigured
                             ? 'Quản trị viên có thể vào mục Quản trị để nạp 6 dữ liệu mẫu vào Database.'
                             : 'Thử xóa bớt bộ lọc hoặc tìm từ khóa ngắn hơn như “giày”, “quần”, “khóa” nhé.'}
@@ -3270,7 +3297,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleResetFilters}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-bold shadow-[2px_2px_0px_#162442] transition-all"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Đặt lại bộ lọc</span>
@@ -3344,7 +3371,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => navigateToTab('home')}
-                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-sm text-xs font-bold text-[#1F2933] hover:text-[#D96B38] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
+                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#DFCBB5] shadow-sm text-xs font-bold text-[#162442] hover:text-[#E86F2C] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Tìm lỗi khác</span>
@@ -3373,7 +3400,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => openAuthModal()}
-                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1F2933] text-[#1F2933] hover:text-white border border-stone-300 shadow-sm text-xs font-medium whitespace-nowrap transition-colors"
+                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1B3B82] text-[#1B3B82] hover:text-white border border-[#1B3B82]/35 shadow-sm text-xs font-bold whitespace-nowrap transition-colors"
                       >
                         Đăng nhập
                       </button>
@@ -3381,21 +3408,21 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pointer-events-auto flex items-center gap-2 bg-white/95 backdrop-blur-md border border-[#E5DFD5] rounded-2xl shadow-md px-3 py-1.5">
-                  <Search className="w-4 h-4 text-[#D96B38] shrink-0" />
+                <div className="pointer-events-auto flex items-center gap-2 bg-white/95 backdrop-blur-md border border-[#1B3B82]/30 rounded-2xl shadow-md px-3 py-1.5">
+                  <Search className="w-4 h-4 text-[#E86F2C] shrink-0" />
                   <input
                     type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Bạn cần sửa gì? (bung đế, lên lai...)"
-                    className="flex-1 min-w-0 h-9 bg-transparent text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:outline-none"
+                    className="flex-1 min-w-0 h-9 bg-transparent text-sm text-[#162442] placeholder:text-[#8A8177] focus:outline-none"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
                       aria-label="Xóa từ khóa"
-                      className="w-8 h-8 rounded-lg text-[#7B8794] flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg text-[#8A8177] flex items-center justify-center"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -3408,8 +3435,8 @@ export default function App() {
                       mobileFiltersOpen ||
                       selectedDistrict !== 'Tất cả khu vực' ||
                       onlyWorking
-                        ? 'bg-[#D96B38] text-white'
-                        : 'bg-[#FAF8F5] text-[#52606D]'
+                        ? 'bg-[#E86F2C] text-white'
+                        : 'bg-[#FDF8F2] text-[#1B3B82]'
                     }`}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
@@ -3417,7 +3444,7 @@ export default function App() {
                 </div>
 
                 {mobileFiltersOpen && (
-                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-[#E5DFD5] rounded-2xl shadow-md p-3 space-y-2.5">
+                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-[#DFCBB5] rounded-2xl shadow-md p-3 space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <select
                         aria-label="Chọn khu vực"
@@ -3427,7 +3454,7 @@ export default function App() {
                             e.target.value as District | 'Tất cả khu vực'
                           )
                         }
-                        className="h-10 px-3 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs font-semibold text-[#1F2933]"
+                        className="h-10 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442]"
                       >
                         <option value="Tất cả khu vực">Tất cả khu vực</option>
                         {DISTRICTS.map((d) => (
@@ -3444,8 +3471,8 @@ export default function App() {
                           onChange={(e) => setOnlyWorking(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <span className="w-9 h-5 rounded-full bg-[#DFD8CE] peer-checked:bg-[#3A6B5C] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
-                        <span className="text-xs font-semibold text-[#1F2933]">
+                        <span className="w-9 h-5 rounded-full bg-[#DFCBB5] peer-checked:bg-[#15803D] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
+                        <span className="text-xs font-bold text-[#162442]">
                           Đang làm việc
                         </span>
                       </label>
@@ -3463,10 +3490,10 @@ export default function App() {
                             onClick={() =>
                               setSearchQuery(active ? '' : problem)
                             }
-                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 ${
+                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 ${
                               active
-                                ? 'bg-[#D96B38] text-white'
-                                : 'bg-[#FAF8F5] border border-[#E5DFD5] text-[#52606D]'
+                                ? 'bg-[#E86F2C] text-white'
+                                : 'bg-[#FDF8F2] border border-[#E6D5C3] text-[#5C564E]'
                             }`}
                           >
                             {problem}
@@ -3483,10 +3510,10 @@ export default function App() {
                     type="button"
                     onClick={handleToggleSortByNearest}
                     aria-pressed={sortByNearest}
-                    className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm inline-flex items-center gap-1 transition-colors ${
+                    className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 shadow-sm inline-flex items-center gap-1 transition-colors ${
                       sortByNearest
-                        ? 'bg-[#D96B38] text-white'
-                        : 'bg-white/95 text-[#D96B38] border border-[#D96B38]/40'
+                        ? 'bg-[#E86F2C] text-white'
+                        : 'bg-white/95 text-[#E86F2C] border border-[#E86F2C]/45'
                     }`}
                   >
                     {isLocating && sortByNearest ? (
@@ -3504,10 +3531,10 @@ export default function App() {
                         key={category}
                         type="button"
                         onClick={() => setSelectedCategory(category)}
-                        className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm transition-colors ${
+                        className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 shadow-sm transition-colors ${
                           active
-                            ? 'bg-[#1F2933] text-white'
-                            : 'bg-white/95 text-[#1F2933] border border-[#E5DFD5]'
+                            ? 'bg-[#1B3B82] text-white'
+                            : 'bg-white/95 text-[#162442] border border-[#DFCBB5]'
                         }`}
                       >
                         {category}
@@ -3518,8 +3545,8 @@ export default function App() {
 
                 {/* Trạng thái Loading nhẹ & Lỗi mạng trên Mobile */}
                 {isLoadingPublicData && (
-                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#E5DFD5] shadow-sm text-xs font-semibold text-[#3A6B5C]">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#DFCBB5] shadow-sm text-xs font-bold text-[#1B3B82]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-[#E86F2C]" />
                     <span>Đang tải dữ liệu từ Supabase...</span>
                   </div>
                 )}
@@ -3527,7 +3554,7 @@ export default function App() {
                 {publicDbError && (
                   <div
                     role="alert"
-                    className="pointer-events-auto rounded-2xl bg-white/95 backdrop-blur-md border border-[#C84B31]/35 shadow-md px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#A3361F]"
+                    className="pointer-events-auto rounded-2xl bg-white/95 backdrop-blur-md border border-[#B93818]/40 shadow-md px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#B93818]"
                   >
                     <span className="inline-flex items-center gap-1.5 min-w-0">
                       <WifiOff className="w-4 h-4 shrink-0" />
@@ -3538,7 +3565,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => void loadPublicArtisans()}
-                      className="min-h-[34px] px-3 py-1 rounded-xl bg-[#C84B31] text-white font-semibold whitespace-nowrap shrink-0"
+                      className="min-h-[34px] px-3 py-1 rounded-xl bg-[#B93818] text-white font-bold whitespace-nowrap shrink-0"
                     >
                       Thử lại
                     </button>
@@ -3546,7 +3573,7 @@ export default function App() {
                 )}
               </div>
 
-              {/* Bản đồ tương tác Leaflet + OpenStreetMap */}
+              {/* Bản đồ tương tác Leaflet + CartoDB Positron */}
               <div
                 className={`w-full h-full ${
                   mobileViewMode === 'list' ? 'hidden lg:block' : 'block'
@@ -3573,9 +3600,9 @@ export default function App() {
 
               {/* Chế độ Danh sách trên Mobile */}
               {mobileViewMode === 'list' && (
-                <div className="lg:hidden absolute inset-0 bg-[#FAF8F5] overflow-y-auto pt-[156px] pb-36 px-3.5 space-y-3">
+                <div className="lg:hidden absolute inset-0 bg-[#FDF8F2] overflow-y-auto pt-[156px] pb-36 px-3.5 space-y-3">
                   <div className="flex items-center justify-between px-1">
-                    <p className="text-xs font-semibold text-[#52606D] tabular-nums">
+                    <p className="font-mono text-xs font-semibold text-[#5C564E] tabular-nums">
                       Tìm thấy {filteredArtisans.length} góc thợ tại TP.HCM
                       {sortByNearest && userLocation ? ' · Gần nhất trước' : ''}
                     </p>
@@ -3583,7 +3610,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={handleResetFilters}
-                        className="text-xs font-semibold text-[#D96B38]"
+                        className="text-xs font-bold text-[#E86F2C]"
                       >
                         Xóa lọc
                       </button>
@@ -3591,30 +3618,30 @@ export default function App() {
                   </div>
 
                   {isLoadingPublicData ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-2">
-                      <Loader2 className="w-6 h-6 text-[#D96B38] animate-spin mx-auto" />
-                      <p className="text-sm font-semibold text-[#1F2933]">
+                    <div className="rounded-2xl bg-white border border-[#E6D5C3] p-6 text-center space-y-2">
+                      <Loader2 className="w-6 h-6 text-[#E86F2C] animate-spin mx-auto" />
+                      <p className="text-sm font-bold text-[#162442]">
                         Đang tải dữ liệu từ Supabase...
                       </p>
                     </div>
                   ) : publicDbError ? (
-                    <div className="rounded-2xl bg-[#C84B31]/8 border border-[#C84B31]/25 p-5 text-center space-y-3">
-                      <WifiOff className="w-6 h-6 text-[#C84B31] mx-auto" />
+                    <div className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/30 p-5 text-center space-y-3">
+                      <WifiOff className="w-6 h-6 text-[#B93818] mx-auto" />
                       <p className="text-xs text-[#7A2B1B] font-medium">
                         {publicDbError}
                       </p>
                       <button
                         type="button"
                         onClick={() => void loadPublicArtisans()}
-                        className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                        className="min-h-[40px] px-4 py-2 rounded-xl bg-[#B93818] text-white text-xs font-bold inline-flex items-center gap-1.5"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Thử tải lại</span>
                       </button>
                     </div>
                   ) : filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-[#EBE5DC] p-6 text-center space-y-3">
-                      <p className="text-sm font-bold text-[#1F2933]">
+                    <div className="rounded-2xl bg-white border border-dashed border-[#D8C3AE] p-6 text-center space-y-3">
+                      <p className="font-display text-sm font-bold text-[#162442]">
                         {publicArtisans.length === 0 && isSupabaseConfigured
                           ? 'Chưa có cô chú thợ nào trên bản đồ'
                           : 'Chưa tìm thấy góc thợ phù hợp'}
@@ -3623,7 +3650,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleResetFilters}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold"
+                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[#E86F2C] text-white text-xs font-bold shadow-[2px_2px_0px_#162442]"
                         >
                           Đặt lại bộ lọc
                         </button>
@@ -3652,9 +3679,9 @@ export default function App() {
                 mobileViewMode === 'map' &&
                 !mobileDetailOpen && (
                   <div className="lg:hidden fixed left-3 right-3 bottom-[76px] z-[460]">
-                    <div className="rounded-2xl bg-white border border-[#E5DFD5] shadow-xl p-3 space-y-3">
+                    <div className="rounded-2xl bg-white border-2 border-[#162442] shadow-[4px_4px_0px_#1B3B82] p-3 space-y-3">
                       <div className="flex items-start gap-3">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#F4EFE6]">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#FDF8F2] border border-[#E6D5C3]">
                           <ArtisanIllustration
                             variant={selectedArtisan.illustrationVariant}
                             customImageUrl={selectedArtisan.customImageUrl}
@@ -3664,14 +3691,14 @@ export default function App() {
 
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-sm font-bold text-[#1F2933] leading-snug line-clamp-2">
+                            <h3 className="font-display text-sm font-bold text-[#162442] leading-snug line-clamp-2">
                               {selectedArtisan.name}
                             </h3>
                             <button
                               type="button"
                               onClick={handleCloseSelectedArtisan}
                               aria-label="Đóng thẻ xem nhanh"
-                              className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#7B8794] flex items-center justify-center shrink-0"
+                              className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#8A8177] hover:text-[#162442] flex items-center justify-center shrink-0"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -3685,14 +3712,14 @@ export default function App() {
                                 {miniCardStatus.label}
                               </span>
                             )}
-                            <span className="text-[#CBD2D9]">·</span>
-                            <span className="font-bold text-[#1F2933] tabular-nums">
+                            <span className="text-[#D8C3AE]">·</span>
+                            <span className="font-mono font-bold text-[#E86F2C] tabular-nums">
                               {selectedArtisan.minPriceLabel}
                             </span>
                             {typeof miniCardDistance === 'number' && (
                               <>
-                                <span className="text-[#CBD2D9]">·</span>
-                                <span className="inline-flex items-center gap-0.5 text-[#D96B38] font-semibold tabular-nums">
+                                <span className="text-[#D8C3AE]">·</span>
+                                <span className="font-mono inline-flex items-center gap-0.5 text-[#1B3B82] font-bold tabular-nums">
                                   <Navigation className="w-3 h-3" />
                                   {formatDistanceWithPrefix(miniCardDistance)}
                                 </span>
@@ -3700,7 +3727,7 @@ export default function App() {
                             )}
                           </div>
 
-                          <p className="text-[11px] text-[#52606D] line-clamp-1">
+                          <p className="text-[11px] text-[#5C564E] line-clamp-1">
                             {selectedArtisan.addressLandmark}
                           </p>
                         </div>
@@ -3710,7 +3737,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setMobileDetailOpen(true)}
-                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs font-semibold text-[#1F2933]"
+                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442]"
                         >
                           Xem chi tiết
                         </button>
@@ -3719,7 +3746,7 @@ export default function App() {
                           onClick={() =>
                             handleDrawRouteFromDetail(selectedArtisan)
                           }
-                          className="min-h-[44px] px-3 py-2 rounded-xl bg-[#3A6B5C] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                          className="min-h-[44px] px-3 py-2 rounded-xl bg-[#1B3B82] text-white text-xs font-bold inline-flex items-center justify-center gap-1 whitespace-nowrap"
                         >
                           <Navigation className="w-3.5 h-3.5" />
                           <span>Vẽ đường</span>
@@ -3732,7 +3759,7 @@ export default function App() {
                           )}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-[#D96B38] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-[#E86F2C] text-white text-xs font-bold inline-flex items-center justify-center gap-1 whitespace-nowrap shadow-[2px_2px_0px_#162442]"
                         >
                           <span>Chỉ đường</span>
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -3750,7 +3777,7 @@ export default function App() {
                     onClick={() =>
                       setMobileViewMode((m) => (m === 'map' ? 'list' : 'map'))
                     }
-                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#1F2933] text-white text-xs font-semibold shadow-lg inline-flex items-center gap-2 active:scale-[0.98] transition-transform whitespace-nowrap"
+                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#1B3B82] text-white text-xs font-bold shadow-[3px_3px_0px_#E86F2C] inline-flex items-center gap-2 active:scale-[0.98] transition-transform whitespace-nowrap"
                   >
                     {mobileViewMode === 'map' ? (
                       <>
@@ -3964,8 +3991,8 @@ export default function App() {
           aria-live="polite"
           className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] sm:max-w-md pointer-events-none"
         >
-          <div className="bg-[#1F2933] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl shadow-lg flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#7CD4B2] shrink-0" />
+          <div className="bg-[#162442] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#1B3B82] shadow-[3px_3px_0px_#E86F2C] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#E86F2C] shrink-0" />
             <span>{toastMessage}</span>
           </div>
         </div>

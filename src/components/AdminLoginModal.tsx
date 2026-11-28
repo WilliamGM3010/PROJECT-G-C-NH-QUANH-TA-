@@ -60,26 +60,26 @@ export function AdminLoginModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="admin-login-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1F2933]/55 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#162442]/55 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white border border-[#EBE5DC] shadow-xl overflow-hidden"
+        className="w-full max-w-md rounded-2xl bg-white border border-[#E6D5C3] shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5DC] bg-[#FAF8F5]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E6D5C3] bg-[#FDF8F2]">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl bg-[#D96B38] text-white flex items-center justify-center shadow-xs">
+            <span className="w-9 h-9 rounded-xl bg-[#E86F2C] text-white flex items-center justify-center shadow-xs">
               <Lock className="w-4 h-4" />
             </span>
             <div>
               <h2
                 id="admin-login-title"
-                className="text-sm font-bold text-[#1F2933]"
+                className="text-sm font-bold text-[#162442]"
               >
                 Đăng nhập Khu Quản Trị
               </h2>
-              <p className="text-[11px] text-[#52606D]">
+              <p className="text-[11px] text-[#5C564E]">
                 {isSupabaseConfigured
                   ? 'Xác thực qua bảng admin_accounts trên Supabase'
                   : 'Góc Thợ Quanh Ta · Chế độ dùng thử cục bộ'}
@@ -91,7 +91,7 @@ export function AdminLoginModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-xl text-[#52606D] hover:bg-white hover:text-[#1F2933] flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl text-[#5C564E] hover:bg-white hover:text-[#162442] flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -101,12 +101,12 @@ export function AdminLoginModal({
           <div>
             <label
               htmlFor="admin-email"
-              className="block text-xs font-semibold text-[#1F2933] mb-1.5"
+              className="block text-xs font-semibold text-[#162442] mb-1.5"
             >
               Email đăng nhập
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-[#8A8177] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 id="admin-email"
                 type="text"
@@ -118,7 +118,7 @@ export function AdminLoginModal({
                   if (errorMsg) setErrorMsg('');
                 }}
                 placeholder="admin@goctho.vn"
-                className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:bg-white focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+                className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8A8177] focus:bg-white focus:outline-none focus:border-[#E86F2C] focus:ring-2 focus:ring-[#E86F2C]/15"
               />
             </div>
           </div>
@@ -126,12 +126,12 @@ export function AdminLoginModal({
           <div>
             <label
               htmlFor="admin-password"
-              className="block text-xs font-semibold text-[#1F2933] mb-1.5"
+              className="block text-xs font-semibold text-[#162442] mb-1.5"
             >
               Mật khẩu
             </label>
             <div className="relative">
-              <KeyRound className="w-4 h-4 text-[#7B8794] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <KeyRound className="w-4 h-4 text-[#8A8177] absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 id="admin-password"
                 type={showPassword ? 'text' : 'password'}
@@ -142,13 +142,13 @@ export function AdminLoginModal({
                   if (errorMsg) setErrorMsg('');
                 }}
                 placeholder="Nhập mật khẩu"
-                className="w-full min-h-[44px] pl-10 pr-11 py-2.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm text-[#1F2933] placeholder:text-[#7B8794] focus:bg-white focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+                className="w-full min-h-[44px] pl-10 pr-11 py-2.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8A8177] focus:bg-white focus:outline-none focus:border-[#E86F2C] focus:ring-2 focus:ring-[#E86F2C]/15"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#7B8794] hover:text-[#1F2933] flex items-center justify-center"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#8A8177] hover:text-[#162442] flex items-center justify-center"
               >
                 {showPassword ? (
                   <EyeOff className="w-4 h-4" />
@@ -162,7 +162,7 @@ export function AdminLoginModal({
           {errorMsg && (
             <div
               role="alert"
-              className="rounded-xl bg-[#C84B31]/10 border border-[#C84B31]/25 px-3.5 py-2.5 text-xs font-semibold text-[#C84B31]"
+              className="rounded-xl bg-[#B93818]/10 border border-[#B93818]/25 px-3.5 py-2.5 text-xs font-semibold text-[#B93818]"
             >
               {errorMsg}
             </div>
@@ -171,7 +171,7 @@ export function AdminLoginModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors"
+            className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-70 text-white text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors"
           >
             {isSubmitting ? (
               <>
@@ -184,17 +184,17 @@ export function AdminLoginModal({
           </button>
 
           {/* Gợi ý tài khoản dùng thử */}
-          <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-3 text-[11px] text-[#52606D] space-y-1.5">
-            <p className="font-semibold text-[#1F2933]">
+          <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-3 text-[11px] text-[#5C564E] space-y-1.5">
+            <p className="font-semibold text-[#162442]">
               Tài khoản dùng thử nhanh:
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span>
                 Super Admin:{' '}
-                <code className="font-semibold text-[#3A6B5C]">
+                <code className="font-semibold text-[#1B3B82]">
                   admin@goctho.vn
                 </code>{' '}
-                / <code className="font-semibold text-[#1F2933]">admin123</code>
+                / <code className="font-semibold text-[#162442]">admin123</code>
               </span>
               <button
                 type="button"
@@ -203,18 +203,18 @@ export function AdminLoginModal({
                   setPassword('admin123');
                   setErrorMsg('');
                 }}
-                className="text-[#D96B38] font-semibold hover:underline"
+                className="text-[#E86F2C] font-semibold hover:underline"
               >
                 Điền nhanh
               </button>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 border-t border-[#EBE5DC]/70">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 border-t border-[#E6D5C3]/70">
               <span>
                 Cộng tác viên:{' '}
-                <code className="font-semibold text-[#3A6B5C]">
+                <code className="font-semibold text-[#1B3B82]">
                   ctv@goctho.vn
                 </code>{' '}
-                / <code className="font-semibold text-[#1F2933]">ctv123</code>
+                / <code className="font-semibold text-[#162442]">ctv123</code>
               </span>
               <button
                 type="button"
@@ -223,7 +223,7 @@ export function AdminLoginModal({
                   setPassword('ctv123');
                   setErrorMsg('');
                 }}
-                className="text-[#D96B38] font-semibold hover:underline"
+                className="text-[#E86F2C] font-semibold hover:underline"
               >
                 Điền nhanh
               </button>

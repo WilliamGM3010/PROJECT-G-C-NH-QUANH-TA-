@@ -429,20 +429,20 @@ export function AdminArticleEditorModal({
       role="dialog"
       aria-modal="true"
       aria-label={isEditing ? 'Chỉnh sửa bài viết' : 'Đăng bài viết mới'}
-      className="fixed inset-0 z-50 bg-[#1F2933]/55 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-50 bg-[#162442]/55 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4"
     >
-      <div className="w-full max-w-6xl h-[94dvh] rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-6xl h-[94dvh] rounded-2xl bg-[#FDF8F2] border border-[#DFCBB5] shadow-2xl flex flex-col overflow-hidden">
         {/* Header CMS */}
-        <div className="px-5 py-3.5 bg-white border-b border-[#E8E2D9] flex items-center justify-between gap-3 shrink-0">
+        <div className="px-5 py-3.5 bg-white border-b border-[#E6D5C3] flex items-center justify-between gap-3 shrink-0">
           <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-bold text-[#1F2933] truncate">
+            <h2 className="text-base sm:text-lg font-bold text-[#162442] truncate">
               {isEditing
                 ? 'Chỉnh sửa bài viết'
                 : sourceType === 'external_link'
                   ? 'Soạn tin nhập từ link báo'
                   : 'Đăng bài viết mới'}
             </h2>
-            <p className="text-xs text-[#616E7C]">
+            <p className="text-xs text-[#5C564E]">
               Đồng bộ trực tiếp lên bảng Bản tin cộng đồng của Góc Thợ Quanh Ta
             </p>
           </div>
@@ -450,7 +450,7 @@ export function AdminArticleEditorModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng trình soạn thảo"
-            className="w-10 h-10 rounded-xl hover:bg-[#FAF8F5] text-[#52606D] flex items-center justify-center transition-colors shrink-0"
+            className="w-10 h-10 rounded-xl hover:bg-[#FDF8F2] text-[#5C564E] flex items-center justify-center transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -461,7 +461,7 @@ export function AdminArticleEditorModal({
           {formError && (
             <div
               role="alert"
-              className="mb-4 rounded-xl bg-[#C84B31]/10 border border-[#C84B31]/30 px-4 py-3 text-xs sm:text-sm font-medium text-[#A3361F]"
+              className="mb-4 rounded-xl bg-[#B93818]/10 border border-[#B93818]/30 px-4 py-3 text-xs sm:text-sm font-medium text-[#992C12]"
             >
               {formError}
             </div>
@@ -471,16 +471,16 @@ export function AdminArticleEditorModal({
             {/* CỘT TRÁI (8/12): Nội dung chính */}
             <div className="lg:col-span-8 space-y-5">
               {/* Tiêu đề chính + Bộ đếm ký tự */}
-              <div className="rounded-2xl bg-white border border-[#E8E2D9] p-4 sm:p-5 space-y-4">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 sm:p-5 space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="cms-article-title"
-                      className="text-xs font-bold text-[#1F2933]"
+                      className="text-xs font-bold text-[#162442]"
                     >
-                      Tiêu đề chính <span className="text-[#C84B31]">*</span>
+                      Tiêu đề chính <span className="text-[#B93818]">*</span>
                     </label>
-                    <span className="text-[11px] text-[#616E7C] tabular-nums">
+                    <span className="text-[11px] text-[#5C564E] tabular-nums">
                       {title.length} ký tự
                     </span>
                   </div>
@@ -490,7 +490,7 @@ export function AdminArticleEditorModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Nhập tiêu đề thu hút, ấm áp và rõ ý..."
-                    className="w-full h-11 px-3.5 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] focus:bg-white text-sm sm:text-base font-semibold text-[#1F2933] focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+                    className="w-full h-11 px-3.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] focus:bg-white text-sm sm:text-base font-semibold text-[#162442] focus:outline-none focus:border-[#E86F2C] focus:ring-2 focus:ring-[#E86F2C]/15"
                   />
                 </div>
 
@@ -499,11 +499,11 @@ export function AdminArticleEditorModal({
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="cms-article-subtitle"
-                      className="text-xs font-bold text-[#1F2933]"
+                      className="text-xs font-bold text-[#162442]"
                     >
                       Tiêu đề phụ / Sa-pô tóm tắt
                     </label>
-                    <span className="text-[11px] text-[#616E7C] tabular-nums">
+                    <span className="text-[11px] text-[#5C564E] tabular-nums">
                       {subtitle.length} ký tự
                     </span>
                   </div>
@@ -513,15 +513,15 @@ export function AdminArticleEditorModal({
                     value={subtitle}
                     onChange={(e) => setSubtitle(e.target.value)}
                     placeholder="Đoạn mở đầu tóm tắt nội dung chính sẽ hiển thị trên thẻ bài viết..."
-                    className="w-full p-3.5 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] focus:bg-white text-sm text-[#1F2933] leading-relaxed focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15 resize-y"
+                    className="w-full p-3.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] focus:bg-white text-sm text-[#162442] leading-relaxed focus:outline-none focus:border-[#E86F2C] focus:ring-2 focus:ring-[#E86F2C]/15 resize-y"
                   />
                 </div>
 
                 {/* Thông tin nguồn báo nếu là external_link */}
                 {sourceType === 'external_link' && (
-                  <div className="rounded-xl bg-[#FAF8F5] border border-[#E5DFD5] p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-[#FDF8F2] border border-[#DFCBB5] p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-[#3A6B5C]">
+                      <label className="text-[11px] font-bold text-[#1B3B82]">
                         Tên trang báo nguồn
                       </label>
                       <input
@@ -529,11 +529,11 @@ export function AdminArticleEditorModal({
                         value={sourceName}
                         onChange={(e) => setSourceName(e.target.value)}
                         placeholder="VD: Tuổi Trẻ Online, VnExpress..."
-                        className="w-full h-10 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs sm:text-sm text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                        className="w-full h-10 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs sm:text-sm text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-[#3A6B5C]">
+                      <label className="text-[11px] font-bold text-[#1B3B82]">
                         Đường dẫn bài gốc (URL) *
                       </label>
                       <input
@@ -541,7 +541,7 @@ export function AdminArticleEditorModal({
                         value={externalUrl}
                         onChange={(e) => setExternalUrl(e.target.value)}
                         placeholder="https://..."
-                        className="w-full h-10 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs sm:text-sm text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                        className="w-full h-10 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs sm:text-sm text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                       />
                     </div>
                   </div>
@@ -549,15 +549,15 @@ export function AdminArticleEditorModal({
               </div>
 
               {/* Khung Nội dung bài viết * có Rich-Text Toolbar */}
-              <div className="rounded-2xl bg-white border border-[#E8E2D9] overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-[#EFECE6] bg-[#FAF8F5] flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#1F2933]">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] overflow-hidden">
+                <div className="px-4 py-2.5 border-b border-[#F3EAE0] bg-[#FDF8F2] flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-[#162442]">
                     Nội dung bài viết{' '}
                     {sourceType === 'original' && (
-                      <span className="text-[#C84B31]">*</span>
+                      <span className="text-[#B93818]">*</span>
                     )}
                   </span>
-                  <span className="text-[11px] text-[#616E7C]">
+                  <span className="text-[11px] text-[#5C564E]">
                     Hỗ trợ định dạng văn bản, tiêu đề mục, trích dẫn, liên kết &amp; ảnh
                   </span>
                 </div>
@@ -566,14 +566,14 @@ export function AdminArticleEditorModal({
                 <div
                   role="toolbar"
                   aria-label="Thanh công cụ định dạng nội dung"
-                  className="px-3 py-2 border-b border-[#EFECE6] bg-white flex flex-wrap items-center gap-1"
+                  className="px-3 py-2 border-b border-[#F3EAE0] bg-white flex flex-wrap items-center gap-1"
                 >
                   <button
                     type="button"
                     title="In đậm"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('bold')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Bold className="w-4 h-4" />
                   </button>
@@ -582,7 +582,7 @@ export function AdminArticleEditorModal({
                     title="In nghiêng"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('italic')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Italic className="w-4 h-4" />
                   </button>
@@ -591,19 +591,19 @@ export function AdminArticleEditorModal({
                     title="Gạch chân"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('underline')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Underline className="w-4 h-4" />
                   </button>
 
-                  <span className="w-px h-5 bg-[#E8E2D9] mx-1" />
+                  <span className="w-px h-5 bg-[#E6D5C3] mx-1" />
 
                   <button
                     type="button"
                     title="Tiêu đề mục H2"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('formatBlock', '<h2>')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Heading2 className="w-4 h-4" />
                   </button>
@@ -612,7 +612,7 @@ export function AdminArticleEditorModal({
                     title="Tiêu đề mục H3"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('formatBlock', '<h3>')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Heading3 className="w-4 h-4" />
                   </button>
@@ -621,19 +621,19 @@ export function AdminArticleEditorModal({
                     title="Trích dẫn"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('formatBlock', '<blockquote>')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <Quote className="w-4 h-4" />
                   </button>
 
-                  <span className="w-px h-5 bg-[#E8E2D9] mx-1" />
+                  <span className="w-px h-5 bg-[#E6D5C3] mx-1" />
 
                   <button
                     type="button"
                     title="Danh sách gạch đầu dòng"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('insertUnorderedList')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <List className="w-4 h-4" />
                   </button>
@@ -642,19 +642,19 @@ export function AdminArticleEditorModal({
                     title="Danh sách đánh số"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('insertOrderedList')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <ListOrdered className="w-4 h-4" />
                   </button>
 
-                  <span className="w-px h-5 bg-[#E8E2D9] mx-1" />
+                  <span className="w-px h-5 bg-[#E6D5C3] mx-1" />
 
                   <button
                     type="button"
                     title="Căn trái"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('justifyLeft')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <AlignLeft className="w-4 h-4" />
                   </button>
@@ -663,7 +663,7 @@ export function AdminArticleEditorModal({
                     title="Căn giữa"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('justifyCenter')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <AlignCenter className="w-4 h-4" />
                   </button>
@@ -672,7 +672,7 @@ export function AdminArticleEditorModal({
                     title="Căn phải"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('justifyRight')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <AlignRight className="w-4 h-4" />
                   </button>
@@ -681,12 +681,12 @@ export function AdminArticleEditorModal({
                     title="Căn đều hai bên"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => runFormatCommand('justifyFull')}
-                    className="w-8 h-8 rounded-lg hover:bg-[#FAF8F5] text-[#1F2933] flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg hover:bg-[#FDF8F2] text-[#162442] flex items-center justify-center transition-colors"
                   >
                     <AlignJustify className="w-4 h-4" />
                   </button>
 
-                  <span className="w-px h-5 bg-[#E8E2D9] mx-1" />
+                  <span className="w-px h-5 bg-[#E6D5C3] mx-1" />
 
                   <button
                     type="button"
@@ -695,8 +695,8 @@ export function AdminArticleEditorModal({
                     onClick={openLinkPopover}
                     className={`h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors ${
                       activePopover === 'link'
-                        ? 'bg-[#D96B38] text-white'
-                        : 'hover:bg-[#FAF8F5] text-[#1F2933]'
+                        ? 'bg-[#E86F2C] text-white'
+                        : 'hover:bg-[#FDF8F2] text-[#162442]'
                     }`}
                   >
                     <Link2 className="w-3.5 h-3.5" />
@@ -709,8 +709,8 @@ export function AdminArticleEditorModal({
                     onClick={openInlineImagePopover}
                     className={`h-8 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors ${
                       activePopover === 'image'
-                        ? 'bg-[#D96B38] text-white'
-                        : 'hover:bg-[#FAF8F5] text-[#1F2933]'
+                        ? 'bg-[#E86F2C] text-white'
+                        : 'hover:bg-[#FDF8F2] text-[#162442]'
                     }`}
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
@@ -720,11 +720,11 @@ export function AdminArticleEditorModal({
 
                 {/* Popover Chèn liên kết / Chèn ảnh */}
                 {activePopover !== 'none' && (
-                  <div className="px-4 py-3 bg-[#FAF8F5] border-b border-[#E8E2D9] space-y-2.5">
+                  <div className="px-4 py-3 bg-[#FDF8F2] border-b border-[#E6D5C3] space-y-2.5">
                     {activePopover === 'link' ? (
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
                         <div className="sm:col-span-4 space-y-1">
-                          <label className="text-[11px] font-semibold text-[#52606D]">
+                          <label className="text-[11px] font-semibold text-[#5C564E]">
                             Chữ hiển thị
                           </label>
                           <input
@@ -732,11 +732,11 @@ export function AdminArticleEditorModal({
                             value={linkTextInput}
                             onChange={(e) => setLinkTextInput(e.target.value)}
                             placeholder="VD: Xem thêm tại đây"
-                            className="w-full h-9 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                            className="w-full h-9 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                           />
                         </div>
                         <div className="sm:col-span-5 space-y-1">
-                          <label className="text-[11px] font-semibold text-[#52606D]">
+                          <label className="text-[11px] font-semibold text-[#5C564E]">
                             Đường dẫn (https://...)
                           </label>
                           <input
@@ -744,14 +744,14 @@ export function AdminArticleEditorModal({
                             value={linkUrlInput}
                             onChange={(e) => setLinkUrlInput(e.target.value)}
                             placeholder="https://..."
-                            className="w-full h-9 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                            className="w-full h-9 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                           />
                         </div>
                         <div className="sm:col-span-3 flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={handleInsertLink}
-                            className="flex-1 h-9 px-3 rounded-lg bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs font-semibold inline-flex items-center justify-center gap-1"
+                            className="flex-1 h-9 px-3 rounded-lg bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-semibold inline-flex items-center justify-center gap-1"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Chèn</span>
@@ -759,7 +759,7 @@ export function AdminArticleEditorModal({
                           <button
                             type="button"
                             onClick={() => setActivePopover('none')}
-                            className="h-9 px-2.5 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#52606D]"
+                            className="h-9 px-2.5 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#5C564E]"
                           >
                             Hủy
                           </button>
@@ -768,7 +768,7 @@ export function AdminArticleEditorModal({
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
                         <div className="sm:col-span-5 space-y-1">
-                          <label className="text-[11px] font-semibold text-[#52606D]">
+                          <label className="text-[11px] font-semibold text-[#5C564E]">
                             Đường dẫn ảnh (URL)
                           </label>
                           <input
@@ -776,11 +776,11 @@ export function AdminArticleEditorModal({
                             value={inlineImgUrlInput}
                             onChange={(e) => setInlineImgUrlInput(e.target.value)}
                             placeholder="https://.../photo.jpg"
-                            className="w-full h-9 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                            className="w-full h-9 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                           />
                         </div>
                         <div className="sm:col-span-4 space-y-1">
-                          <label className="text-[11px] font-semibold text-[#52606D]">
+                          <label className="text-[11px] font-semibold text-[#5C564E]">
                             Chú thích ảnh
                           </label>
                           <input
@@ -788,14 +788,14 @@ export function AdminArticleEditorModal({
                             value={inlineImgAltInput}
                             onChange={(e) => setInlineImgAltInput(e.target.value)}
                             placeholder="Mô tả ngắn dưới ảnh..."
-                            className="w-full h-9 px-3 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                            className="w-full h-9 px-3 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                           />
                         </div>
                         <div className="sm:col-span-3 flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={handleInsertInlineImage}
-                            className="flex-1 h-9 px-3 rounded-lg bg-[#3A6B5C] hover:bg-[#2F574A] text-white text-xs font-semibold inline-flex items-center justify-center gap-1"
+                            className="flex-1 h-9 px-3 rounded-lg bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-semibold inline-flex items-center justify-center gap-1"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Chèn ảnh</span>
@@ -803,7 +803,7 @@ export function AdminArticleEditorModal({
                           <button
                             type="button"
                             onClick={() => setActivePopover('none')}
-                            className="h-9 px-2.5 rounded-lg border border-[#DFD8CE] bg-white text-xs text-[#52606D]"
+                            className="h-9 px-2.5 rounded-lg border border-[#DFCBB5] bg-white text-xs text-[#5C564E]"
                           >
                             Hủy
                           </button>
@@ -811,7 +811,7 @@ export function AdminArticleEditorModal({
                       </div>
                     )}
                     {popoverError && (
-                      <p className="text-xs text-[#C84B31] font-medium">
+                      <p className="text-xs text-[#B93818] font-medium">
                         {popoverError}
                       </p>
                     )}
@@ -828,15 +828,15 @@ export function AdminArticleEditorModal({
                   onKeyUp={captureSelection}
                   onMouseUp={captureSelection}
                   aria-label="Nội dung bài viết"
-                  className="min-h-[300px] max-h-[520px] overflow-y-auto thin-scrollbar p-5 text-[15px] leading-[1.8] text-[#1F2933] focus:outline-none [&_p]:my-2.5 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-1.5 [&_blockquote]:my-4 [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:border-y [&_blockquote]:border-[#E5DFD5] [&_blockquote]:bg-[#FAF8F5] [&_blockquote]:italic [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3 [&_a]:text-[#D96B38] [&_a]:underline [&_figure]:my-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_img]:mx-auto [&_img]:block [&_figcaption]:text-xs [&_figcaption]:text-[#616E7C] [&_figcaption]:italic [&_figcaption]:text-center [&_figcaption]:mt-1.5"
+                  className="min-h-[300px] max-h-[520px] overflow-y-auto thin-scrollbar p-5 text-[15px] leading-[1.8] text-[#162442] focus:outline-none [&_p]:my-2.5 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-1.5 [&_blockquote]:my-4 [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:border-y [&_blockquote]:border-[#DFCBB5] [&_blockquote]:bg-[#FDF8F2] [&_blockquote]:italic [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3 [&_a]:text-[#E86F2C] [&_a]:underline [&_figure]:my-4 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:my-4 [&_img]:mx-auto [&_img]:block [&_figcaption]:text-xs [&_figcaption]:text-[#5C564E] [&_figcaption]:italic [&_figcaption]:text-center [&_figcaption]:mt-1.5"
                 />
 
                 {/* Bộ đếm số từ & số ký tự bên dưới khung soạn thảo */}
-                <div className="px-4 py-2.5 border-t border-[#EFECE6] bg-[#FAF8F5] flex items-center justify-between text-xs text-[#616E7C] tabular-nums">
+                <div className="px-4 py-2.5 border-t border-[#F3EAE0] bg-[#FDF8F2] flex items-center justify-between text-xs text-[#5C564E] tabular-nums">
                   <span>
-                    <strong className="text-[#1F2933]">{contentStats.words}</strong>{' '}
+                    <strong className="text-[#162442]">{contentStats.words}</strong>{' '}
                     từ ·{' '}
-                    <strong className="text-[#1F2933]">{contentStats.chars}</strong>{' '}
+                    <strong className="text-[#162442]">{contentStats.chars}</strong>{' '}
                     ký tự
                   </span>
                   <span>Ước tính {contentStats.readMinutes} phút đọc</span>
@@ -847,53 +847,53 @@ export function AdminArticleEditorModal({
             {/* CỘT PHẢI (4/12): Thiết lập bài viết */}
             <div className="lg:col-span-4 space-y-5">
               {/* Thuộc tính bài viết */}
-              <div className="rounded-2xl bg-white border border-[#E8E2D9] p-4 space-y-3">
-                <h3 className="text-xs font-bold text-[#1F2933]">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 space-y-3">
+                <h3 className="text-xs font-bold text-[#162442]">
                   Thuộc tính bài viết
                 </h3>
 
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#1F2933]">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#162442]">
                   <input
                     type="checkbox"
                     checked={isSpotlight}
                     onChange={(e) => setIsSpotlight(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-[#D96B38] rounded"
+                    className="mt-0.5 w-4 h-4 accent-[#E86F2C] rounded"
                   />
                   <span>
                     <strong className="block font-semibold">
                       Tin tiêu điểm (Hero spotlight)
                     </strong>
-                    <span className="text-[11px] text-[#616E7C]">
+                    <span className="text-[11px] text-[#5C564E]">
                       Hiển thị lớn nổi bật ở đầu trang Bản tin
                     </span>
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#1F2933]">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#162442]">
                   <input
                     type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-[#D96B38] rounded"
+                    className="mt-0.5 w-4 h-4 accent-[#E86F2C] rounded"
                   />
                   <span>
                     <strong className="block font-semibold">Tin nổi bật</strong>
-                    <span className="text-[11px] text-[#616E7C]">
+                    <span className="text-[11px] text-[#5C564E]">
                       Đánh dấu bài viết đáng đọc trong chuyên mục
                     </span>
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#1F2933]">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#162442]">
                   <input
                     type="checkbox"
                     checked={isPinned}
                     onChange={(e) => setIsPinned(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-[#3A6B5C] rounded"
+                    className="mt-0.5 w-4 h-4 accent-[#1B3B82] rounded"
                   />
                   <span>
                     <strong className="block font-semibold">Ghim đầu trang</strong>
-                    <span className="text-[11px] text-[#616E7C]">
+                    <span className="text-[11px] text-[#5C564E]">
                       Luôn giữ bài viết ở vị trí đầu tiên trên bảng tin
                     </span>
                   </span>
@@ -901,9 +901,9 @@ export function AdminArticleEditorModal({
               </div>
 
               {/* Ảnh đại diện bài viết */}
-              <div className="rounded-2xl bg-white border border-[#E8E2D9] p-4 space-y-3">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-xs font-bold text-[#1F2933]">
+                  <h3 className="text-xs font-bold text-[#162442]">
                     Ảnh đại diện bài viết
                   </h3>
                   {imageUrl && (
@@ -913,7 +913,7 @@ export function AdminArticleEditorModal({
                         setImageUrl('');
                         setImageUrlInput('');
                       }}
-                      className="text-[11px] font-semibold text-[#C84B31] hover:underline inline-flex items-center gap-1"
+                      className="text-[11px] font-semibold text-[#B93818] hover:underline inline-flex items-center gap-1"
                     >
                       <Trash2 className="w-3 h-3" />
                       <span>Gỡ ảnh</span>
@@ -922,7 +922,7 @@ export function AdminArticleEditorModal({
                 </div>
 
                 {/* Xem trước ảnh */}
-                <div className="aspect-[16/9] rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] overflow-hidden flex items-center justify-center">
+                <div className="aspect-[16/9] rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] overflow-hidden flex items-center justify-center">
                   {imageUrl ? (
                     <img
                       src={imageUrl}
@@ -936,7 +936,7 @@ export function AdminArticleEditorModal({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-center p-4 space-y-1 text-[#7B8794]">
+                    <div className="text-center p-4 space-y-1 text-[#8A8177]">
                       <ImageIcon className="w-7 h-7 mx-auto opacity-60" />
                       <p className="text-[11px]">Chưa có ảnh đại diện</p>
                     </div>
@@ -955,7 +955,7 @@ export function AdminArticleEditorModal({
                   type="button"
                   disabled={isUploadingImage}
                   onClick={() => coverFileInputRef.current?.click()}
-                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-dashed border-[#D96B38]/60 bg-[#D96B38]/6 hover:bg-[#D96B38]/12 text-xs font-semibold text-[#D96B38] inline-flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-dashed border-[#E86F2C]/60 bg-[#E86F2C]/6 hover:bg-[#E86F2C]/12 text-xs font-semibold text-[#E86F2C] inline-flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {isUploadingImage ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -971,7 +971,7 @@ export function AdminArticleEditorModal({
 
                 {/* Hoặc dán link ảnh trực tiếp + nút Lấy về */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-[#616E7C]">
+                  <label className="text-[11px] font-semibold text-[#5C564E]">
                     Hoặc dán link ảnh trực tiếp
                   </label>
                   <div className="flex items-center gap-1.5">
@@ -980,12 +980,12 @@ export function AdminArticleEditorModal({
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
                       placeholder="https://.../anh-bia.jpg"
-                      className="flex-1 min-w-0 h-9 px-3 rounded-lg border border-[#DFD8CE] bg-[#FAF8F5] text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                      className="flex-1 min-w-0 h-9 px-3 rounded-lg border border-[#DFCBB5] bg-[#FDF8F2] text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                     />
                     <button
                       type="button"
                       onClick={handleFetchCoverUrl}
-                      className="h-9 px-3 rounded-lg bg-[#1F2933] hover:bg-[#323F4B] text-white text-xs font-semibold whitespace-nowrap shrink-0"
+                      className="h-9 px-3 rounded-lg bg-[#162442] hover:bg-[#22345A] text-white text-xs font-semibold whitespace-nowrap shrink-0"
                     >
                       Lấy về
                     </button>
@@ -993,13 +993,13 @@ export function AdminArticleEditorModal({
                 </div>
 
                 {imageError && (
-                  <p className="text-[11px] text-[#C84B31] font-medium leading-relaxed">
+                  <p className="text-[11px] text-[#B93818] font-medium leading-relaxed">
                     {imageError}
                   </p>
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-[#52606D]">
+                  <label className="text-[11px] font-semibold text-[#5C564E]">
                     Mô tả / Chú thích ảnh
                   </label>
                   <input
@@ -1007,15 +1007,15 @@ export function AdminArticleEditorModal({
                     value={imageCaption}
                     onChange={(e) => setImageCaption(e.target.value)}
                     placeholder="VD: Góc bàn sửa giày sáng sớm của Chú Ba..."
-                    className="w-full h-9 px-3 rounded-lg border border-[#DFD8CE] bg-[#FAF8F5] text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                    className="w-full h-9 px-3 rounded-lg border border-[#DFCBB5] bg-[#FDF8F2] text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                   />
                 </div>
               </div>
 
               {/* Chuyên mục, Tác giả & Gắn thẻ cô chú thợ liên quan */}
-              <div className="rounded-2xl bg-white border border-[#E8E2D9] p-4 space-y-3.5">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 space-y-3.5">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#1F2933]">
+                  <label className="text-xs font-bold text-[#162442]">
                     Chuyên mục
                   </label>
                   <select
@@ -1028,7 +1028,7 @@ export function AdminArticleEditorModal({
                         setCategory(e.target.value);
                       }
                     }}
-                    className="w-full h-10 px-3 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] text-xs sm:text-sm font-medium text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                    className="w-full h-10 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs sm:text-sm font-medium text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                   >
                     {allCategoryOptions.map((cat) => (
                       <option key={cat} value={cat}>
@@ -1043,19 +1043,19 @@ export function AdminArticleEditorModal({
                       value={customCategoryInput}
                       onChange={(e) => setCustomCategoryInput(e.target.value)}
                       placeholder="Nhập tên chuyên mục mới..."
-                      className="w-full h-9 px-3 rounded-lg border border-[#D96B38]/60 bg-white text-xs text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                      className="w-full h-9 px-3 rounded-lg border border-[#E86F2C]/60 bg-white text-xs text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                     />
                   )}
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#1F2933]">
+                  <label className="text-xs font-bold text-[#162442]">
                     Gắn thẻ cô chú thợ liên quan
                   </label>
                   <select
                     value={relatedArtisanId}
                     onChange={(e) => setRelatedArtisanId(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] text-xs sm:text-sm text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                    className="w-full h-10 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs sm:text-sm text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                   >
                     <option value="">— Không gắn thẻ thợ —</option>
                     {artisans.map((artisan) => (
@@ -1064,14 +1064,14 @@ export function AdminArticleEditorModal({
                       </option>
                     ))}
                   </select>
-                  <p className="text-[11px] text-[#616E7C]">
+                  <p className="text-[11px] text-[#5C564E]">
                     Khi gắn thẻ, cuối bài viết sẽ có nút chuyển thẳng tới vị trí cô
                     chú thợ trên bản đồ.
                   </p>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#1F2933]">
+                  <label className="text-xs font-bold text-[#162442]">
                     Tên tác giả hiển thị
                   </label>
                   <input
@@ -1079,20 +1079,20 @@ export function AdminArticleEditorModal({
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
                     placeholder={defaultAuthorName}
-                    className="w-full h-10 px-3 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] text-xs sm:text-sm text-[#1F2933] focus:outline-none focus:border-[#D96B38]"
+                    className="w-full h-10 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs sm:text-sm text-[#162442] focus:outline-none focus:border-[#E86F2C]"
                   />
                 </div>
 
-                <div className="pt-2 border-t border-[#F0EAE1] flex items-center justify-between text-xs">
-                  <span className="text-[#616E7C]">Loại bài viết</span>
-                  <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#FAF8F5] border border-[#E5DFD5]">
+                <div className="pt-2 border-t border-[#F3EAE0] flex items-center justify-between text-xs">
+                  <span className="text-[#5C564E]">Loại bài viết</span>
+                  <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#FDF8F2] border border-[#DFCBB5]">
                     <button
                       type="button"
                       onClick={() => setSourceType('original')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
                         sourceType === 'original'
-                          ? 'bg-white text-[#1F2933] shadow-xs'
-                          : 'text-[#616E7C]'
+                          ? 'bg-white text-[#162442] shadow-xs'
+                          : 'text-[#5C564E]'
                       }`}
                     >
                       Tự viết
@@ -1102,8 +1102,8 @@ export function AdminArticleEditorModal({
                       onClick={() => setSourceType('external_link')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
                         sourceType === 'external_link'
-                          ? 'bg-white text-[#D96B38] shadow-xs'
-                          : 'text-[#616E7C]'
+                          ? 'bg-white text-[#E86F2C] shadow-xs'
+                          : 'text-[#5C564E]'
                       }`}
                     >
                       Link báo
@@ -1116,11 +1116,11 @@ export function AdminArticleEditorModal({
         </div>
 
         {/* Thanh hành động dưới cùng */}
-        <div className="px-5 py-3.5 bg-white border-t border-[#E8E2D9] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        <div className="px-5 py-3.5 bg-white border-t border-[#E6D5C3] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] hover:bg-[#F2ECE2] text-xs sm:text-sm font-semibold text-[#52606D] transition-colors"
+            className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:bg-[#F3EAE0] text-xs sm:text-sm font-semibold text-[#5C564E] transition-colors"
           >
             Đóng
           </button>
@@ -1129,7 +1129,7 @@ export function AdminArticleEditorModal({
             <button
               type="button"
               onClick={() => setPreviewOpen(true)}
-              className="min-h-[42px] px-4 py-2 rounded-xl border border-[#3A6B5C]/30 bg-[#3A6B5C]/8 hover:bg-[#3A6B5C]/15 text-xs sm:text-sm font-semibold text-[#3A6B5C] inline-flex items-center gap-1.5 transition-colors"
+              className="min-h-[42px] px-4 py-2 rounded-xl border border-[#1B3B82]/30 bg-[#1B3B82]/8 hover:bg-[#1B3B82]/15 text-xs sm:text-sm font-semibold text-[#1B3B82] inline-flex items-center gap-1.5 transition-colors"
             >
               <Eye className="w-4 h-4" />
               <span>Xem trước</span>
@@ -1139,7 +1139,7 @@ export function AdminArticleEditorModal({
               type="button"
               disabled={isSaving}
               onClick={() => void handleSubmit('draft')}
-              className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFD8CE] bg-white hover:bg-[#FAF8F5] disabled:opacity-60 text-xs sm:text-sm font-semibold text-[#1F2933] inline-flex items-center gap-1.5 transition-colors"
+              className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-white hover:bg-[#FDF8F2] disabled:opacity-60 text-xs sm:text-sm font-semibold text-[#162442] inline-flex items-center gap-1.5 transition-colors"
             >
               <Save className="w-4 h-4" />
               <span>Lưu tin nháp</span>
@@ -1149,7 +1149,7 @@ export function AdminArticleEditorModal({
               type="button"
               disabled={isSaving}
               onClick={() => void handleSubmit('published')}
-              className="min-h-[42px] px-5 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:opacity-60 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors"
+              className="min-h-[42px] px-5 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-60 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 shadow-xs transition-colors"
             >
               {isSaving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -1168,18 +1168,18 @@ export function AdminArticleEditorModal({
           role="dialog"
           aria-modal="true"
           aria-label="Xem trước bài viết"
-          className="fixed inset-0 z-[60] bg-[#1F2933]/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6"
+          className="fixed inset-0 z-[60] bg-[#162442]/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6"
         >
-          <div className="w-full max-w-4xl max-h-[92dvh] rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-5 py-3 bg-white border-b border-[#E8E2D9] flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#3A6B5C]">
+          <div className="w-full max-w-4xl max-h-[92dvh] rounded-2xl bg-[#FDF8F2] border border-[#DFCBB5] shadow-2xl flex flex-col overflow-hidden">
+            <div className="px-5 py-3 bg-white border-b border-[#E6D5C3] flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#1B3B82]">
                 <Eye className="w-4 h-4" />
                 <span>Chế độ xem trước hiển thị trên Bản tin</span>
               </div>
               <button
                 type="button"
                 onClick={() => setPreviewOpen(false)}
-                className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#1F2933] text-white text-xs font-semibold inline-flex items-center gap-1"
+                className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#162442] text-white text-xs font-semibold inline-flex items-center gap-1"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Đóng xem trước</span>

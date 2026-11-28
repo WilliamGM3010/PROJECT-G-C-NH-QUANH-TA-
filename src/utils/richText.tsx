@@ -335,7 +335,7 @@ export function compressImageFileToDataUrl(
           reject(new Error('Trình duyệt không hỗ trợ xử lý ảnh.'));
           return;
         }
-        ctx.fillStyle = '#FAF8F5';
+        ctx.fillStyle = '#FDF8F2';
         ctx.fillRect(0, 0, targetW, targetH);
         ctx.drawImage(img, 0, 0, targetW, targetH);
         const compressed = canvas.toDataURL('image/jpeg', quality);
@@ -360,7 +360,7 @@ function ArticleInlineImage({
 
   if (failed) {
     const fallback = (
-      <div className="my-4 rounded-xl bg-[#F4EFE6] border border-[#E5DFD5] p-8 flex flex-col items-center justify-center gap-2 text-[#7B8794]">
+      <div className="my-4 rounded-xl bg-[#F4EFE6] border border-[#DFCBB5] p-8 flex flex-col items-center justify-center gap-2 text-[#8A8177]">
         <ImageOff className="w-6 h-6" />
         <span className="text-xs">{alt || 'Không thể tải hình ảnh minh họa'}</span>
       </div>
@@ -449,7 +449,7 @@ export function RichTextRenderer({ html }: { html: string }) {
       case 'strong':
       case 'b':
         return (
-          <strong key={key} className="font-bold text-[#1F2933]">
+          <strong key={key} className="font-bold text-[#162442]">
             {children}
           </strong>
         );
@@ -462,14 +462,14 @@ export function RichTextRenderer({ html }: { html: string }) {
         );
       case 'u':
         return (
-          <u key={key} className="underline underline-offset-4 decoration-[#D96B38]/60">
+          <u key={key} className="underline underline-offset-4 decoration-[#E86F2C]/65">
             {children}
           </u>
         );
       case 's':
       case 'strike':
         return (
-          <s key={key} className="line-through text-[#616E7C]">
+          <s key={key} className="line-through text-[#5C564E]">
             {children}
           </s>
         );
@@ -477,7 +477,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h2
             key={key}
-            className={`text-xl sm:text-2xl font-bold text-[#1F2933] tracking-tight mt-9 mb-3.5 leading-snug ${alignClass}`}
+            className={`font-display text-xl sm:text-2xl font-bold text-[#162442] tracking-tight mt-9 mb-3.5 leading-snug ${alignClass}`}
           >
             {children}
           </h2>
@@ -486,7 +486,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h3
             key={key}
-            className={`text-lg sm:text-xl font-bold text-[#1F2933] mt-7 mb-2.5 leading-snug ${alignClass}`}
+            className={`font-display text-lg sm:text-xl font-bold text-[#162442] mt-7 mb-2.5 leading-snug ${alignClass}`}
           >
             {children}
           </h3>
@@ -495,7 +495,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h4
             key={key}
-            className={`text-base font-bold text-[#1F2933] mt-5 mb-2 ${alignClass}`}
+            className={`font-display text-base font-bold text-[#162442] mt-5 mb-2 ${alignClass}`}
           >
             {children}
           </h4>
@@ -504,7 +504,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <blockquote
             key={key}
-            className={`my-7 py-5 px-6 border-y border-[#E5DFD5] bg-[#FAF8F5] text-lg sm:text-xl italic text-[#323F4B] leading-relaxed rounded-xl ${alignClass}`}
+            className={`my-7 py-5 px-6 border-y border-dashed border-[#D8C3AE] border-l-4 border-l-[#B93818] bg-[#FDF8F2] text-lg sm:text-xl italic text-[#162442] leading-relaxed rounded-r-xl ${alignClass}`}
           >
             {children}
           </blockquote>
@@ -513,7 +513,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <ul
             key={key}
-            className="my-4 pl-6 list-disc space-y-2 text-[#2D3748] marker:text-[#D96B38]"
+            className="my-4 pl-6 list-disc space-y-2 text-[#162442] marker:text-[#E86F2C]"
           >
             {children}
           </ul>
@@ -522,7 +522,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <ol
             key={key}
-            className="my-4 pl-6 list-decimal space-y-2 text-[#2D3748] marker:text-[#3A6B5C] marker:font-semibold"
+            className="my-4 pl-6 list-decimal space-y-2 text-[#162442] marker:text-[#1B3B82] marker:font-mono marker:font-bold"
           >
             {children}
           </ol>
@@ -544,7 +544,7 @@ export function RichTextRenderer({ html }: { html: string }) {
             href={safeHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#D96B38] hover:text-[#B85427] underline underline-offset-4 decoration-[#D96B38]/40 hover:decoration-[#B85427] font-medium transition-colors"
+            className="text-[#1B3B82] hover:text-[#E86F2C] underline underline-offset-4 decoration-[#1B3B82]/40 hover:decoration-[#E86F2C] font-semibold transition-colors"
           >
             {children}
           </a>

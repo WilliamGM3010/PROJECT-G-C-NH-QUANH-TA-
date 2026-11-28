@@ -44,9 +44,9 @@ export function evaluateUserBadges(
       title: 'Người bạn Góc Phố',
       subtitle: 'Hành trình sống xanh bắt đầu từ lần sửa đồ đầu tiên',
       requirement: 'Thực hiện ít nhất 1 hành động (sửa đồ, báo tình trạng hoặc gửi cảm ơn)',
-      accentBg: '#3A6B5C',
-      accentPrimary: '#3A6B5C',
-      accentSecondary: '#D96B38',
+      accentBg: '#1B3B82',
+      accentPrimary: '#1B3B82',
+      accentSecondary: '#E86F2C',
       unlocked: totalActions >= 1 || syncedSet.has('friend'),
     },
     {
@@ -55,9 +55,9 @@ export function evaluateUserBadges(
       title: 'Thổ địa Góc Phố',
       subtitle: 'Người dẫn đường tin cậy kết nối cô chú thợ quanh Sài Gòn',
       requirement: 'Gửi ít nhất 1 gợi ý thợ mới HOẶC tổng cộng 3 đóng góp',
-      accentBg: '#D96B38',
-      accentPrimary: '#D96B38',
-      accentSecondary: '#3A6B5C',
+      accentBg: '#E86F2C',
+      accentPrimary: '#E86F2C',
+      accentSecondary: '#1B3B82',
       unlocked:
         stats.suggestionsCount >= 1 ||
         totalActions >= 3 ||
@@ -69,9 +69,9 @@ export function evaluateUserBadges(
       title: 'Đại sứ Sống Xanh',
       subtitle: 'Lan tỏa lối sống bền vững và trân trọng nghề thủ công đô thị',
       requirement: 'Thực hiện từ 5 hành động đóng góp trở lên',
-      accentBg: '#B85427',
-      accentPrimary: '#D96B38',
-      accentSecondary: '#2F594C',
+      accentBg: '#B93818',
+      accentPrimary: '#B93818',
+      accentSecondary: '#1B3B82',
       unlocked: totalActions >= 5 || syncedSet.has('green_ambassador'),
     },
   ];
@@ -131,7 +131,7 @@ function drawWrappedText(
 
 /**
  * Render Thẻ Huy Hiệu 9:16 chuẩn Instagram Story (1080x1920px) trực tiếp bằng HTML Canvas
- * và tải về dưới dạng tệp ảnh PNG sắc nét.
+ * theo bảng màu Craft Editorial Minimalism (Xanh Chàm - Cam Cờ-lê - Giấy Kem Ấm).
  */
 function downloadStoryBadgePng(
   tier: BadgeTier,
@@ -147,17 +147,17 @@ function downloadStoryBadgePng(
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Nền chuyển sắc Cam Đất & Xanh Rêu ấm áp
+  // Nền chuyển sắc Xanh Chàm & Cam Cờ-lê theo chất in Risograph Sài Gòn
   const grad = ctx.createLinearGradient(0, 0, W, H);
   grad.addColorStop(0, tier.accentPrimary);
-  grad.addColorStop(0.55, '#8A5E47');
+  grad.addColorStop(0.55, '#162442');
   grad.addColorStop(1, tier.accentSecondary);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
   // Các mảng hình học mờ trang trí tinh tế
   ctx.save();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
   ctx.beginPath();
   ctx.arc(140, 260, 260, 0, Math.PI * 2);
   ctx.fill();
@@ -166,39 +166,44 @@ function downloadStoryBadgePng(
   ctx.fill();
   ctx.restore();
 
-  // Khung thẻ Kem Sáng trung tâm
+  // Khung thẻ Giấy Kem Ấm trung tâm với bóng mực in thủ công
   ctx.save();
-  ctx.shadowColor = 'rgba(31, 41, 51, 0.28)';
-  ctx.shadowBlur = 48;
+  ctx.shadowColor = 'rgba(22, 36, 66, 0.35)';
+  ctx.shadowBlur = 44;
   ctx.shadowOffsetY = 20;
   drawRoundedRect(ctx, 84, 150, W - 168, H - 300, 56);
-  ctx.fillStyle = '#FAF8F5';
+  ctx.fillStyle = '#FDF8F2';
   ctx.fill();
   ctx.restore();
 
-  // Viền tinh tế bên trong thẻ
+  // Viền chỉ khâu nét đứt tinh tế bên trong thẻ
+  ctx.save();
   drawRoundedRect(ctx, 114, 180, W - 228, H - 360, 42);
-  ctx.strokeStyle = 'rgba(217, 107, 56, 0.28)';
+  ctx.setLineDash([14, 12]);
+  ctx.strokeStyle = 'rgba(27, 59, 130, 0.28)';
   ctx.lineWidth = 4;
   ctx.stroke();
+  ctx.restore();
 
   const fontStack = '"Be Vietnam Pro", system-ui, -apple-system, sans-serif';
+  const displayStack = '"Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif';
+  const monoStack = '"JetBrains Mono", ui-monospace, monospace';
   ctx.textAlign = 'center';
 
   // Nhãn dự án phía trên
-  drawRoundedRect(ctx, W / 2 - 220, 240, 440, 68, 34);
-  ctx.fillStyle = 'rgba(58, 107, 92, 0.12)';
+  drawRoundedRect(ctx, W / 2 - 230, 240, 460, 68, 34);
+  ctx.fillStyle = '#EEF2FA';
   ctx.fill();
-  ctx.fillStyle = '#3A6B5C';
-  ctx.font = `700 28px ${fontStack}`;
-  ctx.fillText('GÓC THỢ QUANH TA · TP.HCM', W / 2, 284);
+  ctx.fillStyle = '#1B3B82';
+  ctx.font = `700 26px ${monoStack}`;
+  ctx.fillText('GÓC THỢ QUANH TA · TP.HCM', W / 2, 283);
 
   // Vòng tròn huy hiệu trung tâm
   ctx.save();
   ctx.beginPath();
   ctx.arc(W / 2, 540, 160, 0, Math.PI * 2);
   ctx.fillStyle = '#FFFFFF';
-  ctx.shadowColor = 'rgba(217, 107, 56, 0.22)';
+  ctx.shadowColor = 'rgba(27, 59, 130, 0.2)';
   ctx.shadowBlur = 32;
   ctx.fill();
   ctx.lineWidth = 10;
@@ -210,63 +215,63 @@ function downloadStoryBadgePng(
   ctx.fillText(tier.emoji, W / 2, 592);
 
   // Nhãn "CHỨNG NHẬN DANH HIỆU"
-  ctx.fillStyle = '#D96B38';
-  ctx.font = `700 30px ${fontStack}`;
+  ctx.fillStyle = '#B93818';
+  ctx.font = `700 28px ${monoStack}`;
   ctx.fillText('CHỨNG NHẬN ĐÓNG GÓP CỘNG ĐỒNG', W / 2, 790);
 
   // Tên danh hiệu
-  ctx.fillStyle = '#1F2933';
-  ctx.font = `800 66px ${fontStack}`;
+  ctx.fillStyle = '#162442';
+  ctx.font = `800 66px ${displayStack}`;
   ctx.fillText(tier.title, W / 2, 876);
 
   // Tên người dùng (cho phép đổi tên)
   drawRoundedRect(ctx, 180, 930, W - 360, 106, 28);
   ctx.fillStyle = '#FFFFFF';
   ctx.fill();
-  ctx.strokeStyle = '#E5DFD5';
+  ctx.strokeStyle = '#DFCBB5';
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.fillStyle = '#52606D';
-  ctx.font = `600 24px ${fontStack}`;
+  ctx.fillStyle = '#5C564E';
+  ctx.font = `600 22px ${monoStack}`;
   ctx.fillText('TRAO TẶNG CHO', W / 2, 968);
 
-  ctx.fillStyle = '#3A6B5C';
-  ctx.font = `800 42px ${fontStack}`;
+  ctx.fillStyle = '#1B3B82';
+  ctx.font = `800 42px ${displayStack}`;
   ctx.fillText(displayName.slice(0, 28), W / 2, 1018);
 
   // Dòng mô tả ngắn
-  ctx.fillStyle = '#52606D';
+  ctx.fillStyle = '#5C564E';
   ctx.font = `500 32px ${fontStack}`;
   drawWrappedText(ctx, tier.subtitle, W / 2, 1110, 740, 46);
 
-  // Khối chỉ số đóng góp
+  // Khối chỉ số đóng góp Xanh Chàm
   drawRoundedRect(ctx, 150, 1230, W - 300, 240, 32);
-  ctx.fillStyle = '#3A6B5C';
+  ctx.fillStyle = '#1B3B82';
   ctx.fill();
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = `800 84px ${fontStack}`;
+  ctx.font = `800 84px ${monoStack}`;
   ctx.fillText(String(totalActions), W / 2, 1340);
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-  ctx.font = `600 30px ${fontStack}`;
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.font = `600 28px ${fontStack}`;
   ctx.fillText('HÀNH ĐỘNG GẮN KẾT & SỐNG XANH', W / 2, 1394);
 
-  ctx.fillStyle = '#F6C8A8';
-  ctx.font = `600 24px ${fontStack}`;
+  ctx.fillStyle = '#FDBA8C';
+  ctx.font = `600 23px ${monoStack}`;
   ctx.fillText(
-    `${stats.revivedCount} lần sửa đồ  ·  ${stats.suggestionsCount} gợi ý thợ  ·  ${stats.thanksCount} lời cảm ơn  ·  ${stats.reportsCount} cập nhật`,
+    `${stats.revivedCount} sửa đồ · ${stats.suggestionsCount} gợi ý · ${stats.thanksCount} cảm ơn · ${stats.reportsCount} cập nhật`,
     W / 2,
     1442
   );
 
   // Tagline ở đáy thẻ
-  ctx.fillStyle = '#D96B38';
-  ctx.font = `700 34px ${fontStack}`;
+  ctx.fillStyle = '#E86F2C';
+  ctx.font = `700 34px ${displayStack}`;
   ctx.fillText('“Hỏng đâu tìm đó – Gần nhau hơn mỗi ngày!”', W / 2, 1600);
 
-  ctx.fillStyle = '#7B8794';
+  ctx.fillStyle = '#5C564E';
   ctx.font = `500 26px ${fontStack}`;
   ctx.fillText('Bản đồ số kết nối nghề thủ công vỉa hè TP.HCM', W / 2, 1656);
 
@@ -318,27 +323,27 @@ export function BadgeModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="badge-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#1F2933]/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#162442]/60 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl bg-[#FAF8F5] border border-[#EBE5DC] shadow-2xl overflow-hidden"
+        className="w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl bg-[#FDF8F2] border-2 border-[#162442] shadow-[6px_6px_0px_#162442] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-[#EBE5DC] shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 bg-white border-b border-dashed border-[#D8C3AE] shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="w-10 h-10 rounded-xl bg-[#D96B38]/12 text-[#D96B38] flex items-center justify-center">
+            <span className="w-10 h-10 rounded-xl bg-[#FFF3EB] border border-[#E86F2C]/30 text-[#E86F2C] flex items-center justify-center">
               <Award className="w-5 h-5" />
             </span>
             <div>
               <h2
                 id="badge-modal-title"
-                className="text-base font-bold text-[#1F2933]"
+                className="font-display text-base font-bold text-[#162442]"
               >
                 🏅 Huy hiệu Thổ địa Góc Phố
               </h2>
-              <p className="text-xs text-[#52606D]">
+              <p className="text-xs text-[#5C564E]">
                 Mỗi lần sửa đồ, gợi ý thợ hay gửi lời cảm ơn đều giúp góc phố thêm gắn kết
               </p>
             </div>
@@ -348,7 +353,7 @@ export function BadgeModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng"
-            className="w-9 h-9 rounded-xl text-[#52606D] hover:bg-[#FAF8F5] flex items-center justify-center"
+            className="w-9 h-9 rounded-xl text-[#5C564E] hover:bg-[#FDF8F2] hover:text-[#162442] flex items-center justify-center"
           >
             <X className="w-4 h-4" />
           </button>
@@ -360,47 +365,47 @@ export function BadgeModal({
             {/* Cột trái: Thống kê đóng góp + 3 cấp bậc huy hiệu */}
             <div className="lg:col-span-7 space-y-5">
               {/* Tóm tắt đóng góp cá nhân */}
-              <div className="rounded-2xl bg-white border border-[#EBE5DC] p-4 space-y-3">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#1F2933]">
+                  <span className="font-display text-xs font-bold text-[#162442]">
                     Hành trình đóng góp của bạn
                   </span>
-                  <span className="text-xs font-bold text-[#3A6B5C] tabular-nums">
+                  <span className="font-mono text-xs font-bold text-[#1B3B82] tabular-nums">
                     Tổng: {totalActions} hành động
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5 text-center">
-                    <p className="text-lg font-bold text-[#3A6B5C] tabular-nums">
+                  <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5 text-center">
+                    <p className="font-mono text-lg font-extrabold text-[#1B3B82] tabular-nums">
                       {stats.revivedCount}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">Lần sửa đồ</p>
+                    <p className="text-[11px] text-[#5C564E]">Lần sửa đồ</p>
                   </div>
-                  <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5 text-center">
-                    <p className="text-lg font-bold text-[#D96B38] tabular-nums">
+                  <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5 text-center">
+                    <p className="font-mono text-lg font-extrabold text-[#E86F2C] tabular-nums">
                       {stats.suggestionsCount}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">Gợi ý thợ mới</p>
+                    <p className="text-[11px] text-[#5C564E]">Gợi ý thợ mới</p>
                   </div>
-                  <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5 text-center">
-                    <p className="text-lg font-bold text-[#1F2933] tabular-nums">
+                  <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5 text-center">
+                    <p className="font-mono text-lg font-extrabold text-[#162442] tabular-nums">
                       {stats.reportsCount}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">Báo tình trạng</p>
+                    <p className="text-[11px] text-[#5C564E]">Báo tình trạng</p>
                   </div>
-                  <div className="rounded-xl bg-[#FAF8F5] border border-[#EBE5DC] p-2.5 text-center">
-                    <p className="text-lg font-bold text-[#D96B38] tabular-nums">
+                  <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-2.5 text-center">
+                    <p className="font-mono text-lg font-extrabold text-[#B93818] tabular-nums">
                       {stats.thanksCount}
                     </p>
-                    <p className="text-[11px] text-[#52606D]">Lời cảm ơn</p>
+                    <p className="text-[11px] text-[#5C564E]">Lời cảm ơn</p>
                   </div>
                 </div>
               </div>
 
               {/* 3 Cấp bậc mở khóa */}
               <div className="space-y-2.5">
-                <h3 className="text-xs font-bold text-[#52606D] uppercase tracking-wider">
+                <h3 className="font-mono text-[11px] font-bold text-[#5C564E] uppercase tracking-wider">
                   3 cấp bậc danh hiệu
                 </h3>
                 {tiers.map((tier) => {
@@ -412,15 +417,17 @@ export function BadgeModal({
                       onClick={() => setSelectedTierId(tier.id)}
                       className={`w-full text-left rounded-2xl p-4 border transition-all flex items-start gap-3.5 ${
                         isSelected
-                          ? 'bg-white border-[#D96B38] ring-2 ring-[#D96B38]/20 shadow-sm'
+                          ? 'bg-white border-[#1B3B82] shadow-[3px_3px_0px_#1B3B82]'
                           : tier.unlocked
-                            ? 'bg-white border-[#EBE5DC] hover:border-[#D96B38]/50'
-                            : 'bg-white/60 border-[#EBE5DC] opacity-80'
+                            ? 'bg-white border-[#E6D5C3] hover:border-[#1B3B82]/50'
+                            : 'bg-white/65 border-[#E6D5C3] opacity-80'
                       }`}
                     >
                       <span
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${
-                          tier.unlocked ? 'bg-[#FAF8F5]' : 'bg-[#EFECE6] grayscale'
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 border ${
+                          tier.unlocked
+                            ? 'bg-[#FDF8F2] border-[#E6D5C3]'
+                            : 'bg-[#F3EBE1] border-[#E6D5C3] grayscale'
                         }`}
                       >
                         {tier.emoji}
@@ -428,22 +435,22 @@ export function BadgeModal({
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-sm font-bold text-[#1F2933]">
+                          <span className="font-display text-sm font-bold text-[#162442]">
                             {tier.title}
                           </span>
                           {tier.unlocked ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3A6B5C] bg-[#3A6B5C]/10 px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803D] bg-[#15803D]/10 px-2 py-0.5 rounded-full">
                               <CheckCircle2 className="w-3 h-3" />
                               Đã mở khóa
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#7B8794] bg-[#EFECE6] px-2 py-0.5 rounded-full">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#8A8177] bg-[#F3EBE1] px-2 py-0.5 rounded-full">
                               <Lock className="w-3 h-3" />
                               Chưa mở khóa
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-[#52606D] leading-relaxed">
+                        <p className="text-xs text-[#5C564E] leading-relaxed">
                           {tier.requirement}
                         </p>
                       </div>
@@ -453,13 +460,13 @@ export function BadgeModal({
               </div>
 
               {/* Đổi tên hiển thị trên Thẻ Huy Hiệu */}
-              <div className="rounded-2xl bg-white border border-[#EBE5DC] p-4 space-y-2.5">
+              <div className="rounded-2xl bg-white border border-[#E6D5C3] p-4 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-bold text-[#1F2933]">
+                    <p className="text-xs font-bold text-[#162442]">
                       Tên hiển thị trên Thẻ Story
                     </p>
-                    <p className="text-xs text-[#3A6B5C] font-semibold">
+                    <p className="text-xs text-[#1B3B82] font-bold">
                       {stats.displayName}
                     </p>
                   </div>
@@ -470,9 +477,9 @@ export function BadgeModal({
                         setDraftName(stats.displayName);
                         setEditingName(true);
                       }}
-                      className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:border-[#D96B38] text-xs font-semibold text-[#1F2933] inline-flex items-center gap-1.5"
+                      className="min-h-[38px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:border-[#1B3B82] text-xs font-bold text-[#162442] inline-flex items-center gap-1.5"
                     >
-                      <Edit3 className="w-3.5 h-3.5 text-[#D96B38]" />
+                      <Edit3 className="w-3.5 h-3.5 text-[#E86F2C]" />
                       <span>Đổi tên trên thẻ</span>
                     </button>
                   )}
@@ -486,12 +493,12 @@ export function BadgeModal({
                       onChange={(e) => setDraftName(e.target.value)}
                       maxLength={28}
                       placeholder="Nhập tên hoặc biệt danh của bạn..."
-                      className="flex-1 min-h-[40px] px-3 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-sm focus:bg-white focus:outline-none focus:border-[#D96B38]"
+                      className="flex-1 min-h-[40px] px-3 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm text-[#162442] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     />
                     <button
                       type="button"
                       onClick={handleSaveName}
-                      className="min-h-[40px] px-4 py-1.5 rounded-xl bg-[#3A6B5C] text-white text-xs font-semibold"
+                      className="min-h-[40px] px-4 py-1.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs font-bold"
                     >
                       Lưu
                     </button>
@@ -503,14 +510,14 @@ export function BadgeModal({
             {/* Cột phải: Bản xem trước Thẻ Huy Hiệu tỉ lệ 9:16 chuẩn Instagram Story + Nút Tải PNG */}
             <div className="lg:col-span-5 flex flex-col items-center space-y-3.5">
               <div
-                className="relative w-full max-w-[270px] aspect-[9/16] rounded-[28px] p-4 shadow-xl overflow-hidden flex flex-col justify-between text-center"
+                className="relative w-full max-w-[270px] aspect-[9/16] rounded-[28px] p-4 shadow-[5px_5px_0px_#162442] border-2 border-[#162442] overflow-hidden flex flex-col justify-between text-center"
                 style={{
-                  background: `linear-gradient(155deg, ${activeTier.accentPrimary} 0%, #8A5E47 55%, ${activeTier.accentSecondary} 100%)`,
+                  background: `linear-gradient(155deg, ${activeTier.accentPrimary} 0%, #162442 55%, ${activeTier.accentSecondary} 100%)`,
                 }}
               >
-                {/* Khung thẻ Kem Sáng bên trong chuẩn 9:16 */}
-                <div className="relative z-10 h-full rounded-[22px] bg-[#FAF8F5] border border-[#D96B38]/30 px-4 py-5 flex flex-col items-center justify-between">
-                  <span className="px-2.5 py-1 rounded-full bg-[#3A6B5C]/12 text-[#3A6B5C] text-[9px] font-bold tracking-wider">
+                {/* Khung thẻ Giấy Kem Ấm bên trong chuẩn 9:16 */}
+                <div className="relative z-10 h-full rounded-[22px] bg-[#FDF8F2] border border-dashed border-[#1B3B82]/35 px-4 py-5 flex flex-col items-center justify-between">
+                  <span className="font-mono px-2.5 py-1 rounded-full bg-[#EEF2FA] text-[#1B3B82] text-[8.5px] font-bold tracking-wider">
                     GÓC THỢ QUANH TA · TP.HCM
                   </span>
 
@@ -523,31 +530,31 @@ export function BadgeModal({
                     </div>
 
                     <div className="space-y-0.5">
-                      <p className="text-[9px] font-bold text-[#D96B38] tracking-wide uppercase">
+                      <p className="font-mono text-[8.5px] font-bold text-[#B93818] tracking-wide uppercase">
                         Chứng nhận đóng góp cộng đồng
                       </p>
-                      <h4 className="text-lg font-extrabold text-[#1F2933] leading-tight">
+                      <h4 className="font-display text-lg font-extrabold text-[#162442] leading-tight">
                         {activeTier.title}
                       </h4>
                     </div>
 
-                    <div className="w-full rounded-xl bg-white border border-[#E5DFD5] px-3 py-1.5">
-                      <p className="text-[8px] font-semibold text-[#7B8794] uppercase">
+                    <div className="w-full rounded-xl bg-white border border-[#DFCBB5] px-3 py-1.5">
+                      <p className="font-mono text-[8px] font-semibold text-[#8A8177] uppercase">
                         Trao tặng cho
                       </p>
-                      <p className="text-xs font-extrabold text-[#3A6B5C] truncate">
+                      <p className="font-display text-xs font-extrabold text-[#1B3B82] truncate">
                         {stats.displayName}
                       </p>
                     </div>
 
-                    <p className="text-[10px] text-[#52606D] leading-snug px-1">
+                    <p className="text-[10px] text-[#5C564E] leading-snug px-1">
                       {activeTier.subtitle}
                     </p>
                   </div>
 
                   <div className="w-full space-y-2.5">
-                    <div className="rounded-xl bg-[#3A6B5C] text-white py-2.5 px-3">
-                      <p className="text-2xl font-extrabold leading-none tabular-nums">
+                    <div className="rounded-xl bg-[#1B3B82] text-white py-2.5 px-3">
+                      <p className="font-mono text-2xl font-extrabold leading-none tabular-nums">
                         {totalActions}
                       </p>
                       <p className="text-[8px] font-semibold text-white/90 uppercase mt-1 tracking-wide">
@@ -555,7 +562,7 @@ export function BadgeModal({
                       </p>
                     </div>
 
-                    <p className="text-[10px] font-bold text-[#D96B38] leading-snug">
+                    <p className="font-display text-[10px] font-bold text-[#E86F2C] leading-snug">
                       &ldquo;Hỏng đâu tìm đó – Gần nhau hơn mỗi ngày!&rdquo;
                     </p>
                   </div>
@@ -563,7 +570,7 @@ export function BadgeModal({
 
                 {/* Lớp khóa nhẹ nếu cấp bậc đang xem chưa mở khóa */}
                 {!activeTier.unlocked && (
-                  <div className="absolute inset-0 z-20 bg-[#1F2933]/45 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-5 text-white text-center space-y-2">
+                  <div className="absolute inset-0 z-20 bg-[#162442]/55 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-5 text-white text-center space-y-2">
                     <span className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
                       <Lock className="w-5 h-5" />
                     </span>
@@ -588,15 +595,15 @@ export function BadgeModal({
                     totalActions
                   )
                 }
-                className="w-full max-w-[270px] min-h-[46px] px-4 py-2.5 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] disabled:bg-[#CBD2D9] disabled:text-[#52606D] text-white text-xs sm:text-sm font-semibold shadow-sm inline-flex items-center justify-center gap-2 transition-colors"
+                className="w-full max-w-[270px] min-h-[46px] px-4 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:bg-[#DFCBB5] disabled:text-[#5C564E] disabled:shadow-none text-white text-xs sm:text-sm font-bold shadow-[3px_3px_0px_#162442] active:translate-y-0.5 inline-flex items-center justify-center gap-2 transition-all"
               >
                 <Download className="w-4 h-4" />
                 <span>Tải ảnh Story (PNG)</span>
               </button>
 
               {!highestUnlocked && (
-                <p className="text-[11px] text-[#3A6B5C] text-center flex items-center gap-1 max-w-[270px]">
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <p className="text-[11px] text-[#1B3B82] text-center flex items-center gap-1 max-w-[270px]">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#E86F2C]" />
                   <span>
                     Bấm &ldquo;Tôi đã đến sửa đồ ở đây&rdquo; hoặc viết 1 lời cảm ơn để mở khóa huy hiệu đầu tiên ngay!
                   </span>

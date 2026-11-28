@@ -26,20 +26,20 @@ export function getStatusDisplay(status: Artisan['status']) {
     case 'working':
       return {
         label: 'Đang làm việc',
-        textClass: 'text-[#3A6B5C]',
-        bgClass: 'bg-[#3A6B5C]/10',
+        textClass: 'text-[#15803D]',
+        bgClass: 'bg-[#15803D]/10',
       };
     case 'off_today':
       return {
         label: 'Hôm nay nghỉ',
-        textClass: 'text-[#B47A0E]',
-        bgClass: 'bg-[#E9A825]/15',
+        textClass: 'text-[#B45309]',
+        bgClass: 'bg-[#D97706]/14',
       };
     case 'relocated':
       return {
         label: 'Cần kiểm tra lại',
-        textClass: 'text-[#C84B31]',
-        bgClass: 'bg-[#C84B31]/12',
+        textClass: 'text-[#B93818]',
+        bgClass: 'bg-[#B93818]/12',
       };
   }
 }
@@ -64,12 +64,12 @@ export function ArtisanCard({
     <article
       onMouseEnter={() => onHoverChange(artisan.id)}
       onMouseLeave={() => onHoverChange(null)}
-      className={`group relative rounded-2xl bg-white transition-all duration-150 overflow-hidden ${
+      className={`group relative rounded-2xl bg-white transition-all duration-200 overflow-hidden ${
         isSelected
-          ? 'ring-2 ring-[#D96B38] shadow-md'
+          ? 'border-[1.5px] border-[#1B3B82] shadow-[4px_4px_0px_#E86F2C]'
           : isHovered
-            ? 'ring-1 ring-[#D96B38]/60 shadow-md -translate-y-0.5'
-            : 'border border-[#EBE5DC] shadow-sm hover:shadow-md'
+            ? 'border-[1.5px] border-[#1B3B82] shadow-[4px_4px_0px_#1B3B82] -translate-y-0.5'
+            : 'border border-[#E6D5C3] hover:border-[#1B3B82] hover:shadow-[3px_3px_0px_#1B3B82]'
       }`}
     >
       {onToggleFavorite && (
@@ -88,8 +88,8 @@ export function ArtisanCard({
           title={isFavorite ? 'Đã lưu góc thợ' : 'Lưu góc thợ yêu thích'}
           className={`absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
             isFavorite
-              ? 'bg-[#D96B38]/12 text-[#D96B38]'
-              : 'bg-[#FAF8F5] text-[#7B8794] hover:text-[#D96B38] hover:bg-[#D96B38]/10'
+              ? 'bg-[#FFF3EB] text-[#E86F2C] border border-[#E86F2C]/25'
+              : 'bg-[#FDF8F2] text-[#8C8378] hover:text-[#E86F2C] hover:bg-[#FFF3EB]'
           }`}
         >
           <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -99,16 +99,16 @@ export function ArtisanCard({
       <button
         type="button"
         onClick={() => onSelect(artisan)}
-        className="w-full text-left p-3.5 flex gap-3.5 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D96B38]"
+        className="w-full text-left p-3.5 flex gap-3.5 items-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1B3B82]"
       >
         {/* Thumbnail ảnh góc nghề */}
-        <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-[#F4EFE6]">
+        <div className="relative w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-[#F3ECE2] border border-[#E6D5C3]/70">
           <ArtisanIllustration
             variant={artisan.illustrationVariant}
             customImageUrl={artisan.customImageUrl}
             alt={`Góc nghề của ${artisan.name}`}
           />
-          <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-[#1F2933]/80 backdrop-blur-[2px] text-white text-[11px] font-semibold px-2 py-0.5 rounded-md text-center tabular-nums truncate">
+          <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-[#162442]/88 backdrop-blur-[2px] text-[#FDF8F2] font-mono text-[10.5px] font-bold px-2 py-0.5 rounded-md text-center tabular-nums truncate">
             {artisan.minPriceLabel}
           </div>
         </div>
@@ -116,7 +116,7 @@ export function ArtisanCard({
         {/* Nội dung chính */}
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-2 pr-8">
-            <h3 className="text-[15px] font-semibold text-[#1F2933] leading-snug group-hover:text-[#D96B38] transition-colors line-clamp-2">
+            <h3 className="font-display text-[15px] font-bold text-[#162442] leading-snug group-hover:text-[#1B3B82] transition-colors line-clamp-2">
               {artisan.name}
             </h3>
           </div>
@@ -126,16 +126,16 @@ export function ArtisanCard({
             <span className={`font-semibold ${statusInfo.textClass}`}>
               {statusInfo.label}
             </span>
-            <span className="text-[#CBD2D9]" aria-hidden="true">
+            <span className="text-[#D8C3AE]" aria-hidden="true">
               ·
             </span>
-            <span className="text-[#52606D] font-medium">{artisan.district}</span>
+            <span className="text-[#5C564E] font-medium">{artisan.district}</span>
             {typeof distanceKm === 'number' && (
               <>
-                <span className="text-[#CBD2D9]" aria-hidden="true">
+                <span className="text-[#D8C3AE]" aria-hidden="true">
                   ·
                 </span>
-                <span className="inline-flex items-center gap-0.5 text-[#D96B38] font-semibold tabular-nums">
+                <span className="inline-flex items-center gap-0.5 font-mono text-[#E86F2C] font-bold tabular-nums">
                   <Navigation className="w-3 h-3" />
                   {formatDistanceWithPrefix(distanceKm)}
                 </span>
@@ -144,32 +144,32 @@ export function ArtisanCard({
           </div>
 
           {/* Mốc nhận diện góc phố */}
-          <p className="text-xs text-[#52606D] flex items-start gap-1.5 leading-relaxed line-clamp-2">
-            <MapPin className="w-3.5 h-3.5 text-[#D96B38] shrink-0 mt-0.5" />
+          <p className="text-xs text-[#5C564E] flex items-start gap-1.5 leading-relaxed line-clamp-2">
+            <MapPin className="w-3.5 h-3.5 text-[#E86F2C] shrink-0 mt-0.5" />
             <span>{artisan.addressLandmark}</span>
           </p>
 
           {/* Chân thẻ: Giờ làm & Xác minh / Khen ngợi */}
-          <div className="pt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-[#52606D]">
-            <span className="inline-flex items-center gap-1 truncate">
-              <Clock className="w-3 h-3 shrink-0 text-[#7B8794]" />
+          <div className="pt-1.5 border-t border-dashed border-[#E6D5C3] flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-[#5C564E]">
+            <span className="inline-flex items-center gap-1 truncate font-mono">
+              <Clock className="w-3 h-3 shrink-0 text-[#8C8378]" />
               <span className="truncate">{artisan.hours}</span>
             </span>
 
             <div className="flex items-center gap-2 shrink-0">
               {artisan.isCommunitySuggested ? (
-                <span className="inline-flex items-center gap-1 font-semibold text-[#D96B38]">
+                <span className="inline-flex items-center gap-1 font-semibold text-[#E86F2C]">
                   <Sparkles className="w-3 h-3" />
                   Mới đề xuất
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 font-medium text-[#3A6B5C]">
+                <span className="inline-flex items-center gap-1 font-semibold text-[#1B3B82]">
                   <BadgeCheck className="w-3.5 h-3.5" />
                   Đã xác minh
                 </span>
               )}
               {totalKudos > 0 && (
-                <span className="text-[#52606D] tabular-nums font-medium">
+                <span className="font-mono text-[#5C564E] tabular-nums font-medium">
                   · {totalKudos} khen
                 </span>
               )}

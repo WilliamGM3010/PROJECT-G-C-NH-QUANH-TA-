@@ -210,10 +210,10 @@ export function AdminArticlesTab({
       {/* Header + 2 nút tạo bài viết rõ ràng ở góc trên */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-[#1F2933]">Quản lý Bản tin</h2>
-          <p className="text-xs text-[#52606D] mt-0.5">
+          <h2 className="text-xl font-bold text-[#162442]">Quản lý Bản tin</h2>
+          <p className="text-xs text-[#5C564E] mt-0.5">
             Soạn câu chuyện nghề vỉa hè, mẹo giữ đồ bền hoặc nhập tin từ báo chí ·{' '}
-            <span className="tabular-nums font-semibold text-[#1F2933]">
+            <span className="tabular-nums font-semibold text-[#162442]">
               {publishedCount} đã xuất bản, {draftCount} tin nháp
             </span>
           </p>
@@ -227,7 +227,7 @@ export function AdminArticlesTab({
                 type="button"
                 disabled={isSeedingArticles}
                 onClick={() => void onSeedInitialArticles()}
-                className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#3A6B5C]/30 bg-[#3A6B5C]/10 hover:bg-[#3A6B5C]/18 disabled:opacity-60 text-xs font-semibold text-[#3A6B5C] inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+                className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B3B82]/30 bg-[#1B3B82]/10 hover:bg-[#1B3B82]/18 disabled:opacity-60 text-xs font-semibold text-[#1B3B82] inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
               >
                 {isSeedingArticles ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -241,7 +241,7 @@ export function AdminArticlesTab({
           <button
             type="button"
             onClick={openImportDialog}
-            className="min-h-[42px] px-4 py-2 rounded-xl border border-[#3A6B5C]/35 bg-white hover:bg-[#3A6B5C]/8 text-xs sm:text-sm font-semibold text-[#3A6B5C] inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
+            className="min-h-[42px] px-4 py-2 rounded-xl border border-[#1B3B82]/35 bg-white hover:bg-[#1B3B82]/8 text-xs sm:text-sm font-semibold text-[#1B3B82] inline-flex items-center gap-1.5 whitespace-nowrap transition-colors"
           >
             <Link2 className="w-4 h-4" />
             <span>Nhập tin từ link báo</span>
@@ -250,7 +250,7 @@ export function AdminArticlesTab({
           <button
             type="button"
             onClick={openCreateNew}
-            className="min-h-[42px] px-4 py-2 rounded-xl bg-[#D96B38] hover:bg-[#C25A2B] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs transition-colors"
+            className="min-h-[42px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Đăng bài mới</span>
@@ -259,7 +259,7 @@ export function AdminArticlesTab({
       </div>
 
       {/* Bộ lọc trạng thái + Tìm kiếm */}
-      <div className="rounded-2xl bg-white border border-[#EBE5DC] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="rounded-2xl bg-white border border-[#E6D5C3] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           {(
             [
@@ -276,8 +276,8 @@ export function AdminArticlesTab({
                 onClick={() => setStatusFilter(tab.id)}
                 className={`min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors tabular-nums ${
                   active
-                    ? 'bg-[#1F2933] text-white'
-                    : 'bg-[#FAF8F5] text-[#52606D] hover:text-[#1F2933]'
+                    ? 'bg-[#162442] text-white'
+                    : 'bg-[#FDF8F2] text-[#5C564E] hover:text-[#162442]'
                 }`}
               >
                 {tab.label}
@@ -287,27 +287,27 @@ export function AdminArticlesTab({
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-[#7B8794] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#8A8177] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo tiêu đề, nguồn..."
-            className="w-full h-9 pl-9 pr-3 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] text-xs text-[#1F2933] focus:outline-none focus:bg-white focus:border-[#D96B38]"
+            className="w-full h-9 pl-9 pr-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs text-[#162442] focus:outline-none focus:bg-white focus:border-[#E86F2C]"
           />
         </div>
       </div>
 
       {/* Danh sách bài viết */}
       {filteredArticles.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-[#EBE5DC] p-10 text-center space-y-3">
-          <Newspaper className="w-8 h-8 text-[#D96B38]/60 mx-auto" />
-          <p className="text-sm font-bold text-[#1F2933]">
+        <div className="rounded-2xl bg-white border border-[#E6D5C3] p-10 text-center space-y-3">
+          <Newspaper className="w-8 h-8 text-[#E86F2C]/60 mx-auto" />
+          <p className="text-sm font-bold text-[#162442]">
             {articles.length === 0
               ? 'Chưa có bài viết nào trong hệ thống'
               : 'Không tìm thấy bài viết phù hợp bộ lọc'}
           </p>
-          <p className="text-xs text-[#52606D] max-w-md mx-auto">
+          <p className="text-xs text-[#5C564E] max-w-md mx-auto">
             {articles.length === 0
               ? 'Bấm "Đăng bài mới" để tự viết câu chuyện hoặc "Nhập tin từ link báo" để trích xuất nhanh từ một bài báo có sẵn.'
               : 'Thử chọn tab Tất cả hoặc xóa từ khóa tìm kiếm.'}
@@ -324,10 +324,10 @@ export function AdminArticlesTab({
             return (
               <div
                 key={article.id}
-                className="rounded-2xl bg-white border border-[#EBE5DC] p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-[#D96B38]/35 transition-colors"
+                className="rounded-2xl bg-white border border-[#E6D5C3] p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-[#E86F2C]/35 transition-colors"
               >
                 {/* Ảnh nhỏ */}
-                <div className="w-full md:w-32 h-36 md:h-22 rounded-xl overflow-hidden bg-[#F4EFE6] shrink-0 flex items-center justify-center">
+                <div className="w-full md:w-32 h-36 md:h-22 rounded-xl overflow-hidden bg-[#F6EFE6] shrink-0 flex items-center justify-center">
                   {safeThumb ? (
                     <img
                       src={safeThumb}
@@ -342,11 +342,11 @@ export function AdminArticlesTab({
 
                 {/* Thông tin bài viết */}
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-[#616E7C]">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium text-[#5C564E]">
                     <span
                       className={`font-bold ${
                         article.status === 'published'
-                          ? 'text-[#3A6B5C]'
+                          ? 'text-[#1B3B82]'
                           : 'text-[#9A6807]'
                       }`}
                     >
@@ -355,7 +355,7 @@ export function AdminArticlesTab({
                         : 'Tin nháp'}
                     </span>
                     <span aria-hidden="true">·</span>
-                    <span className="font-semibold text-[#1F2933]">
+                    <span className="font-semibold text-[#162442]">
                       {article.category}
                     </span>
                     <span aria-hidden="true">·</span>
@@ -363,7 +363,7 @@ export function AdminArticlesTab({
                     {article.sourceType === 'external_link' && (
                       <>
                         <span aria-hidden="true">·</span>
-                        <span className="inline-flex items-center gap-1 text-[#D96B38] font-semibold">
+                        <span className="inline-flex items-center gap-1 text-[#E86F2C] font-semibold">
                           <Globe className="w-3 h-3" />
                           {article.sourceName || 'Link báo'}
                         </span>
@@ -371,19 +371,19 @@ export function AdminArticlesTab({
                     )}
                   </div>
 
-                  <h3 className="text-sm sm:text-base font-bold text-[#1F2933] leading-snug line-clamp-2">
+                  <h3 className="text-sm sm:text-base font-bold text-[#162442] leading-snug line-clamp-2">
                     {article.title}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#52606D]">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#5C564E]">
                     {article.isSpotlight && (
-                      <span className="inline-flex items-center gap-1 font-semibold text-[#D96B38]">
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#E86F2C]">
                         <Sparkles className="w-3 h-3" />
                         Tiêu điểm
                       </span>
                     )}
                     {article.isPinned && (
-                      <span className="inline-flex items-center gap-1 font-semibold text-[#3A6B5C]">
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#1B3B82]">
                         <Pin className="w-3 h-3" />
                         Ghim đầu trang
                       </span>
@@ -395,7 +395,7 @@ export function AdminArticlesTab({
                       </span>
                     )}
                     {linkedArtisan && (
-                      <span className="text-[#3A6B5C]">
+                      <span className="text-[#1B3B82]">
                         Nhân vật: <strong>{linkedArtisan.name}</strong>
                       </span>
                     )}
@@ -408,7 +408,7 @@ export function AdminArticlesTab({
                     type="button"
                     onClick={() => setPreviewArticle(article)}
                     title="Xem trước"
-                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] hover:bg-[#F2ECE2] text-xs font-semibold text-[#52606D] inline-flex items-center gap-1"
+                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] hover:bg-[#F3EAE0] text-xs font-semibold text-[#5C564E] inline-flex items-center gap-1"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span className="hidden xl:inline">Xem</span>
@@ -417,7 +417,7 @@ export function AdminArticlesTab({
                   <button
                     type="button"
                     onClick={() => openEditArticle(article)}
-                    className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#D96B38]/30 bg-[#D96B38]/8 hover:bg-[#D96B38]/15 text-xs font-semibold text-[#D96B38] inline-flex items-center gap-1"
+                    className="min-h-[36px] px-3 py-1.5 rounded-xl border border-[#E86F2C]/30 bg-[#E86F2C]/8 hover:bg-[#E86F2C]/15 text-xs font-semibold text-[#E86F2C] inline-flex items-center gap-1"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>Sửa</span>
@@ -433,8 +433,8 @@ export function AdminArticlesTab({
                     }
                     className={`min-h-[36px] px-3 py-1.5 rounded-xl border text-xs font-semibold inline-flex items-center gap-1 transition-colors ${
                       article.status === 'published'
-                        ? 'border-[#E5DFD5] bg-white hover:bg-[#FAF8F5] text-[#52606D]'
-                        : 'border-[#3A6B5C]/30 bg-[#3A6B5C]/10 hover:bg-[#3A6B5C]/18 text-[#3A6B5C]'
+                        ? 'border-[#DFCBB5] bg-white hover:bg-[#FDF8F2] text-[#5C564E]'
+                        : 'border-[#1B3B82]/30 bg-[#1B3B82]/10 hover:bg-[#1B3B82]/18 text-[#1B3B82]'
                     }`}
                   >
                     {article.status === 'published' ? (
@@ -454,7 +454,7 @@ export function AdminArticlesTab({
                     type="button"
                     onClick={() => setDeletingArticle(article)}
                     title="Xóa bài viết"
-                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#C84B31]/25 bg-[#C84B31]/8 hover:bg-[#C84B31]/16 text-xs font-semibold text-[#C84B31] inline-flex items-center gap-1"
+                    className="min-h-[36px] px-2.5 py-1.5 rounded-xl border border-[#B93818]/25 bg-[#B93818]/8 hover:bg-[#B93818]/16 text-xs font-semibold text-[#B93818] inline-flex items-center gap-1"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span className="sr-only sm:not-sr-only">Xóa</span>
@@ -472,19 +472,19 @@ export function AdminArticlesTab({
           role="dialog"
           aria-modal="true"
           aria-label="Nhập tin từ link báo"
-          className="fixed inset-0 z-50 bg-[#1F2933]/55 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#162442]/55 backdrop-blur-xs flex items-center justify-center p-4"
         >
-          <div className="w-full max-w-lg rounded-2xl bg-white border border-[#E5DFD5] shadow-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#EFECE6] flex items-center justify-between gap-2">
+          <div className="w-full max-w-lg rounded-2xl bg-white border border-[#DFCBB5] shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#F3EAE0] flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-xl bg-[#3A6B5C]/12 text-[#3A6B5C] flex items-center justify-center">
+                <span className="w-8 h-8 rounded-xl bg-[#1B3B82]/12 text-[#1B3B82] flex items-center justify-center">
                   <Link2 className="w-4 h-4" />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-[#1F2933]">
+                  <h3 className="text-base font-bold text-[#162442]">
                     Nhập tin từ link báo
                   </h3>
-                  <p className="text-[11px] text-[#616E7C]">
+                  <p className="text-[11px] text-[#5C564E]">
                     Tự động trích xuất tiêu đề, sa-pô, ảnh bìa và tên trang báo nguồn
                   </p>
                 </div>
@@ -493,7 +493,7 @@ export function AdminArticlesTab({
                 type="button"
                 onClick={() => setImportModalOpen(false)}
                 aria-label="Đóng hộp thoại"
-                className="w-9 h-9 rounded-xl hover:bg-[#FAF8F5] text-[#52606D] flex items-center justify-center"
+                className="w-9 h-9 rounded-xl hover:bg-[#FDF8F2] text-[#5C564E] flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -503,7 +503,7 @@ export function AdminArticlesTab({
               <div className="space-y-1.5">
                 <label
                   htmlFor="microlink-url-input"
-                  className="text-xs font-bold text-[#1F2933]"
+                  className="text-xs font-bold text-[#162442]"
                 >
                   Đường dẫn bài báo (URL)
                 </label>
@@ -514,9 +514,9 @@ export function AdminArticlesTab({
                   value={importUrl}
                   onChange={(e) => setImportUrl(e.target.value)}
                   placeholder="https://tuoitre.vn/bai-viet-ve-nguoi-tho-sua-giay..."
-                  className="w-full h-11 px-3.5 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] focus:bg-white text-sm text-[#1F2933] focus:outline-none focus:border-[#D96B38] focus:ring-2 focus:ring-[#D96B38]/15"
+                  className="w-full h-11 px-3.5 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] focus:bg-white text-sm text-[#162442] focus:outline-none focus:border-[#E86F2C] focus:ring-2 focus:ring-[#E86F2C]/15"
                 />
-                <p className="text-[11px] text-[#616E7C] leading-relaxed">
+                <p className="text-[11px] text-[#5C564E] leading-relaxed">
                   Sau khi lấy dữ liệu, bài viết sẽ mở sẵn trong khung soạn thảo để
                   bạn kiểm tra, gắn thẻ cô chú thợ liên quan rồi bấm Xuất bản.
                 </p>
@@ -535,7 +535,7 @@ export function AdminArticlesTab({
                     <button
                       type="button"
                       onClick={handleOpenManualFromFailedImport}
-                      className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#1F2933] hover:bg-[#323F4B] text-white text-xs font-semibold"
+                      className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#162442] hover:bg-[#22345A] text-white text-xs font-semibold"
                     >
                       Mở trình soạn thảo để tự dán tiêu đề &amp; ảnh
                     </button>
@@ -547,14 +547,14 @@ export function AdminArticlesTab({
                 <button
                   type="button"
                   onClick={() => setImportModalOpen(false)}
-                  className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] text-xs font-semibold text-[#52606D]"
+                  className="min-h-[42px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-semibold text-[#5C564E]"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isImportingUrl}
-                  className="min-h-[42px] px-5 py-2 rounded-xl bg-[#3A6B5C] hover:bg-[#2F574A] disabled:opacity-60 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-xs"
+                  className="min-h-[42px] px-5 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] disabled:opacity-60 text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-xs"
                 >
                   {isImportingUrl ? (
                     <>
@@ -599,17 +599,17 @@ export function AdminArticlesTab({
           role="dialog"
           aria-modal="true"
           aria-label="Xem trước bài viết"
-          className="fixed inset-0 z-50 bg-[#1F2933]/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6"
+          className="fixed inset-0 z-50 bg-[#162442]/65 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6"
         >
-          <div className="w-full max-w-4xl max-h-[92dvh] rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-5 py-3 bg-white border-b border-[#E8E2D9] flex items-center justify-between gap-3 shrink-0">
-              <span className="text-xs font-semibold text-[#3A6B5C]">
+          <div className="w-full max-w-4xl max-h-[92dvh] rounded-2xl bg-[#FDF8F2] border border-[#DFCBB5] shadow-2xl flex flex-col overflow-hidden">
+            <div className="px-5 py-3 bg-white border-b border-[#E6D5C3] flex items-center justify-between gap-3 shrink-0">
+              <span className="text-xs font-semibold text-[#1B3B82]">
                 Xem trước bài viết ({previewArticle.status === 'published' ? 'Đã xuất bản' : 'Tin nháp'})
               </span>
               <button
                 type="button"
                 onClick={() => setPreviewArticle(null)}
-                className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#1F2933] text-white text-xs font-semibold inline-flex items-center gap-1"
+                className="min-h-[36px] px-3 py-1.5 rounded-lg bg-[#162442] text-white text-xs font-semibold inline-flex items-center gap-1"
               >
                 <X className="w-3.5 h-3.5" />
                 <span>Đóng</span>
@@ -636,16 +636,16 @@ export function AdminArticlesTab({
           role="dialog"
           aria-modal="true"
           aria-label="Xác nhận xóa bài viết"
-          className="fixed inset-0 z-50 bg-[#1F2933]/55 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-[#162442]/55 backdrop-blur-xs flex items-center justify-center p-4"
         >
-          <div className="w-full max-w-md rounded-2xl bg-white border border-[#E5DFD5] shadow-2xl p-5 space-y-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-[#DFCBB5] shadow-2xl p-5 space-y-4">
             <div className="space-y-1.5">
-              <h3 className="text-base font-bold text-[#1F2933]">
+              <h3 className="text-base font-bold text-[#162442]">
                 Xóa bài viết khỏi Bản tin?
               </h3>
-              <p className="text-xs text-[#52606D] leading-relaxed">
+              <p className="text-xs text-[#5C564E] leading-relaxed">
                 Bạn có chắc muốn xóa bài{' '}
-                <strong className="text-[#1F2933]">
+                <strong className="text-[#162442]">
                   “{deletingArticle.title}”
                 </strong>
                 ? Thao tác này sẽ gỡ bài viết khỏi cơ sở dữ liệu Supabase và không
@@ -657,7 +657,7 @@ export function AdminArticlesTab({
                 type="button"
                 disabled={isDeleting}
                 onClick={() => setDeletingArticle(null)}
-                className="min-h-[40px] px-4 py-2 rounded-xl border border-[#DFD8CE] bg-[#FAF8F5] text-xs font-semibold text-[#52606D]"
+                className="min-h-[40px] px-4 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-semibold text-[#5C564E]"
               >
                 Hủy
               </button>
@@ -665,7 +665,7 @@ export function AdminArticlesTab({
                 type="button"
                 disabled={isDeleting}
                 onClick={() => void handleConfirmDelete()}
-                className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C84B31] hover:bg-[#AE3C24] disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+                className="min-h-[40px] px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#992C12] disabled:opacity-60 text-white text-xs font-semibold inline-flex items-center gap-1.5"
               >
                 {isDeleting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
