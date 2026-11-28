@@ -242,4 +242,5 @@ export type AppTab =
   | 'news'
   | 'community'
   | 'suggest'
-  | 'about';
+  | 'about'
+  | 'avatar';

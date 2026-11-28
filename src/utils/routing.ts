@@ -19,6 +19,7 @@ export const ROUTE_PATHS = {
   community: '/cong-dong',
   about: '/ve-du-an',
   suggest: '/goi-y',
+  avatar: '/avatar',
   admin: '/quan-tri',
 } as const;
 
@@ -87,6 +88,8 @@ export function buildRouteUrl(options: {
       return ROUTE_PATHS.about;
     case 'suggest':
       return ROUTE_PATHS.suggest;
+    case 'avatar':
+      return ROUTE_PATHS.avatar;
     default:
       return ROUTE_PATHS.home;
   }
@@ -249,6 +252,18 @@ export function parseAppRoute(
     };
   }
 
+  // Trang Góc Thợ Avatar `/avatar`
+  if (lowerPath === ROUTE_PATHS.avatar) {
+    return {
+      isAdmin: false,
+      tab: 'avatar',
+      artisanId: null,
+      articleKey: null,
+      shouldCanonicalize: pathname !== ROUTE_PATHS.avatar,
+      canonicalUrl: ROUTE_PATHS.avatar,
+    };
+  }
+
   // Trang Quản trị `/quan-tri`
   if (lowerPath === ROUTE_PATHS.admin) {
     return {
@@ -301,6 +316,8 @@ export function getDocumentTitleForRoute(options: {
       return 'Về dự án & Team WHO | Góc Thợ Quanh Ta';
     case 'suggest':
       return 'Gợi ý cô chú thợ mới | Góc Thợ Quanh Ta';
+    case 'avatar':
+      return 'Góc Thợ Avatar 3D | Góc Thợ Quanh Ta';
     case 'home':
     default:
       return 'Góc Thợ Quanh Ta — Hỏng đâu sửa liền';

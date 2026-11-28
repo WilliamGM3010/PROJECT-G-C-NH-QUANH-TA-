@@ -147,6 +147,27 @@ import {
   ContributionHistoryModal,
   SavedArtisansModal,
 } from './components/UserAccountModals';
+import { AvatarStudioView } from './components/avatar/AvatarStudioView';
+import {
+  AVATAR_QUESTS,
+  getAchievementById,
+  getAvatarItemById,
+} from './data/avatarCatalog';
+import {
+  claimQuestRewardInProfile,
+  countClaimableQuests,
+  createDefaultAvatarProfile,
+  incrementQuestProgressInProfile,
+  loadAvatarProfile,
+  loadLocalAvatarProfile,
+  saveAvatarProfile,
+  unlockItemWithGpInProfile,
+} from './services/avatarService';
+import type {
+  AvatarConfig,
+  AvatarProfile,
+  AvatarQuestId,
+} from './types/avatar';
 
 function copyTextFallback(text: string): boolean {
   try {
@@ -312,6 +333,32 @@ export default function App() {
     UserContributionItem[]
   >([]);
   const [isLoadingContributions, setIsLoadingContributions] = useState(false);
+
+  // Hồ sơ Góc Thợ Avatar 3D (đồng bộ Supabase user_avatar_profiles + fallback localStorage)
+  const [avatarProfile, setAvatarProfile] = useState<AvatarProfile>(
+    () => loadLocalAvatarProfile('guest') ?? createDefaultAvatarProfile('guest')
+  );
+  const avatarProfileRef = useRef<AvatarProfile>(avatarProfile);
+  avatarProfileRef.current = avatarProfile;
+
+  const avatarUserKey = currentUser?.id || currentUser?.email || 'guest';
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadAvatarProfile(avatarUserKey).then(({ profile }) => {
+      if (!cancelled) {
+        setAvatarProfile(profile);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [avatarUserKey]);
+
+  const claimableAvatarQuestsCount = useMemo(
+    () => countClaimableQuests(avatarProfile),
+    [avatarProfile]
+  );
 
   const openAuthModal = useCallback(
     (
@@ -585,6 +632,137 @@ export default function App() {
       setToastMessage(null);
     }, 3800);
   }, []);
+
+  // Tự động cập nhật tiến độ nhiệm vụ Góc Thợ Avatar từ các tương tác thật trên web
+  const trackAvatarQuest = useCallback(
+    (questId: AvatarQuestId, options?: { artisanId?: string }) => {
+      const { nextProfile, justCompletedQuest } =
+        incrementQuestProgressInProfile(
+          avatarProfileRef.current,
+          questId,
+          options
+        );
+      if (nextProfile === avatarProfileRef.current) return;
+      avatarProfileRef.current = nextProfile;
+      setAvatarProfile(nextProfile);
+      void saveAvatarProfile(nextProfile);
+
+      if (justCompletedQuest) {
+        const questMeta = AVATAR_QUESTS.find((q) => q.id === questId);
+        if (questMeta) {
+          window.setTimeout(() => {
+            showToast(
+              `✨ Hoàn thành nhiệm vụ "${questMeta.title}"! Vào Góc Avatar để nhận +${questMeta.gpReward} GP nhé!`
+            );
+          }, 900);
+        }
+      }
+    },
+    [showToast]
+  );
+
+  // Theo dõi số góc thợ khác nhau người dùng đã mở xem chi tiết (/tho/:id)
+  useEffect(() => {
+    if (activeTab === 'artisan' && selectedArtisanId) {
+      trackAvatarQuest('explore_3_artisans', { artisanId: selectedArtisanId });
+    }
+  }, [activeTab, selectedArtisanId, trackAvatarQuest]);
+
+  const handleSaveAvatarConfig = useCallback(
+    async (
+      nextConfig: AvatarConfig,
+      snapshotDataUrl: string | null,
+      requireAccountSync = false
+    ) => {
+      const base: AvatarProfile = {
+        ...avatarProfileRef.current,
+        userKey: avatarUserKey,
+        avatarConfig: nextConfig,
+        snapshotDataUrl:
+          snapshotDataUrl ?? avatarProfileRef.current.snapshotDataUrl,
+        updatedAt: new Date().toISOString(),
+      };
+      const { nextProfile, justCompletedQuest } =
+        incrementQuestProgressInProfile(base, 'first_avatar_save');
+      avatarProfileRef.current = nextProfile;
+      setAvatarProfile(nextProfile);
+
+      const { savedToDb } = await saveAvatarProfile(nextProfile);
+
+      if (justCompletedQuest) {
+        showToast(
+          '✨ Đã lưu Góc Thợ Avatar & hoàn thành nhiệm vụ đầu tiên! Vào mục Nhiệm vụ để nhận +30 GP nhé.'
+        );
+      } else if (savedToDb || requireAccountSync) {
+        showToast('Đã lưu Góc Thợ Avatar và cập nhật ảnh đại diện tài khoản!');
+      } else {
+        showToast('Đã lưu nhân vật Góc Thợ Avatar trên thiết bị này!');
+      }
+    },
+    [avatarUserKey, showToast]
+  );
+
+  const handleUnlockAvatarItem = useCallback(
+    (itemId: string) => {
+      const result = unlockItemWithGpInProfile(
+        avatarProfileRef.current,
+        itemId
+      );
+      if (!result.ok) {
+        if (result.reason === 'insufficient_gp') {
+          showToast(
+            'Bạn chưa đủ Điểm Góc (GP) — hoàn thành thêm nhiệm vụ cộng đồng để mở khóa nhé!'
+          );
+        }
+        return;
+      }
+      avatarProfileRef.current = result.nextProfile;
+      setAvatarProfile(result.nextProfile);
+      void saveAvatarProfile(result.nextProfile);
+      const item = getAvatarItemById(itemId);
+      showToast(
+        item
+          ? `Đã mở khóa "${item.name}" vào Tủ đồ Góc Thợ Avatar!`
+          : 'Đã mở khóa vật phẩm mới vào Tủ đồ!'
+      );
+    },
+    [showToast]
+  );
+
+  const handleClaimAvatarQuest = useCallback(
+    (questId: AvatarQuestId) => {
+      const result = claimQuestRewardInProfile(
+        avatarProfileRef.current,
+        questId
+      );
+      if (!result.ok) return;
+      avatarProfileRef.current = result.nextProfile;
+      setAvatarProfile(result.nextProfile);
+      void saveAvatarProfile(result.nextProfile);
+      showToast(
+        result.unlockedItemName
+          ? `🎉 Đã nhận +${result.gpAwarded} GP và mở khóa "${result.unlockedItemName}"!`
+          : `🎉 Đã nhận +${result.gpAwarded} Điểm Góc (GP)!`
+      );
+    },
+    [showToast]
+  );
+
+  const handleEquipAvatarTitle = useCallback(
+    (titleId: string) => {
+      const nextProfile: AvatarProfile = {
+        ...avatarProfileRef.current,
+        equippedTitleId: titleId,
+        updatedAt: new Date().toISOString(),
+      };
+      avatarProfileRef.current = nextProfile;
+      setAvatarProfile(nextProfile);
+      void saveAvatarProfile(nextProfile);
+      const titleMeta = getAchievementById(titleId);
+      showToast(`Đã đeo danh hiệu "${titleMeta.title}"!`);
+    },
+    [showToast]
+  );
 
   // Helper ghi Nhật ký hoạt động (Audit Log) tự động
   const appendAuditLog = useCallback(
@@ -1373,8 +1551,9 @@ export default function App() {
         'Cảm ơn bạn đã chọn sửa chữa thay vì vứt bỏ! Bạn vừa giúp hồi sinh thêm 1 món đồ.',
         actor
       );
+      trackAvatarQuest('revive_item');
     },
-    [recordUserContribution, showToast]
+    [recordUserContribution, showToast, trackAvatarQuest]
   );
 
   const handleMarkRevived = useCallback(
@@ -1416,8 +1595,9 @@ export default function App() {
         'Cảm ơn tấm lòng của bạn! Lời nhắn sẽ hiển thị sau khi đội ngũ Góc Thợ duyệt qua nhé.',
         actor
       );
+      trackAvatarQuest('send_praise');
     },
-    [recordUserContribution]
+    [recordUserContribution, trackAvatarQuest]
   );
 
   const handleSubmitThankYou = useCallback(
@@ -1479,9 +1659,10 @@ export default function App() {
 
       if (!alreadyActive) {
         showToast('Cảm ơn lời khen ấm áp bạn vừa gửi tới cô chú!');
+        trackAvatarQuest('send_praise');
       }
     },
-    [artisans, kudosReactedMap, showToast]
+    [artisans, kudosReactedMap, showToast, trackAvatarQuest]
   );
 
   const handleToggleKudos = useCallback(
@@ -1550,8 +1731,9 @@ export default function App() {
       }
 
       showToast('Đã đăng lời khen của bạn vào Cộng đồng khen ngợi!');
+      trackAvatarQuest('send_praise');
     },
-    [artisans, showToast]
+    [artisans, showToast, trackAvatarQuest]
   );
 
   const handleAddPraise = useCallback(
@@ -1661,9 +1843,16 @@ export default function App() {
         'suggestionsCount',
         'Đã gửi đề xuất vào mục Chờ duyệt — bạn có thể theo dõi trong Lịch sử đóng góp!'
       );
+      trackAvatarQuest('suggest_artisan');
       return { ok: true };
     },
-    [currentUser, loadUserContributions, recordUserContribution, showToast]
+    [
+      currentUser,
+      loadUserContributions,
+      recordUserContribution,
+      showToast,
+      trackAvatarQuest,
+    ]
   );
 
   // =======================================================
@@ -1702,8 +1891,11 @@ export default function App() {
           ? 'Đã bỏ góc thợ khỏi danh sách đã lưu.'
           : 'Đã lưu góc thợ vào mục "Góc thợ đã lưu" của bạn!'
       );
+      if (!exists) {
+        trackAvatarQuest('save_favorite');
+      }
     },
-    [showToast]
+    [showToast, trackAvatarQuest]
   );
 
   const handleToggleFavorite = useCallback(
@@ -2984,6 +3176,8 @@ export default function App() {
         favoritesCount={savedArtisans.length}
         contributionsCount={userContributions.length}
         badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
+        avatarSnapshotUrl={avatarProfile.snapshotDataUrl}
+        claimableQuestsCount={claimableAvatarQuestsCount}
         onOpenAuth={() => openAuthModal()}
         onOpenBadge={handleOpenBadgeModal}
         onOpenSaved={() => setSavedModalOpen(true)}
@@ -3005,6 +3199,8 @@ export default function App() {
           favoritesCount={savedArtisans.length}
           contributionsCount={userContributions.length}
           badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
+          avatarSnapshotUrl={avatarProfile.snapshotDataUrl}
+          claimableQuestsCount={claimableAvatarQuestsCount}
           onGoHome={() => navigateToTab('home')}
           onSuggestArtisan={() => handleNavigateTab('suggest')}
           onOpenAuth={() => openAuthModal()}
@@ -3940,6 +4136,33 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'avatar' && (
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
+            <div className="flex-1">
+              <AvatarStudioView
+                profile={avatarProfile}
+                currentUser={currentUser}
+                onSaveAvatarConfig={handleSaveAvatarConfig}
+                onUnlockItemWithGp={handleUnlockAvatarItem}
+                onClaimQuest={handleClaimAvatarQuest}
+                onEquipTitle={handleEquipAvatarTitle}
+                onNavigateAppTab={handleNavigateTab}
+                onRequestLogin={(prompt) => openAuthModal(prompt, 'login')}
+                onShowToast={showToast}
+              />
+            </div>
+            <SiteFooter
+              currentUser={currentUser}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
+            />
+          </div>
+        )}
+
         {activeTab === 'about' && (
           <div
             ref={pageScrollRef}
@@ -3971,7 +4194,11 @@ export default function App() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileBottomNav activeTab={activeTab} onChangeTab={handleNavigateTab} />
+      <MobileBottomNav
+        activeTab={activeTab}
+        onChangeTab={handleNavigateTab}
+        claimableQuestsCount={claimableAvatarQuestsCount}
+      />
 
       {/* Soft Auth Modal: chỉ mở khi khách bấm Đăng nhập hoặc các hành động tương tác */}
       <AuthModal

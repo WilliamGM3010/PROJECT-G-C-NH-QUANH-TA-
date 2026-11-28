@@ -12,6 +12,7 @@ import {
   Newspaper,
   PlusCircle,
   ShieldCheck,
+  Sparkles,
   User,
   Users,
   X,
@@ -27,10 +28,12 @@ import {
 interface AccountMenuProps {
   currentUser: AdminAccount;
   badgeEmoji?: string | null;
+  avatarSnapshotUrl?: string | null;
   favoritesCount: number;
   contributionsCount: number;
   pendingCount?: number;
   compact?: boolean;
+  onOpenAvatar?: () => void;
   onOpenBadge: () => void;
   onOpenSaved: () => void;
   onOpenContributions: () => void;
@@ -42,10 +45,12 @@ interface AccountMenuProps {
 export function AccountMenuDropdown({
   currentUser,
   badgeEmoji,
+  avatarSnapshotUrl,
   favoritesCount,
   contributionsCount,
   pendingCount = 0,
   compact = false,
+  onOpenAvatar,
   onOpenBadge,
   onOpenSaved,
   onOpenContributions,
@@ -95,11 +100,25 @@ export function AccountMenuDropdown({
         }`}
       >
         <span
-          className={`rounded-full flex items-center justify-center font-bold text-[#F7F2E8] shrink-0 ${
+          className={`rounded-full overflow-hidden flex items-center justify-center font-bold text-[#F7F2E8] shrink-0 ${
             compact ? 'w-6 h-6 text-[11px]' : 'w-6.5 h-6.5 text-xs'
-          } ${canManage ? 'bg-[#1B3B82]' : 'bg-[#D46534]'}`}
+          } ${
+            avatarSnapshotUrl
+              ? 'bg-[#E7F7F2] ring-1 ring-[#D46534]/35'
+              : canManage
+                ? 'bg-[#1B3B82]'
+                : 'bg-[#D46534]'
+          }`}
         >
-          {initial}
+          {avatarSnapshotUrl ? (
+            <img
+              src={avatarSnapshotUrl}
+              alt={`Avatar 3D của ${displayName}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            initial
+          )}
         </span>
 
         <span
@@ -148,6 +167,26 @@ export function AccountMenuDropdown({
           </div>
 
           <div className="p-1.5 space-y-0.5">
+            {onOpenAvatar && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenAvatar();
+                }}
+                className="w-full min-h-[40px] px-3 py-2 rounded-xl text-left text-xs font-bold text-[#1B3B82] bg-[#F7F2E8] hover:bg-[#EFE7D7] flex items-center justify-between gap-2 transition-colors"
+              >
+                <span className="inline-flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-[#D46534]" />
+                  <span>Góc Thợ Avatar 3D</span>
+                </span>
+                <span className="font-mono text-[10px] font-bold uppercase text-[#D46534]">
+                  3D
+                </span>
+              </button>
+            )}
+
             <button
               type="button"
               role="menuitem"
@@ -271,6 +310,8 @@ interface NavbarProps {
   favoritesCount: number;
   contributionsCount: number;
   badgeEmoji?: string | null;
+  avatarSnapshotUrl?: string | null;
+  claimableQuestsCount?: number;
   onOpenAuth: () => void;
   onOpenBadge: () => void;
   onOpenSaved: () => void;
@@ -282,6 +323,7 @@ interface NavbarProps {
 const DESKTOP_NAV_ITEMS: { id: AppTab; label: string }[] = [
   { id: 'home', label: 'Trang chủ' },
   { id: 'explore', label: 'Bản đồ thợ' },
+  { id: 'avatar', label: 'Góc Avatar' },
   { id: 'news', label: 'Bản tin' },
   { id: 'community', label: 'Cộng đồng' },
   { id: 'about', label: 'Về dự án' },
@@ -309,6 +351,8 @@ export function DesktopNavbar({
   favoritesCount,
   contributionsCount,
   badgeEmoji,
+  avatarSnapshotUrl,
+  claimableQuestsCount = 0,
   onOpenAuth,
   onOpenBadge,
   onOpenSaved,
@@ -336,8 +380,8 @@ export function DesktopNavbar({
         </span>
       </button>
 
-      {/* Giữa: 5 liên kết tinh gọn với gạch chân đỏ sợi chỉ #B93818 */}
-      <nav aria-label="Điều hướng chính" className="flex items-center gap-7">
+      {/* Giữa: 6 liên kết tinh gọn với gạch chân đỏ sợi chỉ #B93818 */}
+      <nav aria-label="Điều hướng chính" className="flex items-center gap-6">
         {DESKTOP_NAV_ITEMS.map(({ id, label }) => {
           const isActive = isNavItemActive(id, activeTab);
           return (
@@ -345,13 +389,21 @@ export function DesktopNavbar({
               key={id}
               type="button"
               onClick={() => onChangeTab(id)}
-              className={`relative py-2 text-sm whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] rounded ${
+              className={`relative py-2 text-sm whitespace-nowrap shrink-0 inline-flex items-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] rounded ${
                 isActive
                   ? 'text-[#1B3B82] font-bold'
                   : 'text-[#615D57] hover:text-[#25292E] font-medium'
               }`}
             >
-              {label}
+              {id === 'avatar' && (
+                <Sparkles className="w-3.5 h-3.5 text-[#D46534]" />
+              )}
+              <span>{label}</span>
+              {id === 'avatar' && claimableQuestsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[#D46534] text-white font-mono text-[10px] leading-none font-bold">
+                  {claimableQuestsCount}
+                </span>
+              )}
               {isActive && (
                 <span className="absolute left-0 right-0 -bottom-[19px] h-[2.5px] rounded-full bg-[#B93818]" />
               )}
@@ -366,9 +418,11 @@ export function DesktopNavbar({
           <AccountMenuDropdown
             currentUser={currentUser}
             badgeEmoji={badgeEmoji}
+            avatarSnapshotUrl={avatarSnapshotUrl}
             favoritesCount={favoritesCount}
             contributionsCount={contributionsCount}
             pendingCount={pendingCount}
+            onOpenAvatar={() => onChangeTab('avatar')}
             onOpenBadge={onOpenBadge}
             onOpenSaved={onOpenSaved}
             onOpenContributions={onOpenContributions}
@@ -401,6 +455,7 @@ export function MobileTopHeader({
   favoritesCount,
   contributionsCount,
   badgeEmoji,
+  avatarSnapshotUrl,
   onGoHome,
   onSuggestArtisan,
   onOpenAuth,
@@ -450,9 +505,11 @@ export function MobileTopHeader({
               compact
               currentUser={currentUser}
               badgeEmoji={badgeEmoji}
+              avatarSnapshotUrl={avatarSnapshotUrl}
               favoritesCount={favoritesCount}
               contributionsCount={contributionsCount}
               pendingCount={pendingCount}
+              onOpenAvatar={() => onChangeTab('avatar')}
               onOpenBadge={onOpenBadge}
               onOpenSaved={onOpenSaved}
               onOpenContributions={onOpenContributions}
@@ -553,13 +610,15 @@ export function MobileTopHeader({
 export function MobileBottomNav({
   activeTab,
   onChangeTab,
-}: Pick<NavbarProps, 'activeTab' | 'onChangeTab'>) {
+  claimableQuestsCount = 0,
+}: Pick<NavbarProps, 'activeTab' | 'onChangeTab' | 'claimableQuestsCount'>) {
   const tabs: { id: AppTab; label: string; Icon: typeof Compass }[] = [
     { id: 'home', label: 'Trang chủ', Icon: Home },
     { id: 'explore', label: 'Bản đồ', Icon: Compass },
+    { id: 'avatar', label: 'Avatar', Icon: Sparkles },
     { id: 'news', label: 'Bản tin', Icon: Newspaper },
     { id: 'community', label: 'Cộng đồng', Icon: Users },
-    { id: 'about', label: 'Về dự án', Icon: Info },
+    { id: 'about', label: 'Dự án', Icon: Info },
   ];
 
   return (
@@ -568,7 +627,7 @@ export function MobileBottomNav({
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#F7F2E8]/96 backdrop-blur-md border-t border-dashed border-[#DFD3C2] shadow-[0_-4px_16px_rgba(37,41,46,0.06)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="grid grid-cols-5 h-16">
+      <div className="grid grid-cols-6 h-16">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = isNavItemActive(id, activeTab);
           return (
@@ -581,11 +640,18 @@ export function MobileBottomNav({
               }`}
             >
               {isActive && (
-                <span className="absolute top-0 left-3 right-3 h-[2px] rounded-full bg-[#B93818]" />
+                <span className="absolute top-0 left-2 right-2 h-[2px] rounded-full bg-[#B93818]" />
               )}
-              <Icon className="w-5 h-5" strokeWidth={isActive ? 2.3 : 1.8} />
+              <span className="relative">
+                <Icon className="w-[19px] h-[19px]" strokeWidth={isActive ? 2.3 : 1.8} />
+                {id === 'avatar' && claimableQuestsCount > 0 && (
+                  <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] rounded-full bg-[#D46534] text-white font-mono text-[9px] font-bold flex items-center justify-center">
+                    {claimableQuestsCount}
+                  </span>
+                )}
+              </span>
               <span
-                className={`text-[10.5px] leading-none whitespace-nowrap ${
+                className={`text-[10px] leading-none whitespace-nowrap ${
                   isActive ? 'font-bold' : 'font-medium'
                 }`}
               >
