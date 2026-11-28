@@ -62,7 +62,7 @@ export const TEAM_WHO_MEMBERS: TeamMember[] = [
     quote:
       'Công nghệ đẹp nhất là khi giúp những người lao động thầm lặng được nhìn thấy nhiều hơn.',
     facebookUrl: 'https://facebook.com',
-    avatarUrl: '/members/minh.jpg',
+    avatarUrl: '/assets/aistudio/minh_2a239f32.jpg',
     accentTone: 'forest',
   },
   {
