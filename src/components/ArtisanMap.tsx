@@ -71,28 +71,28 @@ function createArtisanDivIcon(
 
   // Ghim mặc định: Xanh Chàm Cobalt #1B3B82 viền trắng sắc nét
   let bg = '#1B3B82';
-  let text = '#FDF8F2';
+  let text = '#F7F2E8';
   const border = '#FFFFFF';
   let iconBg = 'rgba(255,255,255,0.18)';
   const iconColor = '#FFFFFF';
 
   if (artisan.status === 'off_today') {
-    iconBg = '#D97706';
+    iconBg = '#C47A24';
   } else if (artisan.status === 'relocated') {
     iconBg = '#B93818';
   }
 
-  // Khi chọn hoặc hover: nổi bật Cam Cờ-lê #E86F2C kèm quầng sáng nhẹ
+  // Khi chọn hoặc hover: nổi bật Terracotta #D46534 kèm quầng sáng ấm
   if (isHighlighted) {
-    bg = '#E86F2C';
+    bg = '#D46534';
     text = '#FFFFFF';
     iconBg = 'rgba(255,255,255,0.24)';
   }
 
   const scale = isSelected ? 1.12 : isHovered ? 1.07 : 1;
   const shadow = isHighlighted
-    ? '0 0 0 6px rgba(232,111,44,0.22), 0 8px 20px rgba(232,111,44,0.42)'
-    : '0 4px 12px rgba(22,36,66,0.28)';
+    ? '0 0 0 6px rgba(212,101,52,0.22), 0 8px 20px rgba(212,101,52,0.4)'
+    : '0 4px 12px rgba(37,41,46,0.26)';
 
   const firstName = artisan.name.split('–')[0]?.trim() || artisan.shortTitle;
 
@@ -143,7 +143,7 @@ function createArtisanDivIcon(
         border-right: 6px solid transparent;
         border-top: 7px solid ${bg};
         margin-top: -1px;
-        filter: drop-shadow(0 2px 2px rgba(22,36,66,0.22));
+        filter: drop-shadow(0 2px 2px rgba(37,41,46,0.2));
       "></div>
     </div>
   `;
@@ -160,7 +160,7 @@ function createUserLocationIcon(): L.DivIcon {
   const html = `
     <div style="position:relative; width:28px; height:28px; transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center;">
       <span class="gps-pulse-ring" style="position:absolute; width:26px; height:26px; border-radius:9999px; background:rgba(27,59,130,0.32);"></span>
-      <span style="position:relative; width:16px; height:16px; border-radius:9999px; background:#1B3B82; border:3px solid #FFFFFF; box-shadow:0 2px 8px rgba(22,36,66,0.34);"></span>
+      <span style="position:relative; width:16px; height:16px; border-radius:9999px; background:#1B3B82; border:3px solid #FFFFFF; box-shadow:0 2px 8px rgba(37,41,46,0.34);"></span>
     </div>
   `;
   return L.divIcon({
@@ -199,7 +199,7 @@ export function ArtisanMap({
     onSelectRef.current = onSelectArtisan;
   }, [onSelectArtisan]);
 
-  // Khởi tạo bản đồ Leaflet với nền CartoDB Positron (vintage warm paper filter nằm trên .leaflet-tile-pane)
+  // Khởi tạo bản đồ Leaflet với OpenStreetMap chuẩn (KHÔNG dùng Carto)
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -210,14 +210,11 @@ export function ArtisanMap({
       attributionControl: true,
     });
 
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      {
-        maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      }
-    ).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -331,7 +328,6 @@ export function ArtisanMap({
     layer.clearLayers();
     if (!routeInfo || routeInfo.coordinates.length < 2) return;
 
-    // Viền trắng bên ngoài để tuyến đường nổi bật rõ trên nền đường phố
     L.polyline(routeInfo.coordinates, {
       color: '#FFFFFF',
       weight: 9,
@@ -340,9 +336,8 @@ export function ArtisanMap({
       lineJoin: 'round',
     }).addTo(layer);
 
-    // Đường lộ trình chính màu Cam Cờ-lê #E86F2C
     const routeLine = L.polyline(routeInfo.coordinates, {
-      color: '#E86F2C',
+      color: '#D46534',
       weight: 5,
       opacity: 0.96,
       dashArray:
@@ -374,9 +369,9 @@ export function ArtisanMap({
       {/* Thanh thông tin lộ trình GPS khi đang vẽ đường đi */}
       {(routeInfo || isRouting) && selectedArtisan && (
         <div className="absolute top-3 left-3 right-16 lg:top-4 lg:left-4 lg:right-auto lg:max-w-md z-[450] pointer-events-auto">
-          <div className="bg-white/95 backdrop-blur-md border-[1.5px] border-[#1B3B82]/20 rounded-2xl shadow-[4px_4px_0px_rgba(27,59,130,0.16)] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-[0_8px_24px_rgba(37,41,46,0.12)] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-8 h-8 rounded-xl bg-[#FFF3EB] text-[#E86F2C] border border-[#E86F2C]/25 flex items-center justify-center shrink-0">
+              <span className="w-8 h-8 rounded-xl bg-[#FDF0E9] text-[#D46534] border border-[#D46534]/20 flex items-center justify-center shrink-0">
                 {isRouting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
@@ -384,14 +379,14 @@ export function ArtisanMap({
                 )}
               </span>
               <div className="min-w-0">
-                <p className="font-display text-xs font-bold text-[#162442] truncate">
+                <p className="font-display text-xs font-bold text-[#25292E] truncate">
                   {isRouting
                     ? 'Đang tìm tuyến đường ngắn nhất...'
                     : `Đến ${selectedArtisan.shortTitle}`}
                 </p>
                 {routeInfo && !isRouting && (
-                  <p className="font-mono text-[11px] text-[#5C564E] tabular-nums">
-                    <span className="font-bold text-[#E86F2C]">
+                  <p className="font-mono text-[11px] text-[#615D57] tabular-nums">
+                    <span className="font-bold text-[#D46534]">
                       {formatDistanceMeters(routeInfo.distanceMeters)}
                     </span>
                     {' · '}
@@ -403,14 +398,14 @@ export function ArtisanMap({
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              <div className="inline-flex p-0.5 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3]">
+              <div className="inline-flex p-0.5 rounded-xl bg-[#F7F2E8] border border-[#E8DFD1]">
                 <button
                   type="button"
                   onClick={() => onChangeTravelMode('driving')}
                   className={`min-h-[32px] px-2.5 py-1 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
                     travelMode === 'driving'
-                      ? 'bg-[#1B3B82] text-[#FDF8F2] shadow-xs'
-                      : 'text-[#5C564E] hover:text-[#162442]'
+                      ? 'bg-[#1B3B82] text-[#F7F2E8]'
+                      : 'text-[#615D57] hover:text-[#25292E]'
                   }`}
                 >
                   <Bike className="w-3.5 h-3.5" />
@@ -421,8 +416,8 @@ export function ArtisanMap({
                   onClick={() => onChangeTravelMode('walking')}
                   className={`min-h-[32px] px-2.5 py-1 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
                     travelMode === 'walking'
-                      ? 'bg-[#1B3B82] text-[#FDF8F2] shadow-xs'
-                      : 'text-[#5C564E] hover:text-[#162442]'
+                      ? 'bg-[#1B3B82] text-[#F7F2E8]'
+                      : 'text-[#615D57] hover:text-[#25292E]'
                   }`}
                 >
                   <Footprints className="w-3.5 h-3.5" />
@@ -434,7 +429,7 @@ export function ArtisanMap({
                 type="button"
                 onClick={onClearRoute}
                 aria-label="Đóng lộ trình"
-                className="w-8 h-8 rounded-lg text-[#5C564E] hover:text-[#162442] hover:bg-[#FDF8F2] flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg text-[#615D57] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -444,14 +439,14 @@ export function ArtisanMap({
       )}
 
       {/* Nút định vị GPS nổi trên bản đồ */}
-      <div className="absolute right-3 bottom-24 lg:bottom-28 z-[450] flex flex-col items-end gap-2">
+      <div className="absolute right-3 bottom-32 lg:bottom-28 z-[450] flex flex-col items-end gap-2">
         {gpsError && !userLocation && (
-          <div className="max-w-[235px] bg-white/95 backdrop-blur-md border-[1.5px] border-[#1B3B82]/20 rounded-2xl shadow-[4px_4px_0px_rgba(27,59,130,0.14)] p-2.5 text-[11px] text-[#5C564E] space-y-1.5">
+          <div className="max-w-[235px] bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md p-2.5 text-[11px] text-[#615D57] space-y-1.5">
             <p className="leading-snug">{gpsError}</p>
             <button
               type="button"
               onClick={onUseDemoLocation}
-              className="w-full min-h-[36px] px-2.5 py-1.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#FDF8F2] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full min-h-[36px] px-2.5 py-1.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#F7F2E8] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
             >
               <MapPin className="w-3.5 h-3.5" />
               <span>Dùng mốc trung tâm Q.1</span>
@@ -464,10 +459,10 @@ export function ArtisanMap({
           onClick={onLocateUser}
           disabled={isLocating}
           title="Định vị GPS của tôi"
-          className={`min-h-[44px] px-3.5 py-2 rounded-xl border-[1.5px] inline-flex items-center gap-2 text-xs font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] ${
+          className={`min-h-[42px] px-3.5 py-2 rounded-xl border inline-flex items-center gap-2 text-xs font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] ${
             userLocation
-              ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[3px_3px_0px_#E86F2C]'
-              : 'bg-white text-[#162442] border-[#162442]/20 shadow-[3px_3px_0px_rgba(27,59,130,0.18)] hover:border-[#1B3B82] hover:text-[#1B3B82]'
+              ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82] shadow-md'
+              : 'bg-white/95 text-[#25292E] border-[#E8DFD1] shadow-md hover:border-[#1B3B82] hover:text-[#1B3B82]'
           }`}
         >
           {isLocating ? (

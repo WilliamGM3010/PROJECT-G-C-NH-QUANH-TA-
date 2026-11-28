@@ -269,6 +269,12 @@ export function rowToArtisan(row: UnknownRow): Artisan {
       categories[0]
     ),
     customImageUrl: safeImageUrl(row.custom_image_url ?? row.customImageUrl),
+    phone:
+      typeof row.phone === 'string' && row.phone.trim()
+        ? row.phone.trim()
+        : typeof row.phone_number === 'string' && row.phone_number.trim()
+          ? row.phone_number.trim()
+          : undefined,
     kudos: parseKudos(row.kudos),
     praises,
     revivedCount: Number(row.revived_count ?? row.revivedCount ?? 0) || 0,

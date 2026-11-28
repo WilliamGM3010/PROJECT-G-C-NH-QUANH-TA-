@@ -65,6 +65,7 @@ export interface Artisan {
   isCommunitySuggested?: boolean;
   illustrationVariant: IllustrationVariant;
   customImageUrl?: string;
+  phone?: string;
   kudos: Record<KudosKey, number>;
   praises: PraiseEntry[];
   revivedCount?: number;
@@ -234,4 +235,11 @@ export type GpsPermissionStatus =
   | 'denied'
   | 'unsupported';
 
-export type AppTab = 'home' | 'explore' | 'news' | 'suggest' | 'about';
+export type AppTab =
+  | 'home'
+  | 'explore'
+  | 'artisan'
+  | 'news'
+  | 'community'
+  | 'suggest'
+  | 'about';

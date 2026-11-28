@@ -445,11 +445,11 @@ export function RichTextRenderer({ html }: { html: string }) {
       case 'br':
         return <br key={key} />;
       case 'hr':
-        return <hr key={key} className="my-8 border-t border-[#E8E2D9]" />;
+        return <hr key={key} className="my-8 border-t border-dashed border-[#DFD3C2]" />;
       case 'strong':
       case 'b':
         return (
-          <strong key={key} className="font-bold text-[#162442]">
+          <strong key={key} className="font-bold text-[#25292E]">
             {children}
           </strong>
         );
@@ -462,14 +462,14 @@ export function RichTextRenderer({ html }: { html: string }) {
         );
       case 'u':
         return (
-          <u key={key} className="underline underline-offset-4 decoration-[#E86F2C]/65">
+          <u key={key} className="underline underline-offset-4 decoration-[#D46534]/65">
             {children}
           </u>
         );
       case 's':
       case 'strike':
         return (
-          <s key={key} className="line-through text-[#5C564E]">
+          <s key={key} className="line-through text-[#615D57]">
             {children}
           </s>
         );
@@ -477,7 +477,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h2
             key={key}
-            className={`font-display text-xl sm:text-2xl font-bold text-[#162442] tracking-tight mt-9 mb-3.5 leading-snug ${alignClass}`}
+            className={`font-display text-xl sm:text-2xl font-bold text-[#25292E] tracking-tight mt-9 mb-3.5 leading-snug ${alignClass}`}
           >
             {children}
           </h2>
@@ -486,7 +486,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h3
             key={key}
-            className={`font-display text-lg sm:text-xl font-bold text-[#162442] mt-7 mb-2.5 leading-snug ${alignClass}`}
+            className={`font-display text-lg sm:text-xl font-bold text-[#25292E] mt-7 mb-2.5 leading-snug ${alignClass}`}
           >
             {children}
           </h3>
@@ -495,7 +495,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <h4
             key={key}
-            className={`font-display text-base font-bold text-[#162442] mt-5 mb-2 ${alignClass}`}
+            className={`font-display text-base font-bold text-[#25292E] mt-5 mb-2 ${alignClass}`}
           >
             {children}
           </h4>
@@ -504,7 +504,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <blockquote
             key={key}
-            className={`my-7 py-5 px-6 border-y border-dashed border-[#D8C3AE] border-l-4 border-l-[#B93818] bg-[#FDF8F2] text-lg sm:text-xl italic text-[#162442] leading-relaxed rounded-r-xl ${alignClass}`}
+            className={`font-serif-editorial my-8 py-6 px-6 sm:px-8 border-y border-dashed border-[#B93818]/35 bg-[#F7F2E8]/70 text-lg sm:text-xl italic text-[#25292E] leading-relaxed rounded-2xl ${alignClass}`}
           >
             {children}
           </blockquote>
@@ -513,7 +513,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <ul
             key={key}
-            className="my-4 pl-6 list-disc space-y-2 text-[#162442] marker:text-[#E86F2C]"
+            className="my-4 pl-6 list-disc space-y-2 text-[#25292E] marker:text-[#D46534]"
           >
             {children}
           </ul>
@@ -522,7 +522,7 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <ol
             key={key}
-            className="my-4 pl-6 list-decimal space-y-2 text-[#162442] marker:text-[#1B3B82] marker:font-mono marker:font-bold"
+            className="my-4 pl-6 list-decimal space-y-2 text-[#25292E] marker:text-[#1B3B82] marker:font-mono marker:font-bold"
           >
             {children}
           </ol>
@@ -544,7 +544,7 @@ export function RichTextRenderer({ html }: { html: string }) {
             href={safeHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#1B3B82] hover:text-[#E86F2C] underline underline-offset-4 decoration-[#1B3B82]/40 hover:decoration-[#E86F2C] font-semibold transition-colors"
+            className="text-[#1B3B82] hover:text-[#D46534] underline underline-offset-4 decoration-[#1B3B82]/40 hover:decoration-[#D46534] font-semibold transition-colors"
           >
             {children}
           </a>
@@ -572,20 +572,20 @@ export function RichTextRenderer({ html }: { html: string }) {
         return (
           <figcaption
             key={key}
-            className={`text-xs text-[#616E7C] italic text-center px-2 leading-relaxed ${alignClass}`}
+            className={`font-serif-editorial text-xs text-[#615D57] italic text-center px-2 leading-relaxed ${alignClass}`}
           >
             {children}
           </figcaption>
         );
       case 'p':
         return (
-          <p key={key} className={`my-4 leading-[1.85] text-[#2D3748] ${alignClass}`}>
+          <p key={key} className={`my-4 leading-[1.85] text-[#25292E]/90 ${alignClass}`}>
             {children}
           </p>
         );
       case 'div':
         return (
-          <div key={key} className={`my-3 leading-[1.85] text-[#2D3748] ${alignClass}`}>
+          <div key={key} className={`my-3 leading-[1.85] text-[#25292E]/90 ${alignClass}`}>
             {children}
           </div>
         );

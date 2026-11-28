@@ -108,11 +108,11 @@ export function ArtisanDetail({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Header quay lại danh sách + nút Chia sẻ nhanh (Deep Linking) */}
-      <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-4 h-14 bg-[#FDF8F2]/95 backdrop-blur-md border-b border-dashed border-[#D8C3AE] shrink-0">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-4 h-14 bg-[#F7F2E8]/95 backdrop-blur-md border-b border-dashed border-[#DFD3C2] shrink-0">
         <button
           type="button"
           onClick={onBack}
-          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-semibold text-[#162442] hover:text-[#1B3B82] transition-colors -ml-1 px-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
+          className="min-h-[44px] inline-flex items-center gap-2 text-sm font-semibold text-[#25292E] hover:text-[#1B3B82] transition-colors -ml-1 px-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="whitespace-nowrap">Quay lại danh sách</span>
@@ -137,8 +137,8 @@ export function ArtisanDetail({
             }
             className={`min-h-[40px] min-w-[40px] px-2.5 rounded-xl border inline-flex items-center justify-center gap-1 text-xs font-semibold transition-colors whitespace-nowrap ${
               isFavorite
-                ? 'bg-[#FFF3EB] border-[#E86F2C]/40 text-[#E86F2C]'
-                : 'border-[#E6D5C3] bg-white hover:border-[#E86F2C] hover:text-[#E86F2C] text-[#162442]'
+                ? 'bg-[#FDF0E9] border-[#D46534]/40 text-[#D46534]'
+                : 'border-[#E8DFD1] bg-white hover:border-[#D46534] hover:text-[#D46534] text-[#25292E]'
             }`}
           >
             <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
@@ -152,7 +152,7 @@ export function ArtisanDetail({
             onClick={() => onShare(artisan)}
             title="Chia sẻ link địa chỉ cô chú"
             aria-label="Chia sẻ địa chỉ người thợ"
-            className="min-h-[40px] min-w-[40px] px-2.5 rounded-xl border border-[#E6D5C3] bg-white hover:border-[#1B3B82] hover:text-[#1B3B82] text-[#162442] inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors whitespace-nowrap"
+            className="min-h-[40px] min-w-[40px] px-2.5 rounded-xl border border-[#E8DFD1] bg-white hover:border-[#1B3B82] hover:text-[#1B3B82] text-[#25292E] inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors whitespace-nowrap"
           >
             <Share2 className="w-4 h-4" />
             <span className="hidden sm:inline">Chia sẻ</span>
@@ -163,20 +163,22 @@ export function ArtisanDetail({
       {/* Nội dung cuộn chi tiết */}
       <div className="flex-1 overflow-y-auto thin-scrollbar">
         {/* Ảnh góc làm việc / bàn tay làm nghề */}
-        <div className="relative aspect-[4/3] w-full bg-[#F3ECE2] overflow-hidden">
+        <div className="relative aspect-[4/3] w-full bg-[#EFE8DC] overflow-hidden">
           <ArtisanIllustration
             variant={artisan.illustrationVariant}
-            customImageUrl={artisan.customImageUrl}
+            customImageUrl={
+              artisan.hidePortrait ? undefined : artisan.customImageUrl
+            }
             alt={`Góc làm việc của ${artisan.name}`}
           />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#162442]/75 via-[#162442]/25 to-transparent pointer-events-none" />
-          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2 text-[#FDF8F2]">
-            <span className="text-xs font-semibold text-[#FDF8F2]/95">
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#25292E]/75 via-[#25292E]/25 to-transparent pointer-events-none" />
+          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2 text-[#F7F2E8]">
+            <span className="text-xs font-semibold text-[#F7F2E8]/95">
               {artisan.categories.join(' · ')}
             </span>
             {typeof distanceKm === 'number' && (
-              <span className="inline-flex items-center gap-1 font-mono text-xs font-bold bg-[#162442]/80 backdrop-blur-xs px-2.5 py-1 rounded-lg tabular-nums">
-                <Navigation className="w-3 h-3 text-[#F9C6A3]" />
+              <span className="inline-flex items-center gap-1 font-mono text-xs font-bold bg-[#25292E]/80 backdrop-blur-xs px-2.5 py-1 rounded-lg tabular-nums">
+                <Navigation className="w-3 h-3 text-[#F4C4A8]" />
                 {formatDistanceWithPrefix(distanceKm)}
               </span>
             )}
@@ -186,7 +188,7 @@ export function ArtisanDetail({
         <div className="p-4 sm:p-5 space-y-5">
           {/* Tên gọi + Huy hiệu xác minh */}
           <div className="space-y-2">
-            <h2 className="font-display text-xl font-extrabold text-[#162442] leading-snug">
+            <h2 className="font-display text-xl font-extrabold text-[#25292E] leading-snug">
               {artisan.name}
             </h2>
 

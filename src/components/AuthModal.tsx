@@ -171,18 +171,18 @@ export function AuthModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="auth-modal-title"
-      className="fixed inset-0 z-[80] bg-[#162442]/55 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-[80] bg-[#25292E]/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) {
           onClose();
         }
       }}
     >
-      <div className="w-full max-w-md my-auto rounded-3xl bg-white border-[1.5px] border-[#162442]/20 shadow-[6px_6px_0px_#1B3B82] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-md my-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header modal với Logo tròn chính thức */}
-        <div className="px-6 pt-5 pb-4 border-b border-dashed border-[#D8C3AE] flex items-start justify-between gap-3 bg-[#FDF8F2]">
+        <div className="px-6 pt-5 pb-4 border-b border-[#E8DFD1] flex items-start justify-between gap-3 bg-[#F7F2E8]">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-1 ring-[#E86F2C]/35 bg-[#FDF8F2] shadow-xs">
+            <span className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-1 ring-[#D46534]/30 bg-[#F7F2E8] shadow-xs">
               <img
                 src={GTQT_LOGO_SRC}
                 alt="Logo Góc Thợ Quanh Ta"
@@ -192,11 +192,11 @@ export function AuthModal({
             <div className="min-w-0">
               <h2
                 id="auth-modal-title"
-                className="font-display text-base font-extrabold text-[#162442] leading-snug"
+                className="font-display text-base font-extrabold text-[#25292E] leading-snug"
               >
                 Góc Thợ Quanh Ta
               </h2>
-              <p className="text-xs text-[#5C564E] truncate">
+              <p className="text-xs text-[#615D57] truncate">
                 Đăng nhập thành viên hoặc quản trị viên
               </p>
             </div>
@@ -207,7 +207,7 @@ export function AuthModal({
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Đóng cửa sổ đăng nhập"
-            className="w-9 h-9 rounded-xl text-[#5C564E] hover:text-[#162442] hover:bg-[#EFE6DA] flex items-center justify-center transition-colors shrink-0 disabled:opacity-50"
+            className="w-9 h-9 rounded-xl text-[#615D57] hover:text-[#25292E] hover:bg-white flex items-center justify-center transition-colors shrink-0 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -215,8 +215,8 @@ export function AuthModal({
 
         <div className="p-5 sm:p-6 space-y-5 max-h-[82dvh] overflow-y-auto thin-scrollbar">
           {/* Lời nhắc thân thiện khi mở từ tương tác (Soft Auth Wall) */}
-          <div className="rounded-2xl bg-[#FFF3EB] border border-[#E86F2C]/25 px-3.5 py-3 flex items-start gap-2.5 text-xs text-[#7C3515] leading-relaxed">
-            <Sparkles className="w-4 h-4 text-[#E86F2C] shrink-0 mt-0.5" />
+          <div className="rounded-2xl bg-[#FDF0E9] border border-[#D46534]/25 px-3.5 py-3 flex items-start gap-2.5 text-xs text-[#7C3515] leading-relaxed">
+            <Sparkles className="w-4 h-4 text-[#D46534] shrink-0 mt-0.5" />
             <p className="font-medium">
               {promptMessage || DEFAULT_SOFT_AUTH_PROMPT}
             </p>
@@ -226,17 +226,17 @@ export function AuthModal({
           <div
             role="tablist"
             aria-label="Chọn đăng nhập hoặc đăng ký"
-            className="grid grid-cols-2 p-1 rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3]"
+            className="grid grid-cols-2 p-1 rounded-2xl bg-[#F7F2E8] border border-[#E8DFD1]"
           >
             <button
               type="button"
               role="tab"
               aria-selected={mode === 'login'}
               onClick={() => switchMode('login')}
-              className={`min-h-[42px] rounded-xl text-sm font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
+              className={`min-h-[42px] rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-all ${
                 mode === 'login'
-                  ? 'bg-[#1B3B82] text-[#FDF8F2] shadow-xs'
-                  : 'text-[#5C564E] hover:text-[#162442]'
+                  ? 'bg-[#1B3B82] text-white shadow-xs'
+                  : 'text-[#615D57] hover:text-[#25292E]'
               }`}
             >
               <LogIn className="w-4 h-4" />
@@ -247,10 +247,10 @@ export function AuthModal({
               role="tab"
               aria-selected={mode === 'register'}
               onClick={() => switchMode('register')}
-              className={`min-h-[42px] rounded-xl text-sm font-bold inline-flex items-center justify-center gap-1.5 transition-all ${
+              className={`min-h-[42px] rounded-xl text-sm font-semibold inline-flex items-center justify-center gap-1.5 transition-all ${
                 mode === 'register'
-                  ? 'bg-[#E86F2C] text-[#FDF8F2] shadow-xs'
-                  : 'text-[#5C564E] hover:text-[#162442]'
+                  ? 'bg-[#D46534] text-white shadow-xs'
+                  : 'text-[#615D57] hover:text-[#25292E]'
               }`}
             >
               <UserPlus className="w-4 h-4" />
@@ -273,7 +273,7 @@ export function AuthModal({
               <div>
                 <label
                   htmlFor="modal-login-identifier"
-                  className="block text-xs font-bold text-[#162442] mb-1.5"
+                  className="block text-xs font-bold text-[#25292E] mb-1.5"
                 >
                   Tên đăng nhập hoặc Email
                 </label>
@@ -288,14 +288,14 @@ export function AuthModal({
                     if (errorMsg) setErrorMsg('');
                   }}
                   placeholder="VD: minhanh99 hoặc admin@goctho.vn"
-                  className="w-full h-11 px-3.5 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="modal-login-password"
-                  className="block text-xs font-bold text-[#162442] mb-1.5"
+                  className="block text-xs font-bold text-[#25292E] mb-1.5"
                 >
                   Mật khẩu
                 </label>
@@ -310,13 +310,13 @@ export function AuthModal({
                       if (errorMsg) setErrorMsg('');
                     }}
                     placeholder="Nhập mật khẩu của bạn"
-                    className="w-full h-11 pl-3.5 pr-11 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                    className="w-full h-11 pl-3.5 pr-11 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPwd((v) => !v)}
                     aria-label={showLoginPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#8C8378] hover:text-[#162442] flex items-center justify-center"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] flex items-center justify-center"
                   >
                     {showLoginPwd ? (
                       <EyeOff className="w-4 h-4" />
@@ -330,7 +330,7 @@ export function AuthModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] disabled:opacity-65 text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#E86F2C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm font-bold inline-flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] disabled:opacity-65 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors"
               >
                 {isSubmitting ? (
                   <>
@@ -346,8 +346,8 @@ export function AuthModal({
               </button>
 
               {!isSupabaseConfigured && (
-                <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] p-3 space-y-2">
-                  <p className="text-[11px] font-semibold text-[#5C564E]">
+                <div className="rounded-xl bg-[#F7F2E8] border border-[#E8DFD1] p-3 space-y-2">
+                  <p className="text-[11px] font-semibold text-[#615D57]">
                     Chế độ dùng thử cục bộ — điền nhanh tài khoản mẫu:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -357,7 +357,7 @@ export function AuthModal({
                         setLoginIdentifier('minhanh');
                         setLoginPassword('123456');
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E6D5C3] hover:border-[#E86F2C] text-[11px] font-semibold text-[#162442]"
+                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E8DFD1] hover:border-[#D46534] text-[11px] font-semibold text-[#25292E]"
                     >
                       Thành viên (minhanh)
                     </button>
@@ -367,7 +367,7 @@ export function AuthModal({
                         setLoginIdentifier('ctv@goctho.vn');
                         setLoginPassword('ctv2025');
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E6D5C3] hover:border-[#1B3B82] text-[11px] font-semibold text-[#1B3B82]"
+                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E8DFD1] hover:border-[#1B3B82] text-[11px] font-semibold text-[#1B3B82]"
                     >
                       Cộng tác viên
                     </button>
@@ -377,7 +377,7 @@ export function AuthModal({
                         setLoginIdentifier('admin@goctho.vn');
                         setLoginPassword('goctho2025');
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E6D5C3] hover:border-[#E86F2C] text-[11px] font-semibold text-[#E86F2C]"
+                      className="px-2.5 py-1 rounded-lg bg-white border border-[#E8DFD1] hover:border-[#D46534] text-[11px] font-semibold text-[#D46534]"
                     >
                       Super Admin
                     </button>
@@ -385,12 +385,12 @@ export function AuthModal({
                 </div>
               )}
 
-              <p className="text-center text-xs text-[#5C564E]">
+              <p className="text-center text-xs text-[#615D57]">
                 Chưa có tài khoản?{' '}
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className="font-bold text-[#E86F2C] hover:underline"
+                  className="font-bold text-[#D46534] hover:underline"
                 >
                   Đăng ký nhanh trong 5 giây
                 </button>
@@ -401,7 +401,7 @@ export function AuthModal({
               <div>
                 <label
                   htmlFor="modal-reg-username"
-                  className="block text-xs font-bold text-[#162442] mb-1.5"
+                  className="block text-xs font-bold text-[#25292E] mb-1.5"
                 >
                   Tên đăng nhập <span className="text-[#B93818]">*</span>
                 </label>
@@ -416,14 +416,14 @@ export function AuthModal({
                     if (errorMsg) setErrorMsg('');
                   }}
                   placeholder="VD: minhanh99 (viết liền, không dấu)"
-                  className="w-full h-11 px-3.5 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="modal-reg-display-name"
-                  className="block text-xs font-bold text-[#162442] mb-1.5"
+                  className="block text-xs font-bold text-[#25292E] mb-1.5"
                 >
                   Tên hiển thị <span className="text-[#B93818]">*</span>
                 </label>
@@ -437,7 +437,7 @@ export function AuthModal({
                     if (errorMsg) setErrorMsg('');
                   }}
                   placeholder="VD: Minh Anh, Hoàng Nam..."
-                  className="w-full h-11 px-3.5 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15"
                 />
               </div>
 
@@ -445,7 +445,7 @@ export function AuthModal({
                 <div>
                   <label
                     htmlFor="modal-reg-password"
-                    className="block text-xs font-bold text-[#162442] mb-1.5"
+                    className="block text-xs font-bold text-[#25292E] mb-1.5"
                   >
                     Mật khẩu <span className="text-[#B93818]">*</span>
                   </label>
@@ -460,13 +460,13 @@ export function AuthModal({
                         if (errorMsg) setErrorMsg('');
                       }}
                       placeholder="Ít nhất 6 ký tự"
-                      className="w-full h-11 pl-3.5 pr-10 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                      className="w-full h-11 pl-3.5 pr-10 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15"
                     />
                     <button
                       type="button"
                       onClick={() => setShowRegPwd((v) => !v)}
                       aria-label={showRegPwd ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#8C8378] hover:text-[#162442] flex items-center justify-center"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] flex items-center justify-center"
                     >
                       {showRegPwd ? (
                         <EyeOff className="w-4 h-4" />
@@ -480,7 +480,7 @@ export function AuthModal({
                 <div>
                   <label
                     htmlFor="modal-reg-confirm-password"
-                    className="block text-xs font-bold text-[#162442] mb-1.5"
+                    className="block text-xs font-bold text-[#25292E] mb-1.5"
                   >
                     Nhập lại mật khẩu <span className="text-[#B93818]">*</span>
                   </label>
@@ -494,7 +494,7 @@ export function AuthModal({
                       if (errorMsg) setErrorMsg('');
                     }}
                     placeholder="Xác nhận mật khẩu"
-                    className="w-full h-11 px-3.5 rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                    className="w-full h-11 px-3.5 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15"
                   />
                 </div>
               </div>
@@ -502,7 +502,7 @@ export function AuthModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-65 text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#162442] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm font-bold inline-flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#D46534] hover:bg-[#BC5326] disabled:opacity-65 text-white text-sm font-semibold inline-flex items-center justify-center gap-2 transition-colors"
               >
                 {isSubmitting ? (
                   <>
@@ -517,7 +517,7 @@ export function AuthModal({
                 )}
               </button>
 
-              <p className="text-center text-xs text-[#5C564E]">
+              <p className="text-center text-xs text-[#615D57]">
                 Đã có tài khoản?{' '}
                 <button
                   type="button"

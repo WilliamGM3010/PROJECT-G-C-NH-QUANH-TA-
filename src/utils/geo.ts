@@ -241,12 +241,11 @@ export function buildGoogleMapsDirectionsUrl(
 }
 
 export function buildArtisanDeepLink(artisanId: string): string {
+  const path = `/tho/${encodeURIComponent(artisanId)}`;
   if (typeof window === 'undefined') {
-    return `/ban-do?tho=${encodeURIComponent(artisanId)}`;
+    return path;
   }
-  const url = new URL('/ban-do', window.location.origin);
-  url.searchParams.set('tho', artisanId);
-  return url.toString();
+  return new URL(path, window.location.origin).toString();
 }
 
 export function buildQrCodeUrl(targetUrl: string, size = 200): string {

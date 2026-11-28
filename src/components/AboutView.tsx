@@ -27,7 +27,7 @@ interface AboutViewProps {
   onNavigate: (tab: AppTab) => void;
 }
 
-type ChapterId = 've-du-an' | 've-chung-minh' | 'dong-hanh';
+type ChapterId = 've-du-an' | 'hanh-trinh' | 've-chung-minh' | 'dong-hanh';
 
 const CORE_VALUES = [
   {
@@ -183,11 +183,11 @@ function FacebookIcon({ className }: { className?: string }) {
 function getPortraitFallbackClasses(tone: TeamMember['accentTone']): string {
   switch (tone) {
     case 'terracotta':
-      return 'bg-gradient-to-br from-[#FFF3EB] via-[#FDE6D6] to-[#F7D4BC] text-[#B93818]';
+      return 'bg-gradient-to-br from-[#FDF0E9] via-[#F9DFD1] to-[#F2CBB7] text-[#B93818]';
     case 'forest':
       return 'bg-gradient-to-br from-[#EEF2FA] via-[#DFE8F7] to-[#CEDBF2] text-[#1B3B82]';
     default:
-      return 'bg-gradient-to-br from-[#FAF2E8] via-[#F2E5D5] to-[#E8D5BE] text-[#5C564E]';
+      return 'bg-gradient-to-br from-[#F7F2E8] via-[#EFE7D8] to-[#E5D8C3] text-[#615D57]';
   }
 }
 
@@ -243,6 +243,7 @@ export function AboutView({
   >('Tất cả');
 
   const chapterProjectRef = useRef<HTMLElement | null>(null);
+  const chapterJourneyRef = useRef<HTMLDivElement | null>(null);
   const chapterTeamRef = useRef<HTMLElement | null>(null);
   const chapterJoinRef = useRef<HTMLElement | null>(null);
 
@@ -255,10 +256,10 @@ export function AboutView({
   const teamGridReveal = useRevealOnScroll(0.08);
   const ctaReveal = useRevealOnScroll(0.15);
 
-  // Tự động highlight mục đang xem trong thanh Sticky Mini-Pill
   useEffect(() => {
     const sections: { id: ChapterId; el: HTMLElement | null }[] = [
       { id: 've-du-an', el: chapterProjectRef.current },
+      { id: 'hanh-trinh', el: chapterJourneyRef.current },
       { id: 've-chung-minh', el: chapterTeamRef.current },
       { id: 'dong-hanh', el: chapterJoinRef.current },
     ];
@@ -297,18 +298,23 @@ export function AboutView({
     const target =
       id === 've-du-an'
         ? chapterProjectRef.current
-        : id === 've-chung-minh'
-          ? chapterTeamRef.current
-          : chapterJoinRef.current;
+        : id === 'hanh-trinh'
+          ? chapterJourneyRef.current
+          : id === 've-chung-minh'
+            ? chapterTeamRef.current
+            : chapterJoinRef.current;
 
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Số liệu Count-Up mượt từ 0 khi cuộn vào khung nhìn
   const animatedArtisans = useCountUp(totalArtisans, statsReveal.visible, 1000);
   const animatedRevived = useCountUp(revivedCount, statsReveal.visible, 1200);
   const animatedArticles = useCountUp(totalArticles, statsReveal.visible, 900);
-  const animatedTeam = useCountUp(TEAM_WHO_MEMBERS.length, statsReveal.visible, 800);
+  const animatedTeam = useCountUp(
+    TEAM_WHO_MEMBERS.length,
+    statsReveal.visible,
+    800
+  );
 
   const projectLeader = useMemo(
     () => TEAM_WHO_MEMBERS.find((m) => m.tier === 'pl') ?? null,
@@ -351,7 +357,8 @@ export function AboutView({
 
   const navChapters: { id: ChapterId; label: string }[] = [
     { id: 've-du-an', label: 'Về dự án' },
-    { id: 've-chung-minh', label: 'Về chúng mình' },
+    { id: 'hanh-trinh', label: 'Hành trình' },
+    { id: 've-chung-minh', label: 'Team WHO' },
     { id: 'dong-hanh', label: 'Đồng hành' },
   ];
 
@@ -371,39 +378,37 @@ export function AboutView({
             ? `${Math.min(idx, 8) * 65}ms`
             : '0ms',
         }}
-        className={`group rounded-3xl bg-white overflow-hidden flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[5px_5px_0px_#1B3B82] ${
+        className={`group rounded-3xl bg-white overflow-hidden flex flex-col transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(37,41,46,0.09)] ${
           isPl
-            ? 'border-[1.5px] border-[#1B3B82]/35 hover:border-[#1B3B82]'
-            : 'border border-[#E6D5C3] hover:border-[#1B3B82]'
+            ? 'border border-[#1B3B82]/35 hover:border-[#1B3B82]'
+            : 'border border-[#E8DFD1] hover:border-[#1B3B82]/50'
         } ${
           teamGridReveal.visible
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-5'
         } ${extraClassName}`}
       >
-        {/* Phần ảnh chân dung cỡ lớn lồng khung gọn gàng */}
         <div className="p-2.5 pb-0">
-          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-[#FDF8F2] relative">
+          <div className="aspect-square w-full rounded-2xl overflow-hidden bg-[#F7F2E8] relative">
             <MemberPortrait member={member} />
           </div>
         </div>
 
-        {/* Phần thông tin thành viên phía dưới */}
         <div className="p-5 flex-1 flex flex-col">
           <span
             className={`inline-block font-mono text-[10.5px] font-bold uppercase tracking-wider ${
               isPl
                 ? 'text-[#1B3B82]'
                 : isLeader
-                  ? 'text-[#E86F2C]'
-                  : 'text-[#5C564E]'
+                  ? 'text-[#D46534]'
+                  : 'text-[#615D57]'
             }`}
           >
             {member.role}
           </span>
 
           <div className="flex items-center justify-between gap-2 mt-1">
-            <h3 className="font-display text-lg font-bold text-[#162442] leading-snug">
+            <h3 className="font-display text-lg font-bold text-[#25292E] leading-snug">
               {member.name}
             </h3>
 
@@ -413,7 +418,7 @@ export function AboutView({
               rel="noopener noreferrer"
               aria-label={`Facebook của ${member.name}`}
               title={`Facebook của ${member.name}`}
-              className="w-8 h-8 rounded-full text-[#8C8378] hover:bg-[#1B3B82] hover:text-[#FDF8F2] flex items-center justify-center shrink-0 transition-colors"
+              className="w-8 h-8 rounded-full text-[#8A847C] hover:bg-[#1B3B82] hover:text-[#F7F2E8] flex items-center justify-center shrink-0 transition-colors"
             >
               <FacebookIcon className="w-4 h-4" />
             </a>
@@ -428,7 +433,7 @@ export function AboutView({
               {member.departments.map((dept) => (
                 <span
                   key={dept}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#FDF8F2] border border-[#E6D5C3] text-[#5C564E] text-[11px] font-medium"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#F7F2E8] border border-[#E8DFD1] text-[#615D57] text-[11px] font-medium"
                 >
                   {dept}
                 </span>
@@ -437,7 +442,7 @@ export function AboutView({
           )}
 
           <div className="mt-auto pt-3.5">
-            <p className="text-[13px] leading-relaxed text-[#5C564E] italic pt-3 border-t border-dashed border-[#DFCBB5]">
+            <p className="font-serif-editorial text-[13px] leading-relaxed text-[#615D57] italic pt-3 border-t border-dashed border-[#DFD3C2]">
               &ldquo;{member.quote}&rdquo;
             </p>
           </div>
@@ -447,12 +452,12 @@ export function AboutView({
   };
 
   return (
-    <div className="bg-[#FDF8F2] text-[#162442]">
-      {/* 1. THANH ĐIỀU HƯỚNG NHANH STICKY MINI-PILL */}
+    <div className="bg-[#F7F2E8] text-[#25292E]">
+      {/* 1. THANH ĐIỀU HƯỚNG NHANH 4 CHƯƠNG */}
       <div className="sticky top-3 z-30 flex justify-center px-4 pt-4 pointer-events-none">
         <nav
           aria-label="Điều hướng chương trang Về dự án"
-          className="pointer-events-auto inline-flex items-center gap-1 p-1 rounded-full bg-white/92 backdrop-blur-md border-[1.5px] border-[#1B3B82]/20 shadow-[3px_3px_0px_rgba(27,59,130,0.12)]"
+          className="pointer-events-auto inline-flex items-center gap-1 p-1 rounded-full bg-white/92 backdrop-blur-md border border-[#E8DFD1] shadow-[0_6px_20px_rgba(37,41,46,0.08)] overflow-x-auto no-scrollbar max-w-full"
         >
           {navChapters.map(({ id, label }) => {
             const isActive = activeChapter === id;
@@ -461,10 +466,10 @@ export function AboutView({
                 key={id}
                 type="button"
                 onClick={() => scrollToChapter(id)}
-                className={`min-h-[34px] px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                className={`min-h-[34px] px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 shrink-0 ${
                   isActive
-                    ? 'bg-[#1B3B82] text-[#FDF8F2] shadow-[2px_2px_0px_#E86F2C]'
-                    : 'text-[#5C564E] hover:text-[#162442] hover:bg-[#FDF8F2]'
+                    ? 'bg-[#1B3B82] text-[#F7F2E8]'
+                    : 'text-[#615D57] hover:text-[#25292E] hover:bg-[#F7F2E8]'
                 }`}
               >
                 {label}
@@ -484,88 +489,94 @@ export function AboutView({
           data-chapter="ve-du-an"
           className="scroll-mt-20 space-y-16 sm:space-y-24"
         >
-          {/* Hero mở đầu tối giản với Ảnh bìa chính thức Góc Thợ Quanh Ta */}
+          {/* Hero 2 cột biên tập với Ảnh bìa chính thức Góc Thợ Quanh Ta */}
           <div
             ref={heroReveal.ref}
-            className={`space-y-8 sm:space-y-10 transition-all duration-700 ease-out ${
+            className={`space-y-12 transition-all duration-700 ease-out ${
               heroReveal.visible
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-5'
             }`}
           >
-            <header className="max-w-3xl space-y-3.5">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#E86F2C]">
-                VỀ DỰ ÁN · GÓC THỢ QUANH TA
-              </p>
-              <h1
-                className="font-display text-3xl sm:text-5xl font-extrabold text-[#162442] tracking-tight leading-[1.12]"
-                style={{ textWrap: 'balance' }}
-              >
-                Hỏng đâu sửa liền — Thợ giỏi gần bên.
-              </h1>
-            </header>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              <header className="lg:col-span-6 space-y-4">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#D46534]">
+                  VỀ DỰ ÁN · GÓC THỢ QUANH TA
+                </p>
+                <h1
+                  className="font-display text-3xl sm:text-5xl font-extrabold text-[#25292E] tracking-tight leading-[1.12]"
+                  style={{ textWrap: 'balance' }}
+                >
+                  Hỏng đâu sửa liền — Thợ giỏi gần bên.
+                </h1>
+                <p className="font-serif-editorial italic text-base sm:text-lg text-[#615D57] leading-relaxed">
+                  Góc đồ nghề bình dị nhưng bền bỉ — nơi những món đồ quen được
+                  hồi sinh mỗi ngày giữa lòng TP.HCM.
+                </p>
+              </header>
 
-            {/* Ảnh bìa bộ nhận diện chính thức — giữ nguyên vẹn tác phẩm, không phủ gradient tối */}
-            <figure className="space-y-3">
-              <div className="group w-full rounded-3xl overflow-hidden bg-[#FDF8F2] border-[1.5px] border-[#1B3B82]/15 shadow-[5px_5px_0px_rgba(27,59,130,0.12)]">
-                <img
-                  src={GTQT_COVER_SRC}
-                  alt="Bộ nhận diện chính thức Góc Thợ Quanh Ta — Hỏng đâu sửa liền, thợ giỏi gần bên"
-                  className="w-full h-auto block object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
-                />
-              </div>
-              <figcaption className="text-xs text-[#5C564E] font-medium px-1">
-                Góc đồ nghề bình dị nhưng bền bỉ — nơi những món đồ quen được
-                hồi sinh mỗi ngày giữa lòng TP.HCM.
-              </figcaption>
-            </figure>
+              <figure className="lg:col-span-6">
+                <div className="group rounded-3xl overflow-hidden bg-white border border-[#E8DFD1] p-2.5 shadow-[0_12px_32px_rgba(37,41,46,0.06)]">
+                  <div className="rounded-2xl overflow-hidden bg-[#F7F2E8]">
+                    <img
+                      src={GTQT_COVER_SRC}
+                      alt="Bộ nhận diện chính thức Góc Thợ Quanh Ta — Hỏng đâu sửa liền, thợ giỏi gần bên"
+                      className="w-full h-auto block object-cover transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+                    />
+                  </div>
+                </div>
+              </figure>
+            </div>
 
-            {/* Khối Câu chuyện khởi nguồn */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-10 pt-2">
-              <div className="lg:col-span-4">
-                <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#B93818]">
-                  Câu chuyện khởi nguồn
+            {/* Vấn đề & Giải pháp — 2 thẻ song song thoáng sạch */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="rounded-3xl bg-white border border-[#E8DFD1] p-6 sm:p-8 space-y-3">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-[#B93818]">
+                  Bối cảnh &amp; Vấn đề
                 </p>
-                <p className="mt-2 text-sm text-[#5C564E] leading-relaxed">
-                  Từ một bất tiện rất quen của đời sống sinh viên đến bản đồ số
-                  cho những đôi tay lành nghề.
+                <h2 className="font-display text-lg sm:text-xl font-bold text-[#25292E]">
+                  Khoảng trống quanh những món đồ hỏng
+                </h2>
+                <p className="text-sm sm:text-[15px] text-[#615D57] leading-[1.82]">
+                  Nhiều bạn trẻ, đặc biệt là sinh viên, khi giày dép bung keo,
+                  quần áo sứt chỉ hay balo gãy dây kéo thường phải vứt bỏ hoặc
+                  tốn chi phí lớn chỉ vì không biết địa chỉ sửa chữa uy tín, giá
+                  mềm quanh nơi mình sống.
                 </p>
               </div>
-              <div className="lg:col-span-8 space-y-4 text-sm sm:text-[15.5px] text-[#353D4D] leading-[1.82]">
-                <p>
-                  Nhiều người, đặc biệt là sinh viên, khi gặp sự cố hư hỏng đồ
-                  dùng như giày dép bung keo, quần áo sứt chỉ, balo gãy dây kéo,
-                  laptop hay xe cộ thường phải vứt bỏ hoặc tốn chi phí lớn chỉ
-                  vì không biết địa chỉ sửa chữa uy tín, giá mềm quanh nơi mình
-                  sống.
+
+              <div className="rounded-3xl bg-white border border-[#E8DFD1] p-6 sm:p-8 space-y-3">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-[#4F6B54]">
+                  Giải pháp cộng đồng
                 </p>
-                <p>
-                  Trong khi đó, ngay ở những góc phố và con hẻm quen lại có rất
-                  nhiều cô chú thợ lành nghề và tiệm sửa chữa nhỏ lẻ vẫn chưa
-                  hiện diện trên Google Maps.{' '}
+                <h2 className="font-display text-lg sm:text-xl font-bold text-[#25292E]">
+                  Bản đồ số cho những đôi tay lành nghề
+                </h2>
+                <p className="text-sm sm:text-[15px] text-[#615D57] leading-[1.82]">
+                  Ngay ở những góc phố quen có rất nhiều cô chú thợ lành nghề
+                  vẫn chưa hiện diện trên Google Maps.{' '}
                   <strong className="font-bold text-[#1B3B82]">
                     Góc Thợ Quanh Ta
                   </strong>{' '}
-                  ra đời như một nền tảng định vị cộng đồng giúp bạn trẻ tìm
-                  đúng thợ giỏi gần nhà với giá bình dân, đồng thời tăng độ nhận
-                  diện và thu hút thêm khách hàng cho người làm nghề.
+                  ra đời giúp bạn tìm đúng thợ gần nhà với giá bình dân, đồng
+                  thời tăng độ nhận diện và khách hàng cho người làm nghề.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 3 Giá trị cốt lõi (Bento Grid 3 cột, chỉ số monospace Cam Cờ-lê) */}
+          {/* 3 Giá trị cốt lõi */}
           <div ref={valuesReveal.ref} className="space-y-6">
-            <div className="flex items-end justify-between gap-4 border-b border-dashed border-[#D8C3AE] pb-4">
-              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#162442] tracking-tight">
+            <div className="flex items-end justify-between gap-4 border-b border-dashed border-[#DFD3C2] pb-4">
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#25292E] tracking-tight">
                 Ba giá trị cốt lõi
               </h2>
-              <span className="text-xs text-[#5C564E] hidden sm:inline">
+              <span className="font-serif-editorial italic text-xs sm:text-sm text-[#615D57] hidden sm:inline">
                 Nhẹ ví tiền · Ấm tình người · Xanh thành phố
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {CORE_VALUES.map((item, idx) => (
                 <article
                   key={item.number}
@@ -574,16 +585,16 @@ export function AboutView({
                       ? `${idx * 100}ms`
                       : '0ms',
                   }}
-                  className={`rounded-2xl bg-white border border-[#E6D5C3] p-6 sm:p-7 space-y-3.5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#1B3B82] hover:shadow-[4px_4px_0px_#1B3B82] ${
+                  className={`rounded-2xl bg-white border border-[#E8DFD1] p-6 sm:p-7 space-y-3.5 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-[#D46534]/50 hover:shadow-sm ${
                     valuesReveal.visible
                       ? 'opacity-100 translate-y-0'
                       : 'opacity-0 translate-y-6'
                   }`}
                 >
-                  <p className="font-mono text-xs font-bold tracking-[0.14em] text-[#E86F2C] uppercase tabular-nums">
+                  <p className="font-mono text-xs font-bold tracking-[0.14em] text-[#D46534] uppercase tabular-nums">
                     {item.number} · {item.title}
                   </p>
-                  <p className="text-sm text-[#5C564E] leading-[1.75]">
+                  <p className="text-sm text-[#615D57] leading-[1.75]">
                     {item.description}
                   </p>
                 </article>
@@ -594,33 +605,33 @@ export function AboutView({
           {/* Dải số liệu ấn tượng (LIVE Supabase + Count-Up Monospace) */}
           <div
             ref={statsReveal.ref}
-            className={`rounded-3xl bg-white border-[1.5px] border-[#1B3B82]/18 shadow-[4px_4px_0px_rgba(27,59,130,0.08)] px-6 sm:px-8 py-8 sm:py-10 transition-all duration-700 ease-out ${
+            className={`rounded-3xl bg-white border border-[#E8DFD1] px-6 sm:px-8 py-8 sm:py-10 shadow-[0_8px_24px_rgba(37,41,46,0.04)] transition-all duration-700 ease-out ${
               statsReveal.visible
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-5'
             }`}
           >
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 divide-y-0 lg:divide-x lg:divide-dashed divide-[#DFCBB5]">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 divide-y-0 lg:divide-x lg:divide-dashed divide-[#DFD3C2]">
               <div className="space-y-1">
                 <p className="font-mono text-3xl sm:text-4xl font-bold text-[#1B3B82] tabular-nums tracking-tight">
                   {animatedArtisans}
                 </p>
-                <p className="text-xs sm:text-[13px] font-semibold text-[#162442]">
+                <p className="text-xs sm:text-[13px] font-semibold text-[#25292E]">
                   Cô chú thợ đã xác minh
                 </p>
-                <p className="text-[11px] text-[#5C564E]">
+                <p className="text-[11px] text-[#615D57]">
                   Đồng bộ trực tiếp trên bản đồ
                 </p>
               </div>
 
               <div className="space-y-1 lg:pl-7">
-                <p className="font-mono text-3xl sm:text-4xl font-bold text-[#E86F2C] tabular-nums tracking-tight">
+                <p className="font-mono text-3xl sm:text-4xl font-bold text-[#D46534] tabular-nums tracking-tight">
                   {animatedRevived}
                 </p>
-                <p className="text-xs sm:text-[13px] font-semibold text-[#162442]">
+                <p className="text-xs sm:text-[13px] font-semibold text-[#25292E]">
                   Món đồ đã được hồi sinh
                 </p>
-                <p className="text-[11px] text-[#5C564E]">
+                <p className="text-[11px] text-[#615D57]">
                   Sửa bền thay vì vứt bỏ
                 </p>
               </div>
@@ -629,24 +640,24 @@ export function AboutView({
                 <p className="font-mono text-3xl sm:text-4xl font-bold text-[#B93818] tabular-nums tracking-tight">
                   {animatedArticles}
                 </p>
-                <p className="text-xs sm:text-[13px] font-semibold text-[#162442]">
+                <p className="text-xs sm:text-[13px] font-semibold text-[#25292E]">
                   Bài viết trên Bản tin
                 </p>
-                <p className="text-[11px] text-[#5C564E]">
+                <p className="text-[11px] text-[#615D57]">
                   Chuyện nghề &amp; mẹo sống xanh
                 </p>
               </div>
 
               <div className="space-y-1 lg:pl-7">
-                <p className="font-mono text-3xl sm:text-4xl font-bold text-[#1B3B82] tabular-nums tracking-tight">
+                <p className="font-mono text-3xl sm:text-4xl font-bold text-[#4F6B54] tabular-nums tracking-tight">
                   {animatedTeam}
                 </p>
-                <p className="text-xs sm:text-[13px] font-semibold text-[#162442]">
+                <p className="text-xs sm:text-[13px] font-semibold text-[#25292E]">
                   Thành viên &amp; CTV thực địa
                 </p>
-                <p className="text-[11px] text-[#5C564E]">
+                <p className="text-[11px] text-[#615D57]">
                   Phủ{' '}
-                  <span className="font-mono font-semibold text-[#162442]">
+                  <span className="font-mono font-semibold text-[#25292E]">
                     {Math.max(1, districtsCount)}
                   </span>{' '}
                   khu vực tại TP.HCM
@@ -655,24 +666,30 @@ export function AboutView({
             </div>
           </div>
 
-          {/* Hành trình dự án — Sợi chỉ đỏ đứt nét + mốc thời gian Monospace */}
-          <div ref={timelineReveal.ref} className="space-y-8">
+          {/* Hành trình dự án — Sợi chỉ đỏ đứt nét */}
+          <div
+            ref={(el) => {
+              chapterJourneyRef.current = el;
+              timelineReveal.ref.current = el;
+            }}
+            id="chuong-hanh-trinh"
+            data-chapter="hanh-trinh"
+            className="scroll-mt-24 space-y-8"
+          >
             <div className="space-y-1.5">
               <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#B93818]">
                 Hành trình dự án
               </p>
-              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#162442] tracking-tight">
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#25292E] tracking-tight">
                 Từng bước đi từ ý tưởng đến góc phố
               </h2>
             </div>
 
             <div className="relative pl-7 sm:pl-9 space-y-8">
-              {/* Đường chỉ khâu nền */}
               <div
                 aria-hidden="true"
-                className="absolute left-[11px] sm:left-[13px] top-2 bottom-2 border-l-2 border-dashed border-[#DFCBB5]"
+                className="absolute left-[11px] sm:left-[13px] top-2 bottom-2 border-l-2 border-dashed border-[#DFD3C2]"
               />
-              {/* Đường sợi chỉ đỏ tiến độ sáng dần */}
               <div
                 aria-hidden="true"
                 className={`absolute left-[11px] sm:left-[13px] top-2 border-l-2 border-dashed border-[#B93818] transition-all duration-1000 ease-out ${
@@ -694,15 +711,14 @@ export function AboutView({
                       : 'opacity-0 translate-y-4'
                   }`}
                 >
-                  {/* Chấm mốc */}
                   <span
                     aria-hidden="true"
-                    className={`absolute -left-[22px] sm:-left-[28px] top-1.5 w-3 h-3 rounded-full ring-4 ring-[#FDF8F2] transition-colors ${
+                    className={`absolute -left-[22px] sm:-left-[28px] top-1.5 w-3 h-3 rounded-full ring-4 ring-[#F7F2E8] transition-colors ${
                       milestone.status === 'current'
-                        ? 'bg-[#E86F2C]'
+                        ? 'bg-[#D46534]'
                         : milestone.status === 'done'
                           ? 'bg-[#1B3B82]'
-                          : 'bg-[#D8C3AE]'
+                          : 'bg-[#D9CBB8]'
                     }`}
                   />
 
@@ -710,20 +726,20 @@ export function AboutView({
                     <span
                       className={`font-mono text-xs font-bold tabular-nums uppercase tracking-wider shrink-0 sm:w-20 ${
                         milestone.status === 'current'
-                          ? 'text-[#E86F2C]'
+                          ? 'text-[#D46534]'
                           : milestone.status === 'done'
                             ? 'text-[#1B3B82]'
-                            : 'text-[#8C8378]'
+                            : 'text-[#8A847C]'
                       }`}
                     >
                       {milestone.date}
                     </span>
 
                     <div className="space-y-1">
-                      <h3 className="font-display text-base font-bold text-[#162442]">
+                      <h3 className="font-display text-base font-bold text-[#25292E]">
                         {milestone.title}
                       </h3>
-                      <p className="text-sm text-[#5C564E] leading-relaxed max-w-2xl">
+                      <p className="text-sm text-[#615D57] leading-relaxed max-w-2xl">
                         {milestone.description}
                       </p>
                     </div>
@@ -736,15 +752,15 @@ export function AboutView({
           {/* 3 Cam kết đạo đức cộng đồng */}
           <div ref={ethicsReveal.ref} className="space-y-5">
             <div className="space-y-1.5">
-              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#E86F2C]">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#4F6B54]">
                 Nguyên tắc hoạt động
               </p>
-              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#162442] tracking-tight">
+              <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#25292E] tracking-tight">
                 Ba cam kết đạo đức cộng đồng
               </h2>
             </div>
 
-            <div className="divide-y divide-dashed divide-[#DFCBB5] rounded-2xl bg-white border border-[#E6D5C3] overflow-hidden">
+            <div className="divide-y divide-dashed divide-[#DFD3C2] rounded-3xl bg-white border border-[#E8DFD1] overflow-hidden">
               {ETHICS_COMMITMENTS.map(({ title, description, Icon }, idx) => (
                 <div
                   key={title}
@@ -753,20 +769,20 @@ export function AboutView({
                       ? `${idx * 90}ms`
                       : '0ms',
                   }}
-                  className={`p-5 sm:px-7 sm:py-6 flex items-start gap-4 transition-all duration-700 ease-out hover:bg-[#FDF8F2]/80 ${
+                  className={`p-5 sm:px-7 sm:py-6 flex items-start gap-4 transition-all duration-700 ease-out hover:bg-[#F7F2E8]/70 ${
                     ethicsReveal.visible
                       ? 'opacity-100 translate-y-0'
                       : 'opacity-0 translate-y-4'
                   }`}
                 >
-                  <span className="w-9 h-9 rounded-xl bg-[#EEF2FA] border border-[#1B3B82]/15 text-[#1B3B82] flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-9 h-9 rounded-xl bg-[#EDF3EE] border border-[#4F6B54]/15 text-[#4F6B54] flex items-center justify-center shrink-0 mt-0.5">
                     <Icon className="w-4 h-4" strokeWidth={2} />
                   </span>
                   <div className="space-y-1">
-                    <h3 className="font-display text-sm sm:text-[15px] font-bold text-[#162442]">
+                    <h3 className="font-display text-sm sm:text-[15px] font-bold text-[#25292E]">
                       {title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-[#5C564E] leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#615D57] leading-relaxed">
                       {description}
                     </p>
                   </div>
@@ -780,7 +796,7 @@ export function AboutView({
         <div className="border-t border-dashed border-[#B93818]/30" />
 
         {/* =======================================================
-            CHƯƠNG 2 — VỀ CHÚNG MÌNH (TEAM WHO)
+            CHƯƠNG 2 — VỀ CHÚNG MÌNH (TEAM WHO — GIỮ NGUYÊN 100% CẤU TRÚC ĐÃ CHỐT)
            ======================================================= */}
         <section
           ref={chapterTeamRef}
@@ -796,11 +812,9 @@ export function AboutView({
                 : 'opacity-0 translate-y-5'
             }`}
           >
-            {/* Khối tiêu đề mở đầu Chương 2 căn giữa, nổi bật Logo FTU + TEAM WHO */}
             <header className="flex flex-col items-center text-center mb-8 md:mb-10">
-              {/* Hàng 1: Cụm nhận diện chính (Logo FTU lớn + gạch dọc mảnh + TEAM WHO) */}
               <div className="inline-flex items-center justify-center gap-4 md:gap-5">
-                <span className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-white ring-2 ring-[#E6D5C3] shadow-md shrink-0 transition-transform duration-300 hover:scale-105">
+                <span className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-white ring-2 ring-[#E8DFD1] shadow-md shrink-0 transition-transform duration-300 hover:scale-105">
                   <img
                     src={FTU_LOGO_SRC}
                     alt="Logo Trường Đại học Ngoại thương (FTU)"
@@ -810,28 +824,26 @@ export function AboutView({
 
                 <span
                   aria-hidden="true"
-                  className="h-9 md:h-11 w-px bg-[#D8C3AE] shrink-0"
+                  className="h-9 md:h-11 w-px bg-[#DFD3C2] shrink-0"
                 />
 
-                <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#162442] leading-none">
-                  TEAM <span className="text-[#E86F2C]">WHO</span>
+                <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#25292E] leading-none">
+                  TEAM <span className="text-[#D46534]">WHO</span>
                 </h2>
               </div>
 
-              {/* Hàng 2: Dòng Lớp & Trường tách riêng gọn gàng */}
-              <p className="mt-3.5 md:mt-4 text-sm md:text-base text-[#5C564E] font-medium leading-relaxed max-w-2xl">
+              <p className="mt-3.5 md:mt-4 text-sm md:text-base text-[#615D57] font-medium leading-relaxed max-w-2xl">
                 <span className="font-bold text-[#1B3B82]">
                   Lớp Học phần KDO441
                 </span>
-                <span className="mx-1.5 text-[#D8C3AE]" aria-hidden="true">
+                <span className="mx-1.5 text-[#DFD3C2]" aria-hidden="true">
                   ·
                 </span>
                 Phân hiệu Trường Đại học Ngoại thương tại TP. Hồ Chí Minh
               </p>
 
-              {/* Hàng 3: Slogan nhóm bổ trợ tinh tế */}
               <p
-                className="font-display mt-5 md:mt-6 text-xl sm:text-2xl md:text-[26px] font-bold text-[#162442] tracking-tight leading-snug"
+                className="font-serif-editorial mt-5 md:mt-6 text-xl sm:text-2xl md:text-[26px] font-semibold text-[#25292E] tracking-tight leading-snug"
                 style={{ textWrap: 'balance' }}
               >
                 &ldquo;Who are we? We are WHO -{' '}
@@ -840,22 +852,21 @@ export function AboutView({
               </p>
             </header>
 
-            {/* Ảnh tập thể nhóm 16:9 */}
             <figure className="space-y-3">
-              <div className="group aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#F1E6D8] border-[1.5px] border-[#1B3B82]/15 shadow-[5px_5px_0px_rgba(27,59,130,0.1)]">
+              <div className="group aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#EFE7D8] border border-[#E8DFD1] shadow-[0_12px_32px_rgba(37,41,46,0.06)]">
                 <img
                   src={TEAM_WHO_PHOTO_SRC}
                   alt="Ảnh tập thể 9 thành viên Team WHO — Lớp Học phần KDO441 FTU HCMC"
                   className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
               </div>
-              <figcaption className="text-center font-mono text-xs text-[#5C564E] font-medium">
+              <figcaption className="text-center font-mono text-xs text-[#615D57] font-medium">
                 9 mảnh ghép của Team WHO — LỚP HỌC PHẦN KDO441 FTU HCMC
               </figcaption>
             </figure>
           </div>
 
-          {/* 4 Nút lọc phân ban tối giản căn giữa */}
+          {/* 4 Nút lọc phân ban căn giữa */}
           <div className="space-y-10">
             <div
               role="tablist"
@@ -869,8 +880,8 @@ export function AboutView({
                 onClick={() => setSelectedDepartment('Tất cả')}
                 className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap border ${
                   selectedDepartment === 'Tất cả'
-                    ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[2px_2px_0px_#E86F2C]'
-                    : 'bg-white border-[#E6D5C3] text-[#5C564E] hover:border-[#1B3B82]/50 hover:text-[#162442]'
+                    ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82]'
+                    : 'bg-white border-[#E8DFD1] text-[#615D57] hover:border-[#1B3B82]/50 hover:text-[#25292E]'
                 }`}
               >
                 Tất cả ({TEAM_WHO_MEMBERS.length})
@@ -887,8 +898,8 @@ export function AboutView({
                     onClick={() => setSelectedDepartment(dept)}
                     className={`min-h-[38px] px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap border ${
                       isActive
-                        ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[2px_2px_0px_#E86F2C]'
-                        : 'bg-white border-[#E6D5C3] text-[#5C564E] hover:border-[#1B3B82]/50 hover:text-[#162442]'
+                        ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82]'
+                        : 'bg-white border-[#E8DFD1] text-[#615D57] hover:border-[#1B3B82]/50 hover:text-[#25292E]'
                     }`}
                   >
                     {dept} ({departmentCounts[dept]})
@@ -897,28 +908,24 @@ export function AboutView({
               })}
             </div>
 
-            {/* Khu vực hiển thị đội ngũ */}
             <div ref={teamGridReveal.ref}>
               {selectedDepartment === 'Tất cả' ? (
-                /* BỐ CỤC PHÂN CẤP 3 TẦNG SẠCH SẼ — KHÔNG TIÊU ĐỀ PHÂN TÁCH */
                 <div className="space-y-8 md:space-y-10">
-                  {/* Tầng 1: Project Leader — Thẻ chia đôi ngang Spotlight cỡ lớn */}
+                  {/* Tầng 1: Project Leader Spotlight */}
                   {projectLeader && (
                     <article
-                      className={`group max-w-3xl mx-auto rounded-3xl bg-white border-[1.5px] border-[#1B3B82]/35 hover:border-[#1B3B82] overflow-hidden hover:shadow-[6px_6px_0px_#1B3B82] hover:-translate-y-1 transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 ${
+                      className={`group max-w-3xl mx-auto rounded-3xl bg-white border border-[#1B3B82]/25 hover:border-[#1B3B82] overflow-hidden hover:shadow-[0_14px_34px_rgba(37,41,46,0.09)] hover:-translate-y-1 transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 ${
                         teamGridReveal.visible
                           ? 'opacity-100 translate-y-0'
                           : 'opacity-0 translate-y-5'
                       }`}
                     >
-                      {/* Khối ảnh chân dung cỡ lớn bên trái */}
                       <div className="md:col-span-5 p-3 pb-0 md:p-3 md:pr-0">
-                        <div className="aspect-square md:aspect-auto md:h-full min-h-[260px] w-full rounded-2xl overflow-hidden bg-[#FDF8F2] relative">
+                        <div className="aspect-square md:aspect-auto md:h-full min-h-[260px] w-full rounded-2xl overflow-hidden bg-[#F7F2E8] relative">
                           <MemberPortrait member={projectLeader} large />
                         </div>
                       </div>
 
-                      {/* Khối nội dung bên phải căn giữa dọc */}
                       <div className="md:col-span-7 flex flex-col justify-center p-6 md:p-8">
                         <div className="flex items-center justify-between gap-3">
                           <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#EEF2FA] border border-[#1B3B82]/20 text-[#1B3B82] font-mono text-[10.5px] font-bold tracking-wider uppercase">
@@ -931,13 +938,13 @@ export function AboutView({
                             rel="noopener noreferrer"
                             aria-label={`Facebook của ${projectLeader.name}`}
                             title={`Facebook của ${projectLeader.name}`}
-                            className="w-8 h-8 rounded-full text-[#8C8378] hover:bg-[#1B3B82] hover:text-[#FDF8F2] flex items-center justify-center shrink-0 transition-colors"
+                            className="w-8 h-8 rounded-full text-[#8A847C] hover:bg-[#1B3B82] hover:text-[#F7F2E8] flex items-center justify-center shrink-0 transition-colors"
                           >
                             <FacebookIcon className="w-4 h-4" />
                           </a>
                         </div>
 
-                        <h3 className="font-display mt-4 text-2xl font-extrabold text-[#162442] tracking-tight leading-snug">
+                        <h3 className="font-display mt-4 text-2xl font-extrabold text-[#25292E] tracking-tight leading-snug">
                           {projectLeader.name}
                         </h3>
 
@@ -950,21 +957,21 @@ export function AboutView({
                           className="w-12 border-t border-dashed border-[#B93818]/40 my-4"
                         />
 
-                        <p className="text-sm text-[#5C564E] italic leading-relaxed">
+                        <p className="font-serif-editorial text-sm text-[#615D57] italic leading-relaxed">
                           &ldquo;{projectLeader.quote}&rdquo;
                         </p>
                       </div>
                     </article>
                   )}
 
-                  {/* Tầng 2: 3 Trưởng ban — 1 hàng 3 cột đều nhau */}
+                  {/* Tầng 2: 3 Trưởng ban */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
                     {departmentLeaders.map((leader, idx) =>
                       renderPortraitMemberCard(leader, idx + 1, 'h-full')
                     )}
                   </div>
 
-                  {/* Tầng 3: 5 Thành viên — 3 thẻ hàng trên + 2 thẻ căn giữa hàng dưới */}
+                  {/* Tầng 3: 5 Thành viên */}
                   <div className="flex flex-wrap justify-center gap-6">
                     {regularMembers.map((member, idx) =>
                       renderPortraitMemberCard(
@@ -976,7 +983,6 @@ export function AboutView({
                   </div>
                 </div>
               ) : (
-                /* BỐ CỤC KHI LỌC THEO TỪNG BAN */
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
                   {filteredDepartmentMembers.map((member, idx) =>
                     renderPortraitMemberCard(member, idx, 'h-full')
@@ -988,7 +994,7 @@ export function AboutView({
         </section>
 
         {/* =======================================================
-            CHƯƠNG 3 — KÊU GỌI ĐỒNG HÀNH (COBALT CRAFT CTA CARD)
+            CHƯƠNG 3 — KÊU GỌI ĐỒNG HÀNH
            ======================================================= */}
         <section
           ref={chapterJoinRef}
@@ -998,20 +1004,20 @@ export function AboutView({
         >
           <div
             ref={ctaReveal.ref}
-            className={`rounded-3xl bg-[#1B3B82] text-[#FDF8F2] p-3 sm:p-4 shadow-[6px_6px_0px_#E86F2C] border-[1.5px] border-[#162442] transition-all duration-700 ease-out ${
+            className={`rounded-3xl bg-[#1B3B82] text-[#F7F2E8] p-3 sm:p-4 shadow-[0_16px_40px_rgba(27,59,130,0.18)] transition-all duration-700 ease-out ${
               ctaReveal.visible
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-5'
             }`}
           >
-            <div className="rounded-2xl border border-dashed border-[#FDF8F2]/28 px-5 sm:px-9 lg:px-11 py-8 sm:py-10">
+            <div className="rounded-2xl border border-dashed border-[#F7F2E8]/28 px-5 sm:px-9 lg:px-11 py-8 sm:py-10">
               <div className="max-w-2xl space-y-6">
-                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#F9C6A3]">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#F4C4A8]">
                   ĐỒNG HÀNH CÙNG CHÚNG MÌNH
                 </p>
 
                 <h2
-                  className="font-display text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight text-[#FDF8F2]"
+                  className="font-display text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight text-[#F7F2E8]"
                   style={{ textWrap: 'balance' }}
                 >
                   Biết một cô chú thợ lành nghề gần nhà? Cùng chúng mình nối dài
@@ -1021,17 +1027,17 @@ export function AboutView({
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <button
                     type="button"
-                    onClick={() => onNavigate('suggest')}
-                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#E86F2C] hover:bg-[#D25C1B] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#162442] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all"
+                    onClick={() => onNavigate('community')}
+                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#D46534] hover:bg-[#BC5326] text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors"
                   >
                     <PlusCircle className="w-4 h-4" />
-                    <span>Gợi ý cô chú thợ mới</span>
+                    <span>Tham gia Cộng đồng</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
 
                   <a
                     href={`mailto:${PROJECT_CONTACT_EMAIL}`}
-                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/18 border border-[#FDF8F2]/30 text-[#FDF8F2] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors"
+                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/18 border border-[#F7F2E8]/30 text-[#F7F2E8] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors"
                   >
                     <Mail className="w-4 h-4" />
                     <span>Liên hệ hợp tác / CTV</span>

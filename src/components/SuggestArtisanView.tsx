@@ -27,8 +27,13 @@ interface SuggestArtisanViewProps {
   onRequestAuth: (prompt?: string) => void;
   onSubmitPendingSuggestion: (
     suggestion: PendingSuggestion
-  ) => Promise<{ ok: boolean; error?: string }> | { ok: boolean; error?: string } | void;
+  ) =>
+    | Promise<{ ok: boolean; error?: string }>
+    | { ok: boolean; error?: string }
+    | void;
   onBackToExplore: () => void;
+  mode?: 'community' | 'owner';
+  embedded?: boolean;
 }
 
 export function SuggestArtisanView({
@@ -36,7 +41,10 @@ export function SuggestArtisanView({
   onRequestAuth,
   onSubmitPendingSuggestion,
   onBackToExplore,
+  mode = 'community',
+  embedded = false,
 }: SuggestArtisanViewProps) {
+  const isOwnerMode = mode === 'owner';
   const [name, setName] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<CraftCategory[]>(
     ['Sửa giày dép']
@@ -49,7 +57,11 @@ export function SuggestArtisanView({
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>('Chỉ tiền mặt');
   const [parkingInfo, setParkingInfo] = useState<ParkingInfo>('Dễ đậu xe');
-  const [story, setStory] = useState('');
+  const [story, setStory] = useState(
+    isOwnerMode
+      ? '[Đăng ký trực tiếp từ chính chủ/người thân] '
+      : ''
+  );
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(
     undefined
   );
@@ -116,14 +128,22 @@ export function SuggestArtisanView({
       : `${cleanName} – ${selectedCategories.join(' & ')}`;
 
     const baseCoords = DISTRICT_COORDS[district];
+    const defaultStory = isOwnerMode
+      ? `[Đăng ký trực tiếp từ chính chủ/người thân] Góc nghề tại ${district}.`
+      : `Địa điểm được cộng đồng Góc Thợ Quanh Ta giới thiệu tại ${district}.`;
+
     const newSuggestion: PendingSuggestion = {
       id: `pending-${Date.now()}`,
       name: formattedName,
       categories: selectedCategories,
       district,
       coordinates: {
-        lat: Number((baseCoords.lat + (Math.random() - 0.5) * 0.002).toFixed(5)),
-        lng: Number((baseCoords.lng + (Math.random() - 0.5) * 0.002).toFixed(5)),
+        lat: Number(
+          (baseCoords.lat + (Math.random() - 0.5) * 0.002).toFixed(5)
+        ),
+        lng: Number(
+          (baseCoords.lng + (Math.random() - 0.5) * 0.002).toFixed(5)
+        ),
       },
       addressLandmark: landmark.trim(),
       hours: hours.trim() || 'Linh hoạt trong ngày',
@@ -132,9 +152,7 @@ export function SuggestArtisanView({
           ? parsedProblems
           : selectedCategories.map((c) => c.toLowerCase()),
       minPriceLabel: minPrice.trim() || 'Từ 15k',
-      story:
-        story.trim() ||
-        `Địa điểm được cộng đồng Góc Thợ Quanh Ta giới thiệu tại ${district}.`,
+      story: story.trim() || defaultStory,
       paymentMethod,
       parkingInfo,
       customImageUrl: photoPreview,
@@ -158,7 +176,9 @@ export function SuggestArtisanView({
       setName('');
       setLandmark('');
       setProblemsText('');
-      setStory('');
+      setStory(
+        isOwnerMode ? '[Đăng ký trực tiếp từ chính chủ/người thân] ' : ''
+      );
       setPhotoPreview(undefined);
       setErrorMsg('');
     } finally {
@@ -167,28 +187,43 @@ export function SuggestArtisanView({
   };
 
   return (
-    <div className="min-h-full bg-[#FDF8F2] py-6 px-4 sm:px-6 lg:py-10 pb-24 lg:pb-12">
+    <div
+      className={
+        embedded
+          ? 'bg-[#F7F2E8] p-4 sm:p-6'
+          : 'min-h-full bg-[#F7F2E8] py-8 px-4 sm:px-6 lg:py-12 pb-24 lg:pb-14'
+      }
+    >
       <div className="max-w-4xl mx-auto space-y-6">
-        <header className="space-y-2 pb-5 border-b border-dashed border-[#D8C3AE]">
-          <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#E86F2C]">
+        <header className="space-y-2 pb-5 border-b border-dashed border-[#DFD3C2]">
+          <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#D46534]">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Đóng góp từ cộng đồng TP.HCM</span>
+            <span>
+              {isOwnerMode
+                ? 'Đăng ký hoàn toàn miễn phí (0đ) · Tôn trọng quyền riêng tư'
+                : 'Đóng góp từ cộng đồng TP.HCM'}
+            </span>
           </div>
           <h1
-            className="font-display text-2xl sm:text-3xl font-extrabold text-[#162442] tracking-tight"
+            className="font-display text-2xl sm:text-3xl font-extrabold text-[#25292E] tracking-tight"
             style={{ textWrap: 'balance' }}
           >
-            Gợi ý một góc thợ quen gần bạn
+            {isOwnerMode
+              ? 'Đăng ký góc nghề lên bản đồ'
+              : 'Gợi ý một góc thợ quen gần bạn'}
           </h1>
-          <p className="text-sm sm:text-base text-[#5C564E] max-w-2xl leading-relaxed">
-            Biết một cô chú sửa giày, may vá hay đánh khóa khéo tay trên đường đi học, đi làm? Gửi thông tin để đội ngũ xác minh, xin phép cô chú và đưa lên bản đồ nhé.
+          <p className="text-sm sm:text-base text-[#615D57] max-w-2xl leading-relaxed">
+            {isOwnerMode
+              ? 'Dành cho cô chú thợ hoặc người thân muốn đưa góc sửa chữa lên bản đồ Góc Thợ Quanh Ta. Cam kết 0đ chi phí và luôn tôn trọng nguyện vọng ẩn chân dung.'
+              : 'Biết một cô chú sửa giày, may vá hay đánh khóa khéo tay trên đường đi học, đi làm? Gửi thông tin để đội ngũ xác minh, xin phép cô chú và đưa lên bản đồ nhé.'}
           </p>
         </header>
 
         {!currentUser && (
-          <div className="rounded-2xl bg-[#FFF3EB] border border-[#E86F2C]/28 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-[#7C3515]">
+          <div className="rounded-2xl bg-[#FDF0E9] border border-[#D46534]/25 px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-[#7C3515]">
             <p className="font-medium leading-relaxed">
-              Đăng nhập nhanh trong 5 giây để gửi gợi ý cô chú thợ mới và tích huy hiệu đóng góp cộng đồng.
+              Đăng nhập nhanh trong 5 giây để gửi thông tin góc thợ mới và theo
+              dõi trạng thái duyệt cộng đồng.
             </p>
             <button
               type="button"
@@ -197,7 +232,7 @@ export function SuggestArtisanView({
                   'Đăng nhập nhanh trong 5 giây để gửi gợi ý cô chú thợ mới và theo dõi trạng thái duyệt nhé.'
                 )
               }
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[2px_2px_0px_#E86F2C] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none text-xs font-bold whitespace-nowrap shrink-0 transition-all"
+              className="min-h-[40px] px-4 py-2 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-[#F7F2E8] text-xs font-bold whitespace-nowrap shrink-0 transition-colors"
             >
               Đăng nhập / Đăng ký
             </button>
@@ -205,28 +240,30 @@ export function SuggestArtisanView({
         )}
 
         {submittedSuggestion ? (
-          <div className="rounded-3xl bg-white border-[1.5px] border-[#1B3B82]/22 shadow-[5px_5px_0px_rgba(27,59,130,0.1)] p-6 sm:p-8 text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#EEF2FA] text-[#1B3B82] border border-[#1B3B82]/20 mx-auto flex items-center justify-center">
+          <div className="rounded-3xl bg-white border border-[#E8DFD1] p-6 sm:p-8 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#EDF3EE] text-[#4F6B54] border border-[#4F6B54]/20 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div className="space-y-1.5 max-w-md mx-auto">
-              <h2 className="font-display text-xl font-extrabold text-[#162442]">
+              <h2 className="font-display text-xl font-extrabold text-[#25292E]">
                 Đã gửi đề xuất thành công!
               </h2>
-              <p className="text-sm text-[#5C564E] leading-relaxed">
+              <p className="text-sm text-[#615D57] leading-relaxed">
                 Thông tin về{' '}
-                <strong className="text-[#162442]">
+                <strong className="text-[#25292E]">
                   {submittedSuggestion.name}
                 </strong>{' '}
                 đã được đưa vào danh sách{' '}
-                <span className="font-bold text-[#E86F2C]">Chờ duyệt</span>. Đội ngũ cộng tác viên sẽ kiểm tra tọa độ, xin phép cô chú và sớm đưa lên bản đồ!
+                <span className="font-bold text-[#D46534]">Chờ duyệt</span>. Đội
+                ngũ cộng tác viên sẽ kiểm tra tọa độ, xin phép cô chú và sớm đưa
+                lên bản đồ!
               </p>
             </div>
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={onBackToExplore}
-                className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#E86F2C] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm font-bold inline-flex items-center gap-2 transition-all"
+                className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-[#F7F2E8] text-sm font-bold inline-flex items-center gap-2 transition-colors"
               >
                 <Compass className="w-4 h-4" />
                 <span>Quay lại bản đồ</span>
@@ -234,16 +271,16 @@ export function SuggestArtisanView({
               <button
                 type="button"
                 onClick={() => setSubmittedSuggestion(null)}
-                className="min-h-[44px] px-5 py-2.5 rounded-xl border border-[#E6D5C3] bg-white hover:bg-[#FDF8F2] text-sm font-semibold text-[#162442] transition-colors"
+                className="min-h-[44px] px-5 py-2.5 rounded-full border border-[#E8DFD1] bg-white hover:bg-[#F7F2E8] text-sm font-semibold text-[#25292E] transition-colors"
               >
-                Gợi ý thêm thợ khác
+                Gửi thêm góc thợ khác
               </button>
             </div>
           </div>
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="rounded-3xl bg-white border border-[#E6D5C3] shadow-[4px_4px_0px_rgba(27,59,130,0.06)] p-5 sm:p-7 space-y-6"
+            className="rounded-3xl bg-white border border-[#E8DFD1] p-5 sm:p-7 space-y-6"
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Cột trái */}
@@ -251,7 +288,7 @@ export function SuggestArtisanView({
                 <div>
                   <label
                     htmlFor="artisan-name"
-                    className="block text-sm font-bold text-[#162442] mb-1.5"
+                    className="block text-sm font-bold text-[#25292E] mb-1.5"
                   >
                     Tên hoặc cách gọi cô chú{' '}
                     <span className="text-[#B93818]">*</span>
@@ -266,12 +303,12 @@ export function SuggestArtisanView({
                       if (errorMsg) setErrorMsg('');
                     }}
                     placeholder="VD: Chú Tám – Sửa Giày Dép, Cô Lan May Vá..."
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] placeholder:text-[#8E877E] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
                   />
                 </div>
 
                 <div>
-                  <span className="block text-sm font-bold text-[#162442] mb-2">
+                  <span className="block text-sm font-bold text-[#25292E] mb-2">
                     Dịch vụ cô chú nhận sửa{' '}
                     <span className="text-[#B93818]">*</span>
                   </span>
@@ -284,10 +321,10 @@ export function SuggestArtisanView({
                           type="button"
                           onClick={() => toggleCategory(category)}
                           aria-pressed={active}
-                          className={`min-h-[40px] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${
+                          className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${
                             active
-                              ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[2px_2px_0px_#E86F2C]'
-                              : 'bg-[#FDF8F2] text-[#5C564E] border-[#E6D5C3] hover:border-[#1B3B82]/50 hover:text-[#162442]'
+                              ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82]'
+                              : 'bg-[#F7F2E8] text-[#615D57] border-[#E8DFD1] hover:border-[#1B3B82]/50 hover:text-[#25292E]'
                           }`}
                         >
                           {category}
@@ -301,7 +338,7 @@ export function SuggestArtisanView({
                   <div>
                     <label
                       htmlFor="artisan-district"
-                      className="block text-sm font-bold text-[#162442] mb-1.5"
+                      className="block text-sm font-bold text-[#25292E] mb-1.5"
                     >
                       Khu vực
                     </label>
@@ -309,7 +346,7 @@ export function SuggestArtisanView({
                       id="artisan-district"
                       value={district}
                       onChange={(e) => setDistrict(e.target.value as District)}
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     >
                       {DISTRICTS.map((d) => (
                         <option key={d} value={d}>
@@ -322,7 +359,7 @@ export function SuggestArtisanView({
                   <div>
                     <label
                       htmlFor="artisan-price"
-                      className="block text-sm font-bold text-[#162442] mb-1.5"
+                      className="block text-sm font-bold text-[#25292E] mb-1.5"
                     >
                       Mức giá tham khảo
                     </label>
@@ -332,7 +369,7 @@ export function SuggestArtisanView({
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
                       placeholder="VD: Từ 15k"
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] font-mono text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] font-mono text-sm text-[#25292E] placeholder:text-[#8E877E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     />
                   </div>
                 </div>
@@ -341,7 +378,7 @@ export function SuggestArtisanView({
                   <div>
                     <label
                       htmlFor="artisan-payment"
-                      className="block text-sm font-bold text-[#162442] mb-1.5"
+                      className="block text-sm font-bold text-[#25292E] mb-1.5"
                     >
                       Hình thức thanh toán
                     </label>
@@ -351,7 +388,7 @@ export function SuggestArtisanView({
                       onChange={(e) =>
                         setPaymentMethod(e.target.value as PaymentMethod)
                       }
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     >
                       <option value="Chỉ tiền mặt">Chỉ tiền mặt</option>
                       <option value="Có chuyển khoản">Có chuyển khoản</option>
@@ -361,7 +398,7 @@ export function SuggestArtisanView({
                   <div>
                     <label
                       htmlFor="artisan-parking"
-                      className="block text-sm font-bold text-[#162442] mb-1.5"
+                      className="block text-sm font-bold text-[#25292E] mb-1.5"
                     >
                       Chỗ đậu xe
                     </label>
@@ -371,7 +408,7 @@ export function SuggestArtisanView({
                       onChange={(e) =>
                         setParkingInfo(e.target.value as ParkingInfo)
                       }
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
+                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     >
                       <option value="Dễ đậu xe">Dễ đậu xe</option>
                       <option value="Gửi xe gần đó">Gửi xe gần đó</option>
@@ -382,13 +419,13 @@ export function SuggestArtisanView({
                 <div>
                   <label
                     htmlFor="artisan-landmark"
-                    className="block text-sm font-bold text-[#162442] mb-1.5"
+                    className="block text-sm font-bold text-[#25292E] mb-1.5"
                   >
                     Mô tả góc đường &amp; mốc dễ nhận diện{' '}
                     <span className="text-[#B93818]">*</span>
                   </label>
                   <div className="relative">
-                    <MapPin className="w-4 h-4 text-[#E86F2C] absolute left-3.5 top-3.5" />
+                    <MapPin className="w-4 h-4 text-[#D46534] absolute left-3.5 top-3.5" />
                     <textarea
                       id="artisan-landmark"
                       rows={3}
@@ -399,7 +436,7 @@ export function SuggestArtisanView({
                         if (errorMsg) setErrorMsg('');
                       }}
                       placeholder="VD: Vỉa hè trước số 56 Phan Xích Long, ngồi dưới tán cây bàng cạnh tiệm trà sữa..."
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8E8579] resize-none focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] placeholder:text-[#8E877E] resize-none focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     />
                   </div>
                 </div>
@@ -410,7 +447,7 @@ export function SuggestArtisanView({
                 <div>
                   <label
                     htmlFor="artisan-hours"
-                    className="block text-sm font-bold text-[#162442] mb-1.5"
+                    className="block text-sm font-bold text-[#25292E] mb-1.5"
                   >
                     Khung giờ hay gặp cô chú
                   </label>
@@ -422,7 +459,7 @@ export function SuggestArtisanView({
                       value={hours}
                       onChange={(e) => setHours(e.target.value)}
                       placeholder="VD: 08:00 – 17:30 (T2–T7)"
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] font-mono text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] font-mono text-sm text-[#25292E] placeholder:text-[#8E877E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                     />
                   </div>
                 </div>
@@ -430,7 +467,7 @@ export function SuggestArtisanView({
                 <div>
                   <label
                     htmlFor="artisan-problems"
-                    className="block text-sm font-bold text-[#162442] mb-1.5"
+                    className="block text-sm font-bold text-[#25292E] mb-1.5"
                   >
                     Các lỗi thường sửa (cách nhau bằng dấu phẩy)
                   </label>
@@ -440,14 +477,14 @@ export function SuggestArtisanView({
                     value={problemsText}
                     onChange={(e) => setProblemsText(e.target.value)}
                     placeholder="VD: bung đế giày, thay dây kéo, lên lai quần"
-                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8E8579] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] placeholder:text-[#8E877E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="artisan-story"
-                    className="block text-sm font-bold text-[#162442] mb-1.5"
+                    className="block text-sm font-bold text-[#25292E] mb-1.5"
                   >
                     Đôi nét về tay nghề cô chú (không bắt buộc)
                   </label>
@@ -457,12 +494,14 @@ export function SuggestArtisanView({
                     value={story}
                     onChange={(e) => setStory(e.target.value)}
                     placeholder="VD: Chú làm rất kỹ, đường chỉ chắc chắn và luôn báo giá trước..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E6D5C3] bg-[#FDF8F2] text-sm text-[#162442] placeholder:text-[#8E8579] resize-none focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:ring-2 focus:ring-[#1B3B82]/15"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] placeholder:text-[#8E877E] resize-none focus:bg-white focus:outline-none focus:border-[#1B3B82]"
                   />
                 </div>
 
-                <div className="rounded-xl bg-[#FDF8F2] border border-[#E6D5C3] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
-                  <span className="text-[#5C564E]">Người đóng góp (lưu lịch sử):</span>
+                <div className="rounded-xl bg-[#F7F2E8] border border-[#E8DFD1] px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs">
+                  <span className="text-[#615D57]">
+                    Người đóng góp (lưu lịch sử):
+                  </span>
                   <span className="font-semibold text-[#1B3B82] truncate">
                     {currentUser
                       ? `${currentUser.displayName} (@${currentUser.username})`
@@ -470,14 +509,13 @@ export function SuggestArtisanView({
                   </span>
                 </div>
 
-                {/* Ô tải ảnh kèm nhắc nhở xin phép */}
                 <div className="space-y-2">
-                  <span className="block text-sm font-bold text-[#162442]">
+                  <span className="block text-sm font-bold text-[#25292E]">
                     Ảnh góc đồ nghề (không bắt buộc)
                   </span>
 
                   {photoPreview ? (
-                    <div className="relative rounded-2xl overflow-hidden border border-[#E6D5C3] aspect-[16/9] bg-[#FDF8F2]">
+                    <div className="relative rounded-2xl overflow-hidden border border-[#E8DFD1] aspect-[16/9] bg-[#F7F2E8]">
                       <img
                         src={photoPreview}
                         alt="Ảnh xem trước góc làm việc"
@@ -487,17 +525,17 @@ export function SuggestArtisanView({
                         type="button"
                         onClick={() => setPhotoPreview(undefined)}
                         aria-label="Xóa ảnh đã chọn"
-                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl bg-[#162442]/80 hover:bg-[#162442] text-[#FDF8F2] flex items-center justify-center transition-colors"
+                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-xl bg-[#25292E]/80 hover:bg-[#25292E] text-white flex items-center justify-center transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#D8C3AE] bg-[#FDF8F2] hover:border-[#1B3B82] hover:bg-[#EEF2FA]/50 px-4 py-4 cursor-pointer transition-colors">
-                      <span className="w-10 h-10 rounded-xl bg-white border border-[#E6D5C3] flex items-center justify-center text-[#E86F2C]">
+                    <label className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#DFD3C2] bg-[#F7F2E8] hover:border-[#1B3B82] hover:bg-[#EEF2FA]/50 px-4 py-4 cursor-pointer transition-colors">
+                      <span className="w-10 h-10 rounded-xl bg-white border border-[#E8DFD1] flex items-center justify-center text-[#D46534]">
                         <Camera className="w-5 h-5" />
                       </span>
-                      <span className="text-xs font-semibold text-[#162442]">
+                      <span className="text-xs font-semibold text-[#25292E]">
                         Chọn ảnh từ thiết bị
                       </span>
                       <input
@@ -509,10 +547,11 @@ export function SuggestArtisanView({
                     </label>
                   )}
 
-                  <p className="text-xs text-[#1B3B82] flex items-start gap-1.5 leading-relaxed">
+                  <p className="text-xs text-[#4F6B54] flex items-start gap-1.5 leading-relaxed">
                     <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
                     <span>
-                      Hãy xin phép cô chú trước khi chụp, hoặc chỉ chụp góc đồ nghề nhé!
+                      Hãy xin phép cô chú trước khi chụp, hoặc chỉ chụp góc đồ
+                      nghề nhé!
                     </span>
                   </p>
                 </div>
@@ -528,16 +567,18 @@ export function SuggestArtisanView({
               </div>
             )}
 
-            <div className="pt-3 border-t border-dashed border-[#DFCBB5] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <p className="text-xs text-[#5C564E]">
+            <div className="pt-3 border-t border-dashed border-[#DFD3C2] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <p className="text-xs text-[#615D57]">
                 Đề xuất sẽ được chuyển về mục{' '}
-                <strong className="text-[#1B3B82]">Chờ duyệt</strong> để xác minh tọa độ &amp; sự đồng thuận của cô chú trước khi hiển thị công khai.
+                <strong className="text-[#1B3B82]">Chờ duyệt</strong> để xác
+                minh tọa độ &amp; sự đồng thuận của cô chú trước khi hiển thị
+                công khai.
               </p>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="min-h-[46px] px-6 py-2.5 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] disabled:opacity-60 text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[3px_3px_0px_#162442] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm font-bold inline-flex items-center justify-center gap-2 transition-all whitespace-nowrap shrink-0"
+                className="min-h-[46px] px-6 py-2.5 rounded-full bg-[#D46534] hover:bg-[#BC5326] disabled:opacity-60 text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors whitespace-nowrap shrink-0"
               >
                 {isSubmitting ? (
                   <>
@@ -547,7 +588,11 @@ export function SuggestArtisanView({
                 ) : (
                   <>
                     <PlusCircle className="w-4 h-4" />
-                    <span>Gửi đề xuất chờ duyệt</span>
+                    <span>
+                      {isOwnerMode
+                        ? 'Gửi đăng ký góc nghề'
+                        : 'Gửi đề xuất chờ duyệt'}
+                    </span>
                   </>
                 )}
               </button>

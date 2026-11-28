@@ -53,23 +53,23 @@ export function WallOfThanksSection({
   return (
     <section
       aria-labelledby="wall-of-thanks-heading"
-      className="pt-5 border-t border-dashed border-[#D8C3AE] space-y-3.5"
+      className="pt-6 border-t border-dashed border-[#DDD2C2] space-y-3.5"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="space-y-0.5">
           <h3
             id="wall-of-thanks-heading"
-            className="font-display text-sm font-bold text-[#162442] flex items-center gap-1.5"
+            className="font-display text-sm font-bold text-[#25292E] flex items-center gap-1.5"
           >
             <span aria-hidden="true">💌</span>
             <span>Sổ lưu bút cảm ơn</span>
             {approvedNotes.length > 0 && (
-              <span className="font-mono text-xs font-bold text-[#E86F2C] tabular-nums">
+              <span className="font-mono text-xs font-bold text-[#D46534] tabular-nums">
                 ({approvedNotes.length})
               </span>
             )}
           </h3>
-          <p className="text-xs text-[#5C564E]">
+          <p className="text-xs text-[#615D57]">
             Những tấm thiệp nhỏ gửi tới tay nghề tận tâm của cô chú.
           </p>
         </div>
@@ -81,7 +81,7 @@ export function WallOfThanksSection({
             setJustSubmitted(false);
             setErrorMsg('');
           }}
-          className="min-h-[38px] px-3 py-1.5 rounded-xl bg-[#FFF3EB] hover:bg-[#FFE6D6] border border-[#E86F2C]/35 text-[#E86F2C] text-xs font-bold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0"
+          className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[#FDF0E9] hover:bg-[#FAE2D6] border border-[#D46534]/30 text-[#D46534] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0"
         >
           {formOpen ? (
             <>
@@ -99,7 +99,7 @@ export function WallOfThanksSection({
 
       {/* Thông báo sau khi gửi lời cảm ơn */}
       {justSubmitted && (
-        <div className="rounded-2xl bg-[#EEF2FA] border border-[#1B3B82]/25 p-3.5 flex items-start gap-2.5 text-xs text-[#1B3B82]">
+        <div className="rounded-2xl bg-[#EDF3EE] border border-[#4F6B54]/25 p-3.5 flex items-start gap-2.5 text-xs text-[#4F6B54]">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <p className="leading-relaxed font-medium">
             Cảm ơn tấm lòng của bạn! Lời nhắn sẽ hiển thị sau khi đội ngũ Góc Thợ duyệt qua nhé.
@@ -111,12 +111,12 @@ export function WallOfThanksSection({
       {formOpen && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-4 space-y-3"
+          className="rounded-2xl bg-[#F7F2E8]/75 border border-[#E8DFD1] p-4 space-y-3"
         >
           <div>
             <label
               htmlFor="thanks-author"
-              className="block text-xs font-bold text-[#162442] mb-1"
+              className="block text-xs font-bold text-[#25292E] mb-1"
             >
               Tên / Biệt danh (có thể để trống để ẩn danh)
             </label>
@@ -127,7 +127,7 @@ export function WallOfThanksSection({
               onChange={(e) => setAuthor(e.target.value)}
               maxLength={40}
               placeholder="VD: Minh Anh (SV D2), hoặc để trống..."
-              className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs text-[#162442] placeholder:text-[#8A8177] focus:outline-none focus:border-[#1B3B82]"
+              className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-[#E8DFD1] bg-white text-xs text-[#25292E] placeholder:text-[#8E8880] focus:outline-none focus:border-[#D46534]"
             />
           </div>
 
@@ -135,11 +135,11 @@ export function WallOfThanksSection({
             <div className="flex items-center justify-between mb-1">
               <label
                 htmlFor="thanks-message"
-                className="text-xs font-bold text-[#162442]"
+                className="text-xs font-bold text-[#25292E]"
               >
                 Lời nhắn cảm ơn cô chú <span className="text-[#B93818]">*</span>
               </label>
-              <span className="font-mono text-[11px] text-[#8A8177] tabular-nums">
+              <span className="font-mono text-[11px] text-[#8E8880] tabular-nums">
                 {message.length}/{MAX_MESSAGE_LENGTH}
               </span>
             </div>
@@ -154,7 +154,7 @@ export function WallOfThanksSection({
                 if (errorMsg) setErrorMsg('');
               }}
               placeholder="Gửi lời cảm ơn về món đồ cô chú vừa giúp bạn sửa hoặc chúc cô chú thật nhiều sức khỏe..."
-              className="w-full px-3 py-2 rounded-xl border border-[#DFCBB5] bg-white text-xs text-[#162442] placeholder:text-[#8A8177] resize-none focus:outline-none focus:border-[#1B3B82]"
+              className="w-full px-3 py-2 rounded-xl border border-[#E8DFD1] bg-white text-xs text-[#25292E] placeholder:text-[#8E8880] resize-none focus:outline-none focus:border-[#D46534]"
             />
           </div>
 
@@ -163,12 +163,12 @@ export function WallOfThanksSection({
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] text-[#5C564E]">
+            <p className="text-[11px] text-[#615D57]">
               Sẽ hiển thị sau khi đội ngũ Góc Thợ duyệt
             </p>
             <button
               type="submit"
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-[2px_2px_0px_#162442] active:translate-y-0.5 transition-all whitespace-nowrap"
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Gửi lời cảm ơn</span>
@@ -179,9 +179,9 @@ export function WallOfThanksSection({
 
       {/* Danh sách các tấm thẻ giấy ghi chú (note card) màu giấy kem ấm */}
       {approvedNotes.length === 0 ? (
-        <div className="rounded-2xl bg-[#FDF8F2] border border-dashed border-[#D8C3AE] p-4 text-center space-y-1">
-          <HeartHandshake className="w-5 h-5 text-[#E86F2C]/75 mx-auto" />
-          <p className="text-xs text-[#5C564E]">
+        <div className="rounded-2xl bg-[#F7F2E8]/75 border border-dashed border-[#DDD2C2] p-5 text-center space-y-1.5">
+          <HeartHandshake className="w-5 h-5 text-[#D46534]/75 mx-auto" />
+          <p className="text-xs text-[#615D57]">
             Chưa có tấm thiệp lưu bút nào. Hãy là người đầu tiên gửi lời cảm ơn tới cô chú nhé!
           </p>
         </div>
@@ -190,21 +190,21 @@ export function WallOfThanksSection({
           {approvedNotes.map((note) => (
             <article
               key={note.id}
-              className="relative rounded-2xl bg-[#FDF8F2] border border-[#E6D5C3] p-3.5 space-y-2"
+              className="relative rounded-2xl bg-[#F7F2E8]/85 border border-[#E8DFD1] p-4 space-y-2"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#162442]">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#25292E]">
                   <span
                     className="w-2 h-2 rounded-full bg-[#B93818]"
                     aria-hidden="true"
                   />
                   {note.author}
                 </span>
-                <span className="font-mono text-[10px] text-[#8A8177] tabular-nums">
+                <span className="font-mono text-[10px] text-[#8E8880] tabular-nums">
                   {note.createdAt}
                 </span>
               </div>
-              <p className="text-xs text-[#5C564E] leading-relaxed italic">
+              <p className="font-serif-editorial text-sm text-[#494540] leading-relaxed italic">
                 &ldquo;{note.message}&rdquo;
               </p>
             </article>

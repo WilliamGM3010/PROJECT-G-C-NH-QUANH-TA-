@@ -1,17 +1,30 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  ArrowRight,
   ArrowUpRight,
   ChevronDown,
+  Compass,
+  Footprints,
+  KeyRound,
   Loader2,
   LocateFixed,
+  MapPin,
+  PlusCircle,
   RefreshCw,
+  Scissors,
   Search,
+  ShoppingBag,
   Tag,
+  Watch,
   WifiOff,
+  Wrench,
   X,
 } from 'lucide-react';
 import { DISTRICTS } from '../data/artisans';
+import { GTQT_COVER_SRC } from '../data/team';
 import type {
+  AppTab,
+  Article,
   Artisan,
   CraftCategory,
   District,
@@ -23,49 +36,59 @@ import {
   formatCompactDistance,
   normalizeVietnamese,
 } from '../utils/geo';
+import { sanitizeImageSrc } from '../utils/richText';
+import { ArtisanIllustration } from './ArtisanIllustration';
+import { HomeMiniMap } from './HomeMiniMap';
 import { PriceComparisonModal } from './PriceComparisonModal';
 
-interface MinimalProblemChip {
+interface ServiceCategoryItem {
   id: string;
   label: string;
+  Icon: typeof Wrench;
   categories?: CraftCategory[];
   keywords?: string[];
 }
 
-const MINIMAL_PROBLEM_CHIPS: MinimalProblemChip[] = [
+const SERVICE_CATEGORY_ITEMS: ServiceCategoryItem[] = [
   {
     id: 'shoes',
     label: 'Giày dép',
+    Icon: Footprints,
     categories: ['Sửa giày dép'],
     keywords: ['giay', 'dep', 'bung de', 'bung keo', 'ho keo', 'khau de', 'got'],
   },
   {
     id: 'tailor',
-    label: 'May vá / Dây kéo',
+    label: 'Quần áo / May vá',
+    Icon: Scissors,
     categories: ['May vá'],
     keywords: ['day keo', 'may va', 'len lai', 'bop eo', 'quan', 'ao', 'va'],
   },
   {
     id: 'lock',
-    label: 'Sửa khóa',
+    label: 'Chìa khóa',
+    Icon: KeyRound,
     categories: ['Sửa khóa'],
     keywords: ['khoa', 'chia', 'o khoa', 'smartkey', 'ket'],
   },
   {
     id: 'watch',
     label: 'Đồng hồ',
+    Icon: Watch,
     categories: ['Sửa đồng hồ'],
     keywords: ['dong ho', 'thay pin', 'day da', 'cat mat'],
   },
   {
     id: 'bag',
-    label: 'Túi / Balo',
+    label: 'Balo / Túi xách',
+    Icon: ShoppingBag,
     categories: ['Sửa balo/túi'],
     keywords: ['balo', 'tui', 'vali', 'quai deo', 'khoa keo'],
   },
   {
     id: 'electronics',
-    label: 'Đồ điện',
+    label: 'Đồ điện & Khác',
+    Icon: Wrench,
     keywords: [
       'do dien',
       'quat',
@@ -78,8 +101,32 @@ const MINIMAL_PROBLEM_CHIPS: MinimalProblemChip[] = [
   },
 ];
 
+function matchesServiceCategory(
+  artisan: Artisan,
+  item: ServiceCategoryItem
+): boolean {
+  const categoryMatch =
+    item.categories?.some((cat) => artisan.categories.includes(cat)) ?? false;
+  if (categoryMatch) return true;
+
+  const searchable = normalizeVietnamese(
+    [
+      artisan.name,
+      artisan.shortTitle,
+      ...artisan.categories,
+      ...artisan.problems,
+      ...artisan.prices.map((p) => p.service),
+      artisan.story,
+    ].join(' ')
+  );
+
+  return item.keywords?.some((kw) => searchable.includes(kw)) ?? false;
+}
+
 interface HomeDiscoveryViewProps {
   artisans: Artisan[];
+  articles: Article[];
+  revivedCount: number;
   isLoading: boolean;
   dbError: string | null;
   gpsStatus: GpsPermissionStatus;
@@ -90,13 +137,17 @@ interface HomeDiscoveryViewProps {
   onSelectedDistrictChange: (district: District | 'Tất cả khu vực') => void;
   onRequestGps: () => void;
   onRetryLoad: () => void;
+  onOpenArtisanProfile: (artisan: Artisan) => void;
   onSelectArtisanOnMap: (artisan: Artisan) => void;
   onOpenFullMap: () => void;
-  onRequestSuggest: () => void;
+  onOpenArticle: (articleId: string) => void;
+  onNavigateTab: (tab: AppTab) => void;
 }
 
 export function HomeDiscoveryView({
   artisans,
+  articles,
+  revivedCount,
   isLoading,
   dbError,
   gpsStatus,
@@ -107,39 +158,55 @@ export function HomeDiscoveryView({
   onSelectedDistrictChange,
   onRequestGps,
   onRetryLoad,
+  onOpenArtisanProfile,
   onSelectArtisanOnMap,
   onOpenFullMap,
-  onRequestSuggest,
+  onOpenArticle,
+  onNavigateTab,
 }: HomeDiscoveryViewProps) {
-  const [selectedChipId, setSelectedChipId] = useState<string | null>(null);
+  const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const resultsSectionRef = useRef<HTMLElement | null>(null);
 
   const hasRealGps =
     gpsStatus === 'granted' && userLocation?.source === 'gps';
 
+  const visiblePublicArtisans = useMemo(
+    () =>
+      artisans.filter((a) => !a.isHidden && a.approvalStatus !== 'pending'),
+    [artisans]
+  );
+
   const availableDistricts = useMemo(() => {
     const set = new Set<string>(DISTRICTS);
-    for (const a of artisans) {
+    for (const a of visiblePublicArtisans) {
       if (a.district) set.add(a.district);
     }
     return Array.from(set);
-  }, [artisans]);
+  }, [visiblePublicArtisans]);
 
-  const activeChip = useMemo(
+  const categoryCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of SERVICE_CATEGORY_ITEMS) {
+      map[item.id] = visiblePublicArtisans.filter((a) =>
+        matchesServiceCategory(a, item)
+      ).length;
+    }
+    return map;
+  }, [visiblePublicArtisans]);
+
+  const activeCategory = useMemo(
     () =>
-      selectedChipId
-        ? (MINIMAL_PROBLEM_CHIPS.find((c) => c.id === selectedChipId) ?? null)
+      selectedCatId
+        ? (SERVICE_CATEGORY_ITEMS.find((c) => c.id === selectedCatId) ?? null)
         : null,
-    [selectedChipId]
+    [selectedCatId]
   );
 
   const suggestedArtisans = useMemo(() => {
     const queryNorm = normalizeVietnamese(searchQuery);
 
-    const matched = artisans.filter((artisan) => {
-      if (artisan.isHidden) return false;
-      if (artisan.approvalStatus === 'pending') return false;
-
+    const matched = visiblePublicArtisans.filter((artisan) => {
       if (
         selectedDistrict !== 'Tất cả khu vực' &&
         artisan.district !== selectedDistrict
@@ -147,30 +214,8 @@ export function HomeDiscoveryView({
         return false;
       }
 
-      if (activeChip) {
-        const categoryMatch =
-          activeChip.categories?.some((cat) =>
-            artisan.categories.includes(cat)
-          ) ?? false;
-
-        const searchableChipText = normalizeVietnamese(
-          [
-            artisan.name,
-            artisan.shortTitle,
-            ...artisan.categories,
-            ...artisan.problems,
-            ...artisan.prices.map((p) => p.service),
-            artisan.story,
-          ].join(' ')
-        );
-
-        const keywordMatch =
-          activeChip.keywords?.some((kw) => searchableChipText.includes(kw)) ??
-          false;
-
-        if (!categoryMatch && !keywordMatch) {
-          return false;
-        }
+      if (activeCategory && !matchesServiceCategory(artisan, activeCategory)) {
+        return false;
       }
 
       if (queryNorm.length > 0) {
@@ -215,379 +260,736 @@ export function HomeDiscoveryView({
 
     return enriched;
   }, [
-    artisans,
+    visiblePublicArtisans,
     searchQuery,
     selectedDistrict,
-    activeChip,
+    activeCategory,
     hasRealGps,
     userLocation,
   ]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
-    selectedChipId !== null ||
+    selectedCatId !== null ||
     selectedDistrict !== 'Tất cả khu vực';
+
+  const displayedArtisans = hasActiveFilters
+    ? suggestedArtisans
+    : suggestedArtisans.slice(0, 3);
+  const remainingCount = Math.max(0, suggestedArtisans.length - 3);
 
   const handleResetFilters = () => {
     onSearchQueryChange('');
-    setSelectedChipId(null);
+    setSelectedCatId(null);
     onSelectedDistrictChange('Tất cả khu vực');
+  };
+
+  const handleSearchSubmit = () => {
+    resultsSectionRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
   const sectionTitle = useMemo(() => {
     const trimmed = searchQuery.trim();
     if (trimmed) return `Kết quả cho "${trimmed}"`;
-    if (activeChip) return `Kết quả cho ${activeChip.label}`;
-    if (selectedDistrict !== 'Tất cả khu vực') return `Tại ${selectedDistrict}`;
-    if (hasRealGps) return 'Gần bạn nhất';
-    return 'Góc thợ quanh TP.HCM';
-  }, [searchQuery, activeChip, selectedDistrict, hasRealGps]);
+    if (activeCategory) return `Góc thợ ${activeCategory.label.toLowerCase()}`;
+    if (selectedDistrict !== 'Tất cả khu vực')
+      return `Góc thợ tại ${selectedDistrict}`;
+    if (hasRealGps) return 'Góc thợ gần bạn nhất';
+    return 'Góc thợ tiêu biểu quanh Sài Gòn';
+  }, [searchQuery, activeCategory, selectedDistrict, hasRealGps]);
+
+  // 2 câu chuyện biên tập nổi bật (ưu tiên bài viết Bản tin đã xuất bản, fallback sang câu chuyện cô chú thợ)
+  const editorialStories = useMemo(() => {
+    const published = articles.filter((a) => a.status === 'published');
+    if (published.length >= 2) {
+      return published.slice(0, 2).map((article) => ({
+        kind: 'article' as const,
+        id: article.id,
+        kicker: article.category,
+        date: article.publishedAt,
+        title: article.title,
+        excerpt: article.subtitle,
+        imageUrl: sanitizeImageSrc(article.imageUrl),
+        article,
+      }));
+    }
+
+    const fromArticles = published.map((article) => ({
+      kind: 'article' as const,
+      id: article.id,
+      kicker: article.category,
+      date: article.publishedAt,
+      title: article.title,
+      excerpt: article.subtitle,
+      imageUrl: sanitizeImageSrc(article.imageUrl),
+      article,
+    }));
+
+    const fromArtisans = visiblePublicArtisans
+      .filter((a) => a.story && a.story.trim().length > 20)
+      .slice(0, 2 - fromArticles.length)
+      .map((artisan) => ({
+        kind: 'artisan' as const,
+        id: artisan.id,
+        kicker: artisan.categories[0] ?? 'Chuyện nghề',
+        date: artisan.district,
+        title: artisan.name,
+        excerpt: artisan.story,
+        imageUrl: artisan.hidePortrait ? undefined : artisan.customImageUrl,
+        artisan,
+      }));
+
+    return [...fromArticles, ...fromArtisans];
+  }, [articles, visiblePublicArtisans]);
 
   return (
-    <div className="bg-[#FDF8F2] px-4 sm:px-6 pb-14 lg:pb-16">
-      {/* Khu vực tìm kiếm siêu tối giản (1 cột căn giữa, khoảng trắng thoáng) */}
-      <section className="max-w-2xl mx-auto pt-10 sm:pt-20 pb-8 sm:pb-10">
-        {/* Tiêu đề duy nhất với font display ấm áp, sắc nét */}
-        <h1 className="font-display text-center text-2xl sm:text-[38px] font-extrabold text-[#162442] tracking-tight leading-tight mb-6 sm:mb-8">
-          Bạn đang cần sửa gì hôm nay?
-        </h1>
+    <div className="bg-[#F7F2E8] text-[#25292E]">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10 md:py-16 space-y-20 md:space-y-28">
+        {/* ============================================================
+            1. HERO EDITORIAL — 2 CỘT THOÁNG SẠCH
+           ============================================================ */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          {/* Cột trái (7 cột): 4 tầng nội dung tinh gọn */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="space-y-3.5">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-[#D46534]">
+                THE NEIGHBORHOOD CRAFT · SÀI GÒN
+              </p>
 
-        {/* Thanh tìm kiếm trung tâm viền xanh chàm & bóng cứng khi focus */}
-        <div className="rounded-2xl bg-white border-[1.5px] border-[#1B3B82]/25 shadow-[0_2px_10px_rgba(22,36,66,0.03)] focus-within:border-[#1B3B82] focus-within:shadow-[4px_4px_0px_#1B3B82] transition-all duration-200">
-          <div className="flex items-center gap-2 pl-4 pr-2.5 h-14 sm:h-15">
-            <Search className="w-5 h-5 text-[#1B3B82]/70 shrink-0 pointer-events-none" />
-
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              placeholder="VD: hở keo giày, hư dây kéo, sửa khóa..."
-              aria-label="Tìm lỗi hỏng cần sửa"
-              className="flex-1 min-w-0 h-full bg-transparent text-sm sm:text-[15px] text-[#162442] placeholder:text-[#8E8579] focus:outline-none"
-            />
-
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => onSearchQueryChange('')}
-                aria-label="Xóa từ khóa tìm kiếm"
-                className="w-7 h-7 rounded-full text-[#5C564E] hover:text-[#162442] hover:bg-[#FDF8F2] flex items-center justify-center shrink-0 transition-colors"
+              <h1
+                className="font-display text-3xl sm:text-4xl lg:text-[46px] font-extrabold text-[#25292E] tracking-tight leading-[1.14]"
+                style={{ textWrap: 'balance' }}
               >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+                Tìm lại những góc nghề bình dị ngay quanh bạn.
+              </h1>
 
-            {/* 1 nhãn GPS / Quận siêu gọn tích hợp ngay góc phải thanh tìm kiếm */}
-            <div className="hidden sm:flex items-center shrink-0 pl-2 border-l border-dashed border-[#DFCBB5]">
-              {gpsStatus === 'locating' ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FDF8F2] border border-[#E6D5C3] text-[11.5px] font-medium text-[#5C564E] whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#E86F2C] animate-pulse" />
-                  <span>Đang định vị...</span>
-                </span>
-              ) : hasRealGps ? (
-                <button
-                  type="button"
-                  onClick={onRequestGps}
-                  title="Bấm để định vị lại GPS"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EEF2FA] hover:bg-[#1B3B82]/14 border border-[#1B3B82]/20 text-[11.5px] font-semibold text-[#1B3B82] whitespace-nowrap transition-colors"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
-                  <span>Gần bạn</span>
-                </button>
-              ) : (
-                <div className="inline-flex items-center gap-1">
-                  <div className="relative flex items-center">
-                    <select
-                      aria-label="Chọn quận"
-                      value={selectedDistrict}
-                      onChange={(e) =>
-                        onSelectedDistrictChange(
-                          e.target.value as District | 'Tất cả khu vực'
-                        )
-                      }
-                      className="appearance-none h-8 pl-2.5 pr-6 rounded-full bg-[#FDF8F2] hover:bg-[#F3ECE2] border border-[#E6D5C3] text-[11.5px] font-medium text-[#162442] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B3B82]/30 transition-colors"
+              <p className="font-serif-editorial italic text-base sm:text-lg text-[#615D57] leading-relaxed">
+                Hỏng đâu sửa liền — Thợ giỏi gần bên.
+              </p>
+            </div>
+
+            {/* Thanh tìm kiếm trung tâm gọn gàng tích hợp GPS / Quận + nút Tìm ngay */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearchSubmit();
+              }}
+              className="rounded-2xl bg-white border border-[#E8DFD1] shadow-[0_8px_28px_rgba(37,41,46,0.06)] focus-within:border-[#1B3B82] focus-within:ring-2 focus-within:ring-[#1B3B82]/12 p-2 transition-all"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0 pl-2.5 pr-1">
+                  <Search className="w-4.5 h-4.5 text-[#1B3B82]/75 shrink-0 pointer-events-none" />
+                  <input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => onSearchQueryChange(e.target.value)}
+                    placeholder="VD: hở keo giày, lên lai quần, sửa khóa..."
+                    aria-label="Tìm lỗi hỏng cần sửa"
+                    className="flex-1 min-w-0 h-11 bg-transparent text-sm sm:text-[15px] text-[#25292E] placeholder:text-[#8E877E] focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => onSearchQueryChange('')}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                      className="w-7 h-7 rounded-full text-[#615D57] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center shrink-0"
                     >
-                      <option value="Tất cả khu vực">Tất cả quận</option>
-                      {availableDistricts.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3 h-3 text-[#5C564E] absolute right-2 pointer-events-none" />
-                  </div>
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-2 pt-1.5 sm:pt-0 border-t sm:border-t-0 sm:border-l border-dashed border-[#E8DFD1] sm:pl-2.5">
+                  {gpsStatus === 'locating' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F7F2E8] text-xs font-medium text-[#615D57] whitespace-nowrap">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#D46534]" />
+                      <span>Định vị...</span>
+                    </span>
+                  ) : hasRealGps ? (
+                    <button
+                      type="button"
+                      onClick={onRequestGps}
+                      title="Bấm để định vị lại GPS"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#EDF3EE] text-xs font-semibold text-[#4F6B54] hover:bg-[#4F6B54]/15 whitespace-nowrap transition-colors"
+                    >
+                      <LocateFixed className="w-3.5 h-3.5" />
+                      <span>Gần bạn</span>
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-1">
+                      <div className="relative flex items-center">
+                        <select
+                          aria-label="Chọn khu vực"
+                          value={selectedDistrict}
+                          onChange={(e) =>
+                            onSelectedDistrictChange(
+                              e.target.value as District | 'Tất cả khu vực'
+                            )
+                          }
+                          className="appearance-none h-9 pl-2.5 pr-6 rounded-xl bg-[#F7F2E8] hover:bg-[#EFE7D8] text-xs font-medium text-[#25292E] cursor-pointer focus:outline-none"
+                        >
+                          <option value="Tất cả khu vực">Tất cả quận</option>
+                          {availableDistricts.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-[#615D57] absolute right-2 pointer-events-none" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onRequestGps}
+                        title="Bật định vị GPS"
+                        aria-label="Bật định vị GPS"
+                        className="w-9 h-9 rounded-xl text-[#1B3B82] hover:bg-[#EEF2FA] flex items-center justify-center shrink-0 transition-colors"
+                      >
+                        <LocateFixed className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
 
                   <button
-                    type="button"
-                    onClick={onRequestGps}
-                    title="Bật định vị GPS"
-                    className="h-8 px-2.5 rounded-full text-[11.5px] font-semibold text-[#1B3B82] hover:bg-[#EEF2FA] inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+                    type="submit"
+                    className="min-h-[42px] px-5 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-colors"
                   >
-                    <LocateFixed className="w-3.5 h-3.5" />
-                    <span>Bật GPS</span>
+                    Tìm ngay
                   </button>
                 </div>
-              )}
+              </div>
+            </form>
+
+            {/* 1 dòng tiện ích tinh gọn */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-[13px] text-[#615D57]">
+              <button
+                type="button"
+                onClick={() => setPriceModalOpen(true)}
+                className="inline-flex items-center gap-1.5 font-semibold text-[#615D57] hover:text-[#D46534] transition-colors py-1"
+              >
+                <Tag className="w-3.5 h-3.5 text-[#D46534]" />
+                <span>So sánh giá sửa vs mua mới</span>
+              </button>
+
+              <span className="text-[#D9CBB8] select-none" aria-hidden="true">
+                ·
+              </span>
+
+              <button
+                type="button"
+                onClick={onOpenFullMap}
+                className="inline-flex items-center gap-1 font-semibold text-[#1B3B82] hover:text-[#D46534] transition-colors py-1"
+              >
+                <span>Mở bản đồ</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Dòng GPS siêu gọn cho màn hình điện thoại nhỏ */}
-        <div className="sm:hidden mt-2.5 flex items-center justify-center gap-2 text-xs">
-          {gpsStatus === 'locating' ? (
-            <span className="inline-flex items-center gap-1.5 text-[#5C564E]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E86F2C] animate-pulse" />
-              <span>Đang định vị...</span>
-            </span>
-          ) : hasRealGps ? (
-            <button
-              type="button"
-              onClick={onRequestGps}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EEF2FA] border border-[#1B3B82]/20 text-[#1B3B82] font-semibold"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
-              <span>Gần bạn</span>
-            </button>
-          ) : (
-            <>
-              <div className="relative inline-flex items-center">
-                <select
-                  aria-label="Chọn quận"
-                  value={selectedDistrict}
-                  onChange={(e) =>
-                    onSelectedDistrictChange(
-                      e.target.value as District | 'Tất cả khu vực'
-                    )
-                  }
-                  className="appearance-none h-7 pl-2.5 pr-6 rounded-full bg-white border border-[#E6D5C3] text-xs font-medium text-[#162442] focus:outline-none focus:border-[#1B3B82]"
-                >
-                  <option value="Tất cả khu vực">Tất cả quận</option>
-                  {availableDistricts.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#5C564E] absolute right-2 pointer-events-none" />
+          {/* Cột phải (5 cột): Ảnh bìa gốc sạch sẽ + 1 dải số liệu live tinh tế ở cạnh dưới */}
+          <div className="lg:col-span-5">
+            <div className="rounded-3xl bg-white border border-[#E8DFD1] p-2.5 shadow-[0_14px_38px_rgba(37,41,46,0.07)]">
+              <div className="rounded-2xl overflow-hidden bg-[#F7F2E8]">
+                <img
+                  src={GTQT_COVER_SRC}
+                  alt="Góc Thợ Quanh Ta — Hỏng đâu sửa liền, thợ giỏi gần bên"
+                  className="w-full h-auto block object-cover"
+                />
               </div>
 
-              <button
-                type="button"
-                onClick={onRequestGps}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#1B3B82] px-2.5 py-1 rounded-full hover:bg-[#EEF2FA]"
-              >
-                <LocateFixed className="w-3.5 h-3.5" />
-                <span>Bật GPS</span>
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Hàng chọn nhanh lỗi (Craft Chips — nền trắng viền cát, active Xanh Chàm + bóng cam) */}
-        <div
-          role="group"
-          aria-label="Chọn nhanh lỗi cần sửa"
-          className="mt-4 flex flex-wrap items-center justify-center gap-2"
-        >
-          {MINIMAL_PROBLEM_CHIPS.map((chip) => {
-            const isActive = selectedChipId === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() =>
-                  setSelectedChipId((prev) =>
-                    prev === chip.id ? null : chip.id
-                  )
-                }
-                className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold transition-all whitespace-nowrap border ${
-                  isActive
-                    ? 'bg-[#1B3B82] text-[#FDF8F2] border-[#162442] shadow-[2px_2px_0px_#E86F2C]'
-                    : 'bg-white text-[#5C564E] border-[#E6D5C3] hover:border-[#1B3B82]/50 hover:text-[#162442]'
-                }`}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Thanh tiện ích siêu gọn — 1 dòng duy nhất */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs sm:text-[13px] text-[#5C564E]">
-          <button
-            type="button"
-            onClick={() => setPriceModalOpen(true)}
-            className="inline-flex items-center gap-1.5 font-semibold text-[#5C564E] hover:text-[#E86F2C] transition-colors py-1"
-          >
-            <Tag className="w-3.5 h-3.5 text-[#E86F2C]" />
-            <span>So sánh giá tiết kiệm</span>
-          </button>
-
-          <span className="text-[#D8C3AE] select-none" aria-hidden="true">
-            ·
-          </span>
-
-          <button
-            type="button"
-            onClick={onOpenFullMap}
-            className="inline-flex items-center gap-1 font-semibold text-[#5C564E] hover:text-[#1B3B82] transition-colors py-1"
-          >
-            <span>Mở toàn bộ bản đồ</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-[#1B3B82]" />
-          </button>
-        </div>
-      </section>
-
-      {/* Danh sách gợi ý cô chú thợ dạng Phiếu Góc Thợ (Repair Ticket Card) */}
-      <section className="max-w-2xl mx-auto pt-4 sm:pt-6 space-y-3.5">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <h2 className="font-display text-sm sm:text-base font-bold text-[#162442] flex items-center gap-2">
-            <span>{sectionTitle}</span>
-            {!isLoading && !dbError && (
-              <span className="font-mono text-xs font-semibold text-[#5C564E] tabular-nums">
-                · {suggestedArtisans.length}
-              </span>
-            )}
-          </h2>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="text-xs font-semibold text-[#B93818] hover:underline"
-            >
-              Xóa lọc
-            </button>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-2 text-[#5C564E]">
-            <Loader2 className="w-5 h-5 text-[#1B3B82] animate-spin" />
-            <p className="text-xs">Đang tải danh sách cô chú thợ...</p>
-          </div>
-        ) : dbError ? (
-          <div
-            role="alert"
-            className="rounded-2xl bg-white border border-[#B93818]/30 p-6 text-center space-y-3"
-          >
-            <WifiOff className="w-6 h-6 text-[#B93818] mx-auto" />
-            <p className="text-xs text-[#7F240E] leading-relaxed">{dbError}</p>
-            <button
-              type="button"
-              onClick={onRetryLoad}
-              className="min-h-[38px] inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#B93818] hover:bg-[#9C2E13] text-[#FDF8F2] text-xs font-semibold transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Thử tải lại</span>
-            </button>
-          </div>
-        ) : suggestedArtisans.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-[#E6D5C3] px-6 py-10 text-center space-y-3">
-            <p className="font-display text-base font-bold text-[#162442]">
-              Chưa tìm thấy cô chú thợ phù hợp
-            </p>
-            <p className="text-xs text-[#5C564E]">
-              Thử từ khóa khác ngắn hơn, hoặc gợi ý cô chú thợ quen gần bạn.
-            </p>
-            <div className="flex items-center justify-center gap-3 pt-1 text-xs">
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="px-4 py-2 rounded-full bg-[#1B3B82] text-[#FDF8F2] border-[1.5px] border-[#162442] shadow-[2px_2px_0px_#E86F2C] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none font-semibold transition-all"
-                >
-                  Xem tất cả
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={onRequestSuggest}
-                className="px-4 py-2 rounded-full border border-[#E6D5C3] bg-white text-[#162442] font-semibold hover:border-[#E86F2C] hover:text-[#E86F2C] transition-colors"
-              >
-                Gợi ý thợ mới
-              </button>
+              <div className="mt-2.5 px-3 py-2.5 rounded-xl bg-[#F7F2E8]/85 flex flex-wrap items-center justify-between gap-2 text-xs text-[#615D57]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-[#1B3B82] tabular-nums">
+                    {visiblePublicArtisans.length}
+                  </span>
+                  <span>góc thợ đã xác thực</span>
+                </span>
+                <span className="text-[#D9CBB8]" aria-hidden="true">
+                  ·
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-[#4F6B54] tabular-nums">
+                    {revivedCount}
+                  </span>
+                  <span>món đồ hồi sinh</span>
+                </span>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {suggestedArtisans.map(({ artisan, distanceKm }) => {
-              const isWorking = artisan.status === 'working';
-              const showShortTitle =
-                Boolean(artisan.shortTitle) &&
-                !normalizeVietnamese(artisan.name).includes(
-                  normalizeVietnamese(artisan.shortTitle)
-                );
+        </section>
 
+        {/* ============================================================
+            2. DẢI 6 NHÓM NGHỀ SỬA CHỮA (CÓ SỐ LƯỢNG LIVE TỪ SUPABASE)
+           ============================================================ */}
+        <section aria-label="Nhóm nghề sửa chữa" className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#615D57]">
+              Chọn nhanh theo món đồ cần sửa
+            </h2>
+            {selectedCatId && (
+              <button
+                type="button"
+                onClick={() => setSelectedCatId(null)}
+                className="text-xs font-semibold text-[#B93818] hover:underline"
+              >
+                Bỏ chọn
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 lg:grid lg:grid-cols-6">
+            {SERVICE_CATEGORY_ITEMS.map((item) => {
+              const isActive = selectedCatId === item.id;
+              const count = categoryCounts[item.id] ?? 0;
+              const Icon = item.Icon;
               return (
                 <button
-                  key={artisan.id}
+                  key={item.id}
                   type="button"
-                  onClick={() => onSelectArtisanOnMap(artisan)}
-                  className="group w-full text-left rounded-2xl bg-white border border-[#E6D5C3] hover:border-[#1B3B82] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1B3B82] px-4 sm:px-5 py-4 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
+                  aria-pressed={isActive}
+                  onClick={() =>
+                    setSelectedCatId((prev) =>
+                      prev === item.id ? null : item.id
+                    )
+                  }
+                  className={`min-w-[144px] lg:min-w-0 rounded-2xl px-4 py-3.5 text-left border transition-all duration-200 flex items-center lg:flex-col lg:items-start gap-3 shrink-0 ${
+                    isActive
+                      ? 'bg-[#1B3B82] border-[#1B3B82] text-[#F7F2E8] shadow-[0_8px_20px_rgba(27,59,130,0.2)]'
+                      : 'bg-white border-[#E8DFD1] text-[#25292E] hover:border-[#D46534]/55 hover:-translate-y-0.5 hover:shadow-xs'
+                  }`}
                 >
-                  {/* Phần thân phiếu: Tên + nghề ngắn | Khoảng cách & Con dấu mực Đang làm việc */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <span className="font-display text-[16px] font-bold text-[#162442] group-hover:text-[#1B3B82] transition-colors">
-                          {artisan.name}
-                        </span>
-                        {showShortTitle && (
-                          <span className="text-xs text-[#5C564E] font-normal">
-                            {' · '}
-                            {artisan.shortTitle}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {distanceKm !== null && (
-                          <span className="font-mono text-xs font-semibold text-[#1B3B82] tabular-nums whitespace-nowrap">
-                            {formatCompactDistance(distanceKm)}
-                          </span>
-                        )}
-                        {isWorking && (
-                          <span className="-rotate-2 inline-flex items-center gap-1 border border-[#15803D]/50 text-[#15803D] bg-[#15803D]/5 px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wider rounded whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
-                            Đang mở
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Mốc địa chỉ gọn 1 dòng */}
-                    <p className="text-xs sm:text-[13px] text-[#5C564E] truncate">
-                      {artisan.addressLandmark}
-                      {artisan.district ? ` · ${artisan.district}` : ''}
+                  <span
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      isActive
+                        ? 'bg-white/15 text-[#F7F2E8]'
+                        : 'bg-[#F7F2E8] text-[#D46534]'
+                    }`}
+                  >
+                    <Icon className="w-4.5 h-4.5" strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-[13px] font-bold leading-snug truncate">
+                      {item.label}
                     </p>
-                  </div>
-
-                  {/* Cuống phiếu (Ticket Stub) tách bằng đường chỉ đứt nét */}
-                  <div className="mt-3 pt-2.5 border-t border-dashed border-[#DFCBB5] flex items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2 min-w-0 truncate">
-                      <span className="font-mono font-bold text-[#E86F2C] tabular-nums whitespace-nowrap">
-                        {artisan.minPriceLabel}
-                      </span>
-                      <span className="text-[#D8C3AE]" aria-hidden="true">
-                        ·
-                      </span>
-                      <span className="text-[#5C564E] truncate">
-                        {artisan.paymentMethod}
-                      </span>
-                    </div>
-
-                    <span className="text-[#1B3B82] group-hover:text-[#E86F2C] font-semibold whitespace-nowrap shrink-0 transition-colors">
-                      Xem bản đồ →
-                    </span>
+                    <p
+                      className={`font-mono text-[11px] mt-0.5 tabular-nums ${
+                        isActive ? 'text-[#F7F2E8]/80' : 'text-[#615D57]'
+                      }`}
+                    >
+                      {count} góc thợ
+                    </p>
                   </div>
                 </button>
               );
             })}
           </div>
+        </section>
+
+        {/* ============================================================
+            3. GÓC THỢ GẦN BẠN (SMART DENSITY: MẶC ĐỊNH TỐI ĐA 3 THẺ THOÁNG)
+           ============================================================ */}
+        <section
+          ref={resultsSectionRef}
+          aria-label="Danh sách góc thợ gần bạn"
+          className="scroll-mt-20 space-y-7"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-dashed border-[#DFD3C2] pb-4">
+            <div className="space-y-1">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.15em] text-[#D46534]">
+                Khám phá thực tế
+              </p>
+              <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#25292E] tracking-tight">
+                {sectionTitle}
+                {!isLoading && !dbError && (
+                  <span className="ml-2 font-mono text-base font-semibold text-[#615D57] tabular-nums">
+                    ({suggestedArtisans.length})
+                  </span>
+                )}
+              </h2>
+            </div>
+
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="self-start sm:self-auto text-xs sm:text-sm font-semibold text-[#B93818] hover:underline"
+              >
+                Xóa lọc
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenFullMap}
+                className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#1B3B82] hover:text-[#D46534] transition-colors whitespace-nowrap"
+              >
+                <span>Xem toàn bộ bản đồ</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {isLoading ? (
+            <div className="py-14 rounded-3xl bg-white border border-[#E8DFD1] flex flex-col items-center justify-center gap-2.5 text-[#615D57]">
+              <Loader2 className="w-6 h-6 text-[#1B3B82] animate-spin" />
+              <p className="text-sm font-medium">
+                Đang tải danh sách cô chú thợ...
+              </p>
+            </div>
+          ) : dbError ? (
+            <div
+              role="alert"
+              className="rounded-3xl bg-white border border-[#B93818]/25 p-8 text-center space-y-3"
+            >
+              <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
+              <p className="text-sm text-[#7F240E] max-w-md mx-auto leading-relaxed">
+                {dbError}
+              </p>
+              <button
+                type="button"
+                onClick={onRetryLoad}
+                className="min-h-[40px] inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-[#B93818] hover:bg-[#9C2E13] text-[#F7F2E8] text-xs font-semibold transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Thử tải lại</span>
+              </button>
+            </div>
+          ) : displayedArtisans.length === 0 ? (
+            <div className="rounded-3xl bg-white border border-[#E8DFD1] px-6 py-12 text-center space-y-3.5">
+              <p className="font-display text-lg font-bold text-[#25292E]">
+                Chưa tìm thấy cô chú thợ phù hợp
+              </p>
+              <p className="text-sm text-[#615D57] max-w-md mx-auto">
+                Hãy thử từ khóa ngắn hơn hoặc giới thiệu cho chúng mình một góc
+                thợ quen gần bạn nhé.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="min-h-[40px] px-5 py-2 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-white text-xs sm:text-sm font-bold transition-colors"
+                  >
+                    Xem tất cả
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('community')}
+                  className="min-h-[40px] px-5 py-2 rounded-full border border-[#E8DFD1] bg-white text-[#25292E] hover:border-[#D46534] hover:text-[#D46534] text-xs sm:text-sm font-semibold transition-colors"
+                >
+                  Đề xuất góc thợ mới
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
+                {displayedArtisans.map(({ artisan, distanceKm }) => {
+                  const isWorking = artisan.status === 'working';
+                  return (
+                    <article
+                      key={artisan.id}
+                      onClick={() => onOpenArtisanProfile(artisan)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onOpenArtisanProfile(artisan);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      className="group rounded-3xl bg-white border border-[#E8DFD1] hover:border-[#1B3B82]/45 hover:-translate-y-1 hover:shadow-[0_14px_32px_rgba(37,41,46,0.08)] p-5 flex flex-col gap-4 transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
+                    >
+                      {/* Ảnh góc nghề 4:3 tôn trọng hidePortrait */}
+                      <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-[#EFE8DC]">
+                        <ArtisanIllustration
+                          variant={artisan.illustrationVariant}
+                          customImageUrl={
+                            artisan.hidePortrait
+                              ? undefined
+                              : artisan.customImageUrl
+                          }
+                          alt={`Góc nghề của ${artisan.name}`}
+                        />
+                        {isWorking && (
+                          <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-xs text-[#4F6B54] font-mono text-[10.5px] font-bold uppercase tracking-wider shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4F6B54]" />
+                            Đang mở
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Thông tin chính */}
+                      <div className="flex-1 flex flex-col gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[11.5px] font-semibold text-[#1B3B82] truncate">
+                            {artisan.categories.join(' · ')}
+                          </span>
+                          {distanceKm !== null && (
+                            <span className="font-mono text-[11.5px] font-bold text-[#4F6B54] tabular-nums whitespace-nowrap shrink-0">
+                              {formatCompactDistance(distanceKm)}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="font-display text-lg font-bold text-[#25292E] leading-snug group-hover:text-[#1B3B82] transition-colors line-clamp-2">
+                          {artisan.name}
+                        </h3>
+
+                        <p className="text-xs sm:text-[13px] text-[#615D57] flex items-start gap-1.5 line-clamp-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#D46534] shrink-0 mt-0.5" />
+                          <span className="truncate">
+                            {artisan.addressLandmark} · {artisan.district}
+                          </span>
+                        </p>
+
+                        {/* Chân thẻ: Giá tham khảo Terracotta & nút Ghim bản đồ */}
+                        <div className="mt-auto pt-3.5 border-t border-dashed border-[#E8DFD1] flex items-center justify-between gap-2">
+                          <span className="font-mono text-sm font-bold text-[#D46534] tabular-nums">
+                            {artisan.minPriceLabel}
+                          </span>
+
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectArtisanOnMap(artisan);
+                              }}
+                              title="Xem vị trí trên bản đồ"
+                              aria-label={`Xem ${artisan.name} trên bản đồ`}
+                              className="h-8 px-2.5 rounded-xl bg-[#F7F2E8] hover:bg-[#EEF2FA] text-[#1B3B82] text-xs font-semibold inline-flex items-center gap-1 transition-colors"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span>Bản đồ</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              {!hasActiveFilters && remainingCount > 0 && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={onOpenFullMap}
+                    className="min-h-[44px] px-6 py-2.5 rounded-full bg-white hover:bg-[#1B3B82] text-[#25292E] hover:text-[#F7F2E8] border border-[#E8DFD1] hover:border-[#1B3B82] text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all shadow-2xs"
+                  >
+                    <span>Khám phá thêm {remainingCount} góc thợ khác</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* ============================================================
+            4. MINI INTERACTIVE MAP — "QUANH KHU VỰC CỦA BẠN"
+           ============================================================ */}
+        <section
+          aria-label="Bản đồ thu gọn quanh khu vực của bạn"
+          className="rounded-3xl bg-white/80 border border-[#E8DFD1] p-6 md:p-10 shadow-[0_10px_30px_rgba(37,41,46,0.04)]"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 space-y-5">
+              <div className="space-y-2.5">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#1B3B82]">
+                  Bản đồ tương tác
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#25292E] tracking-tight leading-snug">
+                  Quanh khu vực của bạn
+                </h2>
+                <p className="text-sm sm:text-[15px] text-[#615D57] leading-relaxed">
+                  Mỗi chấm nhỏ trên bản đồ là một góc nghề thật tại TP.HCM đã
+                  được đội ngũ khảo sát thực địa, ghi nhận mốc đường và khung
+                  giờ rõ ràng. Bấm trực tiếp vào ghim để xem vị trí chi tiết.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onOpenFullMap}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#1B3B82] hover:bg-[#142D66] text-[#F7F2E8] text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors"
+                >
+                  <Compass className="w-4 h-4" />
+                  <span>Mở bản đồ đầy đủ</span>
+                </button>
+
+                {!hasRealGps && (
+                  <button
+                    type="button"
+                    onClick={onRequestGps}
+                    className="min-h-[44px] px-4 py-2.5 rounded-full bg-[#F7F2E8] hover:bg-[#EFE7D8] border border-[#E8DFD1] text-[#25292E] text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <LocateFixed className="w-4 h-4 text-[#D46534]" />
+                    <span>Định vị gần tôi</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-7">
+              <HomeMiniMap
+                artisans={visiblePublicArtisans}
+                userLocation={userLocation}
+                onSelectArtisan={onSelectArtisanOnMap}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================================
+            5. CHUYỆN NGHỀ GÓC PHỐ (2 CỘT EDITORIAL STORIES)
+           ============================================================ */}
+        {editorialStories.length > 0 && (
+          <section aria-label="Chuyện nghề nổi bật" className="space-y-7">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-dashed border-[#DFD3C2] pb-4">
+              <div className="space-y-1">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#B93818]">
+                  Bản tin &amp; Ký sự
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[#25292E] tracking-tight">
+                  Chuyện nghề bên góc đường
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onNavigateTab('news')}
+                className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#1B3B82] hover:text-[#D46534] transition-colors whitespace-nowrap"
+              >
+                <span>Đọc thêm tại Bản tin</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+              {editorialStories.map((story) => (
+                <article
+                  key={`${story.kind}-${story.id}`}
+                  onClick={() => {
+                    if (story.kind === 'article') {
+                      onOpenArticle(story.article.id);
+                    } else {
+                      onOpenArtisanProfile(story.artisan);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (story.kind === 'article') {
+                        onOpenArticle(story.article.id);
+                      } else {
+                        onOpenArtisanProfile(story.artisan);
+                      }
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="group rounded-3xl bg-white border border-[#E8DFD1] hover:border-[#1B3B82]/45 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(37,41,46,0.07)] overflow-hidden flex flex-col transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82]"
+                >
+                  <div className="aspect-[16/9] w-full bg-[#EFE8DC] overflow-hidden">
+                    {story.imageUrl ? (
+                      <img
+                        src={story.imageUrl}
+                        alt={story.title}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      />
+                    ) : story.kind === 'artisan' ? (
+                      <ArtisanIllustration
+                        variant={story.artisan.illustrationVariant}
+                        alt={story.title}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#F7F2E8] to-[#E8DFD1] flex items-center justify-center text-[#1B3B82]/50 font-serif-editorial italic text-sm px-6 text-center">
+                        Góc Thợ Quanh Ta · Chuyện nghề Sài Gòn
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 flex-1 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 font-mono text-[11px] text-[#615D57]">
+                      <span className="font-bold text-[#D46534] uppercase">
+                        {story.kicker}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>{story.date}</span>
+                    </div>
+
+                    <h3 className="font-serif-editorial text-xl font-semibold text-[#25292E] leading-snug group-hover:text-[#1B3B82] transition-colors line-clamp-2">
+                      {story.title}
+                    </h3>
+
+                    {story.excerpt && (
+                      <p className="font-serif-editorial italic text-sm text-[#615D57] leading-relaxed line-clamp-2">
+                        &ldquo;{story.excerpt}&rdquo;
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-3 border-t border-dashed border-[#E8DFD1] flex justify-end">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1B3B82] group-hover:text-[#D46534] transition-colors">
+                        <span>Đọc câu chuyện</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         )}
-      </section>
+
+        {/* ============================================================
+            6. COMPACT CTA BAND (SAIGON COBALT #1B3B82 + ĐƯỜNG CHỈ ĐỨT NÉT)
+           ============================================================ */}
+        <section aria-label="Đồng hành cùng bản đồ">
+          <div className="rounded-3xl bg-[#1B3B82] text-[#F7F2E8] p-3 sm:p-4 shadow-[0_16px_40px_rgba(27,59,130,0.18)]">
+            <div className="rounded-2xl border border-dashed border-[#F7F2E8]/28 px-6 sm:px-10 py-8 sm:py-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#F4C4A8]">
+                  Cùng giữ lại những góc nghề quen
+                </p>
+                <h2
+                  className="font-display text-xl sm:text-2xl font-extrabold text-[#F7F2E8] leading-snug"
+                  style={{ textWrap: 'balance' }}
+                >
+                  Biết một cô chú thợ lành nghề gần nhà? Góp một chấm nhỏ để bản
+                  đồ cộng đồng thêm đủ đầy.
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={onOpenFullMap}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full bg-white text-[#1B3B82] hover:bg-[#F7F2E8] text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors whitespace-nowrap"
+                >
+                  <Compass className="w-4 h-4" />
+                  <span>Khám phá bản đồ thợ</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('community')}
+                  className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#D46534] hover:bg-[#BC5326] text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors whitespace-nowrap"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Đề xuất góc thợ mới</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <PriceComparisonModal
         isOpen={priceModalOpen}

@@ -14,7 +14,9 @@ export interface ParsedAppRoute {
 export const ROUTE_PATHS = {
   home: '/',
   explore: '/ban-do',
+  artisan: '/tho',
   news: '/ban-tin',
+  community: '/cong-dong',
   about: '/ve-du-an',
   suggest: '/goi-y',
   admin: '/quan-tri',
@@ -65,6 +67,13 @@ export function buildRouteUrl(options: {
       }
       return ROUTE_PATHS.explore;
     }
+    case 'artisan': {
+      const artisanId = options.artisanId?.trim();
+      if (artisanId) {
+        return `${ROUTE_PATHS.artisan}/${encodeURIComponent(artisanId)}`;
+      }
+      return ROUTE_PATHS.explore;
+    }
     case 'news': {
       const articleKey = options.articleKey?.trim();
       if (articleKey) {
@@ -72,6 +81,8 @@ export function buildRouteUrl(options: {
       }
       return ROUTE_PATHS.news;
     }
+    case 'community':
+      return ROUTE_PATHS.community;
     case 'about':
       return ROUTE_PATHS.about;
     case 'suggest':
@@ -129,6 +140,47 @@ export function parseAppRoute(
     };
   }
 
+  // Trang Hồ sơ Chi tiết Người thợ `/tho/<id>`
+  if (
+    lowerPath === ROUTE_PATHS.artisan ||
+    lowerPath.startsWith(`${ROUTE_PATHS.artisan}/`)
+  ) {
+    const rawSegment = cleanedPath.slice(ROUTE_PATHS.artisan.length + 1);
+    let decodedId: string | null = null;
+    if (rawSegment) {
+      const firstPart = rawSegment.split('/')[0];
+      try {
+        decodedId = decodeURIComponent(firstPart).trim() || null;
+      } catch {
+        decodedId = firstPart.trim() || null;
+      }
+    }
+
+    if (!decodedId) {
+      return {
+        isAdmin: false,
+        tab: 'explore',
+        artisanId: null,
+        articleKey: null,
+        shouldCanonicalize: true,
+        canonicalUrl: ROUTE_PATHS.explore,
+      };
+    }
+
+    const canonicalUrl = buildRouteUrl({
+      tab: 'artisan',
+      artisanId: decodedId,
+    });
+    return {
+      isAdmin: false,
+      tab: 'artisan',
+      artisanId: decodedId,
+      articleKey: null,
+      shouldCanonicalize: rawSegment.includes('/') || Boolean(search),
+      canonicalUrl,
+    };
+  }
+
   // Chuyên trang Bản tin `/ban-tin` và bài viết chi tiết `/ban-tin/<id_or_slug>`
   if (
     lowerPath === ROUTE_PATHS.news ||
@@ -158,6 +210,18 @@ export function parseAppRoute(
         lowerPath.startsWith(`${ROUTE_PATHS.news}/`) &&
         rawSegment.includes('/'),
       canonicalUrl,
+    };
+  }
+
+  // Trang Cộng đồng `/cong-dong`
+  if (lowerPath === ROUTE_PATHS.community) {
+    return {
+      isAdmin: false,
+      tab: 'community',
+      artisanId: null,
+      articleKey: null,
+      shouldCanonicalize: pathname !== ROUTE_PATHS.community,
+      canonicalUrl: ROUTE_PATHS.community,
     };
   }
 
@@ -219,14 +283,20 @@ export function getDocumentTitleForRoute(options: {
   }
 
   switch (options.tab) {
+    case 'artisan':
+      return options.selectedArtisanName
+        ? `${options.selectedArtisanName} | Góc Thợ Quanh Ta`
+        : 'Hồ sơ góc thợ | Góc Thợ Quanh Ta';
     case 'explore':
       return options.selectedArtisanName
         ? `${options.selectedArtisanName} — Bản đồ góc thợ | Góc Thợ Quanh Ta`
-        : 'Bản đồ góc thợ | Góc Thợ Quanh Ta';
+        : 'Bản đồ thợ | Góc Thợ Quanh Ta';
     case 'news':
       return options.activeArticleTitle
         ? `${options.activeArticleTitle} — Bản tin | Góc Thợ Quanh Ta`
         : 'Bản tin | Góc Thợ Quanh Ta';
+    case 'community':
+      return 'Cộng đồng | Góc Thợ Quanh Ta';
     case 'about':
       return 'Về dự án & Team WHO | Góc Thợ Quanh Ta';
     case 'suggest':

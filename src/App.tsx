@@ -2,15 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
   ExternalLink,
-  List,
+  Heart,
   Loader2,
   LogIn,
   LogOut,
-  Map as MapIcon,
   MapPin,
   Navigation,
+  Phone,
   Recycle,
   RefreshCw,
   RotateCcw,
@@ -18,6 +22,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
+  Tag,
   WifiOff,
   X,
 } from 'lucide-react';
@@ -123,11 +128,12 @@ import { isSupabaseConfigured, supabaseConfigWarning } from './supabaseClient';
 import { AboutView } from './components/AboutView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ArtisanCard, getStatusDisplay } from './components/ArtisanCard';
-import { ArtisanDetail } from './components/ArtisanDetail';
 import { ArtisanIllustration } from './components/ArtisanIllustration';
 import { ArtisanMap } from './components/ArtisanMap';
 import { AuthModal, DEFAULT_SOFT_AUTH_PROMPT } from './components/AuthModal';
 import { BadgeModal, evaluateUserBadges } from './components/BadgeModal';
+import { CommunityView } from './components/CommunityView';
+import { CraftsmanProfileView } from './components/CraftsmanProfileView';
 import { HomeDiscoveryView } from './components/HomeDiscoveryView';
 import { QrDirectionsModal, StatusReportModal } from './components/Modals';
 import {
@@ -137,6 +143,7 @@ import {
   MobileTopHeader,
 } from './components/Navbar';
 import { NewsView } from './components/NewsView';
+import { PriceComparisonModal } from './components/PriceComparisonModal';
 import { SiteFooter } from './components/SiteFooter';
 import { SuggestArtisanView } from './components/SuggestArtisanView';
 import {
@@ -478,12 +485,10 @@ export default function App() {
   );
   const [hoveredArtisanId, setHoveredArtisanId] = useState<string | null>(null);
 
-  // Mobile UX states
-  const [mobileViewMode, setMobileViewMode] = useState<'map' | 'list'>('map');
-  const [mobileDetailOpen, setMobileDetailOpen] = useState<boolean>(
-    Boolean(initialRoute.artisanId)
-  );
+  // Mobile UX & Map Modal states
+  const [mapBottomSheetExpanded, setMapBottomSheetExpanded] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mapPriceModalOpen, setMapPriceModalOpen] = useState(false);
 
   // Định vị GPS tự động & lộ trình OSRM
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -549,8 +554,7 @@ export default function App() {
       setReadingArticleKey(parsed.articleKey);
 
       if (parsed.tab === 'explore') {
-        setMobileViewMode('map');
-        setMobileDetailOpen(Boolean(parsed.artisanId));
+        setMapBottomSheetExpanded(false);
       } else if (!parsed.isAdmin) {
         scrollPageToTop();
       }
@@ -1172,8 +1176,7 @@ export default function App() {
 
   const handleDrawRouteFromDetail = useCallback(
     (artisan: Artisan, mode: TravelMode = travelMode) => {
-      setMobileDetailOpen(false);
-      setMobileViewMode('map');
+      setMapBottomSheetExpanded(false);
 
       if (userLocation) {
         computeRouteToArtisan(userLocation, artisan, mode);
@@ -1211,7 +1214,9 @@ export default function App() {
       }
     ) => {
       const nextArtisanId =
-        tab === 'explore' ? (options?.artisanId ?? null) : null;
+        tab === 'explore' || tab === 'artisan'
+          ? (options?.artisanId ?? null)
+          : null;
       const nextArticleKey =
         tab === 'news' ? (options?.articleKey ?? null) : null;
 
@@ -1221,8 +1226,7 @@ export default function App() {
       setReadingArticleKey(nextArticleKey);
 
       if (tab === 'explore') {
-        setMobileViewMode('map');
-        setMobileDetailOpen(Boolean(nextArtisanId));
+        setMapBottomSheetExpanded(false);
       }
 
       const targetUrl = buildRouteUrl({
@@ -1244,7 +1248,7 @@ export default function App() {
     (artisan: Artisan) => {
       setSelectedArtisanId(artisan.id);
       setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
-      setMobileDetailOpen(true);
+      setMapBottomSheetExpanded(false);
       syncUrlToHistory(
         buildRouteUrl({ tab: 'explore', artisanId: artisan.id }),
         'push'
@@ -1257,7 +1261,7 @@ export default function App() {
     (artisan: Artisan) => {
       setSelectedArtisanId(artisan.id);
       setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
-      setMobileDetailOpen(false);
+      setMapBottomSheetExpanded(false);
       syncUrlToHistory(
         buildRouteUrl({ tab: 'explore', artisanId: artisan.id }),
         'push'
@@ -1268,7 +1272,6 @@ export default function App() {
 
   const handleCloseSelectedArtisan = useCallback(() => {
     setSelectedArtisanId(null);
-    setMobileDetailOpen(false);
     syncUrlToHistory(buildRouteUrl({ tab: 'explore', artisanId: null }), 'push');
   }, [syncUrlToHistory]);
 
@@ -1276,6 +1279,15 @@ export default function App() {
     (artisan: Artisan) => {
       setRouteInfo((prev) => (prev?.artisanId === artisan.id ? prev : null));
       navigateToTab('explore', { artisanId: artisan.id, skipScroll: true });
+    },
+    [navigateToTab]
+  );
+
+  const handleOpenArtisanProfile = useCallback(
+    (artisanOrId: Artisan | string) => {
+      const artisanId =
+        typeof artisanOrId === 'string' ? artisanOrId : artisanOrId.id;
+      navigateToTab('artisan', { artisanId });
     },
     [navigateToTab]
   );
@@ -2950,8 +2962,8 @@ export default function App() {
             aria-live="polite"
             className="fixed top-6 left-1/2 -translate-x-1/2 z-[70] max-w-[90vw] sm:max-w-md pointer-events-none"
           >
-            <div className="bg-[#162442] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#1B3B82] shadow-[3px_3px_0px_#E86F2C] flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#E86F2C] shrink-0" />
+            <div className="bg-[#25292E] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#3A4048] shadow-lg flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#D46534] shrink-0" />
               <span>{toastMessage}</span>
             </div>
           </div>
@@ -2987,7 +2999,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-[100dvh] lg:h-screen flex flex-col bg-[#FDF8F2] text-[#162442] overflow-hidden relative">
+    <div className="h-[100dvh] lg:h-screen flex flex-col bg-[#F7F2E8] text-[#25292E] overflow-hidden relative">
       <div className="craft-paper-grain" aria-hidden="true" />
       {/* Desktop Top Navbar cố định (h-16) với nút Đăng nhập / Đăng ký hoặc Tài khoản */}
       <DesktopNavbar
@@ -3009,9 +3021,11 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Mobile Top Header trên màn hình mở đầu, Bản tin, Gợi ý, Về dự án */}
+      {/* Mobile Top Header trên các trang nội dung */}
       {activeTab !== 'explore' && (
         <MobileTopHeader
+          activeTab={activeTab}
+          onChangeTab={handleNavigateTab}
           currentUser={currentUser}
           pendingCount={pendingSuggestions.length}
           favoritesCount={savedArtisans.length}
@@ -3061,6 +3075,8 @@ export default function App() {
             <div className="flex-1">
               <HomeDiscoveryView
                 artisans={publicArtisans}
+                articles={articles}
+                revivedCount={revivedCount}
                 isLoading={isLoadingPublicData}
                 dbError={publicDbError}
                 gpsStatus={gpsStatus}
@@ -3072,8 +3088,12 @@ export default function App() {
                 onRequestGps={() => requestAutoGps(true)}
                 onRetryLoad={() => void loadPublicArtisans()}
                 onSelectArtisanOnMap={handleSelectArtisanFromHome}
+                onOpenArtisanProfile={handleOpenArtisanProfile}
                 onOpenFullMap={handleOpenFullMap}
-                onRequestSuggest={() => handleNavigateTab('suggest')}
+                onOpenArticle={(articleId) =>
+                  navigateToTab('news', { articleKey: articleId })
+                }
+                onNavigateTab={handleNavigateTab}
               />
             </div>
             <SiteFooter
@@ -3088,22 +3108,22 @@ export default function App() {
         {activeTab === 'explore' && (
           <div className="h-full w-full lg:flex">
             {/* =======================================================
-                CỘT TRÁI DESKTOP (440px): Quay lại Tìm lỗi khác, Tác động xanh, Tìm kiếm, Bộ lọc, Danh sách & Chi tiết
+                CỘT TRÁI DESKTOP (36%, 340px–440px): Bộ lọc & Danh sách góc thợ
                ======================================================= */}
-            <aside className="hidden lg:flex flex-col w-[440px] shrink-0 h-full bg-[#FDF8F2] border-r border-dashed border-[#D8C3AE] relative overflow-hidden">
+            <aside className="hidden lg:flex flex-col w-[36%] min-w-[340px] max-w-[440px] shrink-0 h-full bg-[#F7F2E8] border-r border-[#E8DFD1] relative overflow-hidden">
               <div className="flex flex-col h-full">
-                {/* Thanh đếm gọn nhẹ + Nút quay lại trang Tìm lỗi khác */}
-                <div className="px-4 py-2 bg-[#EEF2FA] border-b border-dashed border-[#1B3B82]/20 flex items-center justify-between gap-2 shrink-0">
+                {/* Thanh tóm tắt tác động + Quay lại Trang chủ */}
+                <div className="px-4 py-2.5 bg-white/80 border-b border-[#E8DFD1] flex items-center justify-between gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => navigateToTab('home')}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#162442] hover:text-[#E86F2C] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#615D57] hover:text-[#D46534] transition-colors whitespace-nowrap shrink-0"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Tìm lỗi khác</span>
+                    <span>Trang chủ</span>
                   </button>
-                  <p className="font-mono text-[11px] font-semibold text-[#1B3B82] flex items-center gap-1 tabular-nums truncate">
-                    <Recycle className="w-3.5 h-3.5 shrink-0 text-[#E86F2C]" />
+                  <p className="font-mono text-[11px] font-semibold text-[#4F6B54] flex items-center gap-1 tabular-nums truncate">
+                    <Recycle className="w-3.5 h-3.5 shrink-0 text-[#4F6B54]" />
                     <span>
                       <strong className="font-bold">{revivedCount}</strong> món
                       đồ hồi sinh
@@ -3112,10 +3132,10 @@ export default function App() {
                 </div>
 
                 {/* Khối Tìm kiếm theo vấn đề & Bộ lọc thông minh */}
-                <div className="p-4 bg-white border-b border-dashed border-[#D8C3AE] space-y-3 shrink-0">
+                <div className="p-4 bg-white border-b border-[#E8DFD1] space-y-3 shrink-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-[#5C564E]">
-                      Hỏng đâu tìm đó – Gần nhau hơn mỗi ngày!
+                    <p className="text-xs font-medium text-[#615D57]">
+                      Hỏng đâu tìm đó – Quanh khu vực của bạn
                     </p>
                     <span className="font-mono text-xs font-bold text-[#1B3B82] tabular-nums">
                       {filteredArtisans.length} góc thợ
@@ -3124,20 +3144,20 @@ export default function App() {
 
                   {/* Ô tìm kiếm theo vấn đề */}
                   <div className="relative">
-                    <Search className="w-4 h-4 text-[#1B3B82]/70 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Search className="w-4 h-4 text-[#D46534] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="search"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Bạn cần sửa gì? (VD: bung đế giày, lên lai quần, thay pin...)"
-                      className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#FDF8F2] border border-[#DFCBB5] text-sm text-[#162442] placeholder:text-[#8A8177] focus:bg-white focus:outline-none focus:border-[#1B3B82] focus:shadow-[3px_3px_0px_#1B3B82] transition-all"
+                      placeholder="Tìm lỗi cần sửa (bung đế, lên lai, thay khóa...)"
+                      className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15 transition-all"
                     />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={() => setSearchQuery('')}
                         aria-label="Xóa từ khóa"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-[#8A8177] hover:text-[#162442] hover:bg-[#F3EAE0] flex items-center justify-center"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-[#8E8880] hover:text-[#25292E] hover:bg-[#EFE8DC] flex items-center justify-center"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -3157,8 +3177,8 @@ export default function App() {
                           onClick={() => setSearchQuery(active ? '' : problem)}
                           className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 transition-colors ${
                             active
-                              ? 'bg-[#E86F2C] text-white'
-                              : 'bg-[#FDF8F2] border border-[#E6D5C3] text-[#5C564E] hover:border-[#1B3B82] hover:text-[#1B3B82]'
+                              ? 'bg-[#D46534] text-white'
+                              : 'bg-[#F7F2E8] border border-[#E8DFD1] text-[#615D57] hover:border-[#D46534]/45 hover:text-[#D46534]'
                           }`}
                         >
                           {problem}
@@ -3167,22 +3187,22 @@ export default function App() {
                     })}
                   </div>
 
-                  {/* Thanh chip: 📍 Gần tôi nhất + Danh mục trượt ngang */}
+                  {/* Thanh chip: Gần tôi nhất + Danh mục trượt ngang */}
                   <div className="flex items-center gap-1.5 overflow-x-auto thin-scrollbar pb-1">
                     <button
                       type="button"
                       onClick={handleToggleSortByNearest}
                       aria-pressed={sortByNearest}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors ${
                         sortByNearest
-                          ? 'bg-[#E86F2C] text-white shadow-[2px_2px_0px_#162442]'
-                          : 'bg-[#FFF3EB] border border-[#E86F2C]/40 text-[#E86F2C] hover:bg-[#FFE6D6]'
+                          ? 'bg-[#D46534] text-white shadow-xs'
+                          : 'bg-[#FDF0E9] border border-[#D46534]/30 text-[#D46534] hover:bg-[#FAE2D6]'
                       }`}
                     >
                       {isLocating && sortByNearest ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
-                        <span aria-hidden="true">📍</span>
+                        <Navigation className="w-3 h-3" />
                       )}
                       <span>Gần tôi nhất</span>
                     </button>
@@ -3197,8 +3217,8 @@ export default function App() {
                             onClick={() => setSelectedCategory(category)}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
                               active
-                                ? 'bg-[#1B3B82] text-white shadow-[2px_2px_0px_#E86F2C]'
-                                : 'bg-white border border-[#DFCBB5] text-[#5C564E] hover:border-[#1B3B82] hover:text-[#1B3B82]'
+                                ? 'bg-[#1B3B82] text-white'
+                                : 'bg-white border border-[#E8DFD1] text-[#615D57] hover:border-[#1B3B82]/40 hover:text-[#1B3B82]'
                             }`}
                           >
                             {category}
@@ -3208,7 +3228,7 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* Lọc khu vực & Toggle Đang làm việc */}
+                  {/* Lọc khu vực, Toggle Đang làm việc & Nút So sánh giá */}
                   <div className="flex items-center justify-between gap-2 pt-0.5">
                     <select
                       aria-label="Lọc theo khu vực"
@@ -3218,7 +3238,7 @@ export default function App() {
                           e.target.value as District | 'Tất cả khu vực'
                         )
                       }
-                      className="h-9 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442] focus:outline-none focus:border-[#1B3B82]"
+                      className="h-9 px-3 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8]/80 text-xs font-semibold text-[#25292E] focus:outline-none focus:border-[#D46534]"
                     >
                       <option value="Tất cả khu vực">Tất cả khu vực</option>
                       {DISTRICTS.map((d) => (
@@ -3228,37 +3248,49 @@ export default function App() {
                       ))}
                     </select>
 
-                    <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={onlyWorking}
-                        onChange={(e) => setOnlyWorking(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <span className="w-9 h-5 rounded-full bg-[#DFCBB5] peer-checked:bg-[#15803D] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:shadow-xs after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
-                      <span className="text-xs font-bold text-[#162442] whitespace-nowrap">
-                        Đang làm việc
-                      </span>
-                    </label>
+                    <div className="flex items-center gap-2.5">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={onlyWorking}
+                          onChange={(e) => setOnlyWorking(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <span className="w-8 h-4.5 rounded-full bg-[#DDD2C2] peer-checked:bg-[#4F6B54] relative transition-colors after:content-[''] after:w-3.5 after:h-3.5 after:rounded-full after:bg-white after:shadow-xs after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-3.5 after:transition-transform" />
+                        <span className="text-xs font-semibold text-[#25292E] whitespace-nowrap">
+                          Đang mở
+                        </span>
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => setMapPriceModalOpen(true)}
+                        title="So sánh chi phí sửa chữa và mua mới"
+                        className="h-9 px-2.5 rounded-xl bg-[#FDF0E9] hover:bg-[#FAE2D6] border border-[#D46534]/25 text-[#D46534] text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap transition-colors"
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                        <span>So giá</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Danh sách thẻ người thợ cuộn dọc */}
                 <div className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
                   {isLoadingPublicData ? (
-                    <div className="rounded-2xl bg-white border border-[#E6D5C3] p-6 text-center space-y-2.5 mt-4">
-                      <Loader2 className="w-6 h-6 text-[#E86F2C] animate-spin mx-auto" />
-                      <p className="font-display text-sm font-bold text-[#162442]">
+                    <div className="rounded-2xl bg-white border border-[#E8DFD1] p-6 text-center space-y-2.5 mt-4">
+                      <Loader2 className="w-6 h-6 text-[#D46534] animate-spin mx-auto" />
+                      <p className="font-display text-sm font-bold text-[#25292E]">
                         Đang tải danh sách cô chú thợ...
                       </p>
-                      <p className="text-xs text-[#5C564E]">
-                        Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu Supabase.
+                      <p className="text-xs text-[#615D57]">
+                        Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu.
                       </p>
                     </div>
                   ) : publicDbError ? (
                     <div
                       role="alert"
-                      className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/30 p-5 text-center space-y-3 mt-4"
+                      className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/25 p-5 text-center space-y-3 mt-4"
                     >
                       <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
                       <div className="space-y-1">
@@ -3279,17 +3311,17 @@ export default function App() {
                       </button>
                     </div>
                   ) : filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-dashed border-[#D8C3AE] p-6 text-center space-y-3 mt-4">
-                      <MapPin className="w-8 h-8 text-[#E86F2C]/65 mx-auto" />
+                    <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-6 text-center space-y-3 mt-4">
+                      <MapPin className="w-8 h-8 text-[#D46534]/65 mx-auto" />
                       <div className="space-y-1">
-                        <p className="font-display text-sm font-bold text-[#162442]">
+                        <p className="font-display text-sm font-bold text-[#25292E]">
                           {publicArtisans.length === 0 && isSupabaseConfigured
                             ? 'Chưa có cô chú thợ nào trên bản đồ'
                             : 'Chưa tìm thấy góc thợ phù hợp'}
                         </p>
-                        <p className="text-xs text-[#5C564E] leading-relaxed">
+                        <p className="text-xs text-[#615D57] leading-relaxed">
                           {publicArtisans.length === 0 && isSupabaseConfigured
-                            ? 'Quản trị viên có thể vào mục Quản trị để nạp 6 dữ liệu mẫu vào Database.'
+                            ? 'Quản trị viên có thể vào mục Quản trị để nạp dữ liệu vào hệ thống.'
                             : 'Thử xóa bớt bộ lọc hoặc tìm từ khóa ngắn hơn như “giày”, “quần”, “khóa” nhé.'}
                         </p>
                       </div>
@@ -3297,7 +3329,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={handleResetFilters}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E86F2C] hover:bg-[#D25C1B] text-white text-xs font-bold shadow-[2px_2px_0px_#162442] transition-all"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold transition-colors"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Đặt lại bộ lọc</span>
@@ -3321,63 +3353,34 @@ export default function App() {
                   )}
                 </div>
               </div>
-
-              {/* Panel Chi tiết trượt đè mượt mà lên cột trái trên Desktop */}
-              <div
-                aria-hidden={!selectedArtisan}
-                className={`absolute inset-0 z-30 bg-white transition-transform duration-200 ease-out ${
-                  selectedArtisan
-                    ? 'translate-x-0 pointer-events-auto'
-                    : '-translate-x-full pointer-events-none'
-                }`}
-              >
-                {selectedArtisan && (
-                  <ArtisanDetail
-                    artisan={selectedArtisan}
-                    distanceKm={getDistanceForArtisan(selectedArtisan)}
-                    userLocation={userLocation}
-                    routeInfo={routeInfo}
-                    isRouting={isRouting}
-                    travelMode={travelMode}
-                    userKudosKeys={kudosReactedMap[selectedArtisan.id] ?? []}
-                    approvedThankYouNotes={selectedArtisanApprovedThanks}
-                    isFavorite={favoriteIdsSet.has(selectedArtisan.id)}
-                    currentUserDisplayName={
-                      currentUser?.displayName || currentUser?.name || ''
-                    }
-                    onBack={handleCloseSelectedArtisan}
-                    onShare={handleShareArtisan}
-                    onToggleFavorite={(id) => void handleToggleFavorite(id)}
-                    onMarkRevived={handleMarkRevived}
-                    onSubmitThankYou={handleSubmitThankYou}
-                    onDrawRoute={handleDrawRouteFromDetail}
-                    onChangeTravelMode={handleChangeTravelMode}
-                    onOpenQr={setQrModalArtisan}
-                    onOpenStatusReport={handleRequestStatusReport}
-                    onToggleKudos={handleToggleKudos}
-                    onAddPraise={handleAddPraise}
-                  />
-                )}
-              </div>
             </aside>
 
             {/* =======================================================
-                CỘT PHẢI DESKTOP & MÀN HÌNH CHÍNH MOBILE: BẢN ĐỒ + FLOATING CONTROLS
+                CỘT PHẢI DESKTOP & TOÀN MÀN HÌNH MOBILE: BẢN ĐỒ OSM + FLOATING CARD + BOTTOM SHEET
                ======================================================= */}
             <section className="relative flex-1 h-full w-full">
-              {/* Nút ← Tìm lỗi khác + Đăng nhập / Tài khoản + tìm kiếm + chip lọc nổi phía trên cho Mobile */}
+              {/* Thanh tìm kiếm & bộ lọc nổi gọn phía trên cho Mobile */}
               <div className="lg:hidden absolute top-0 left-0 right-0 z-[440] p-3 pointer-events-none space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => navigateToTab('home')}
-                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#DFCBB5] shadow-sm text-xs font-bold text-[#162442] hover:text-[#E86F2C] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
+                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-xs font-semibold text-[#25292E] hover:text-[#D46534] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Tìm lỗi khác</span>
+                    <span>Trang chủ</span>
                   </button>
 
-                  <div className="pointer-events-auto shrink-0">
+                  <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setMapPriceModalOpen(true)}
+                      className="h-9 px-2.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-[#D46534] text-xs font-semibold inline-flex items-center gap-1"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>So giá</span>
+                    </button>
+
                     {currentUser ? (
                       <AccountMenuDropdown
                         compact
@@ -3400,7 +3403,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => openAuthModal()}
-                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1B3B82] text-[#1B3B82] hover:text-white border border-[#1B3B82]/35 shadow-sm text-xs font-bold whitespace-nowrap transition-colors"
+                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1B3B82] text-[#1B3B82] hover:text-white border border-[#1B3B82]/30 shadow-sm text-xs font-semibold whitespace-nowrap transition-colors"
                       >
                         Đăng nhập
                       </button>
@@ -3408,21 +3411,21 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="pointer-events-auto flex items-center gap-2 bg-white/95 backdrop-blur-md border border-[#1B3B82]/30 rounded-2xl shadow-md px-3 py-1.5">
-                  <Search className="w-4 h-4 text-[#E86F2C] shrink-0" />
+                <div className="pointer-events-auto flex items-center gap-2 bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md px-3 py-1.5">
+                  <Search className="w-4 h-4 text-[#D46534] shrink-0" />
                   <input
                     type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Bạn cần sửa gì? (bung đế, lên lai...)"
-                    className="flex-1 min-w-0 h-9 bg-transparent text-sm text-[#162442] placeholder:text-[#8A8177] focus:outline-none"
+                    className="flex-1 min-w-0 h-9 bg-transparent text-sm text-[#25292E] placeholder:text-[#8E8880] focus:outline-none"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
                       aria-label="Xóa từ khóa"
-                      className="w-8 h-8 rounded-lg text-[#8A8177] flex items-center justify-center"
+                      className="w-8 h-8 rounded-lg text-[#8E8880] flex items-center justify-center"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -3435,8 +3438,8 @@ export default function App() {
                       mobileFiltersOpen ||
                       selectedDistrict !== 'Tất cả khu vực' ||
                       onlyWorking
-                        ? 'bg-[#E86F2C] text-white'
-                        : 'bg-[#FDF8F2] text-[#1B3B82]'
+                        ? 'bg-[#D46534] text-white'
+                        : 'bg-[#F7F2E8] text-[#1B3B82]'
                     }`}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
@@ -3444,7 +3447,7 @@ export default function App() {
                 </div>
 
                 {mobileFiltersOpen && (
-                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-[#DFCBB5] rounded-2xl shadow-md p-3 space-y-2.5">
+                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md p-3 space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <select
                         aria-label="Chọn khu vực"
@@ -3454,7 +3457,7 @@ export default function App() {
                             e.target.value as District | 'Tất cả khu vực'
                           )
                         }
-                        className="h-10 px-3 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442]"
+                        className="h-10 px-3 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-xs font-semibold text-[#25292E]"
                       >
                         <option value="Tất cả khu vực">Tất cả khu vực</option>
                         {DISTRICTS.map((d) => (
@@ -3471,9 +3474,9 @@ export default function App() {
                           onChange={(e) => setOnlyWorking(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <span className="w-9 h-5 rounded-full bg-[#DFCBB5] peer-checked:bg-[#15803D] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
-                        <span className="text-xs font-bold text-[#162442]">
-                          Đang làm việc
+                        <span className="w-9 h-5 rounded-full bg-[#DDD2C2] peer-checked:bg-[#4F6B54] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
+                        <span className="text-xs font-semibold text-[#25292E]">
+                          Đang mở
                         </span>
                       </label>
                     </div>
@@ -3492,8 +3495,8 @@ export default function App() {
                             }
                             className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 ${
                               active
-                                ? 'bg-[#E86F2C] text-white'
-                                : 'bg-[#FDF8F2] border border-[#E6D5C3] text-[#5C564E]'
+                                ? 'bg-[#D46534] text-white'
+                                : 'bg-[#F7F2E8] border border-[#E8DFD1] text-[#615D57]'
                             }`}
                           >
                             {problem}
@@ -3504,22 +3507,22 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Thanh chip: 📍 Gần tôi nhất + Danh mục trượt ngang */}
+                {/* Thanh chip: Gần tôi nhất + Danh mục trượt ngang */}
                 <div className="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                   <button
                     type="button"
                     onClick={handleToggleSortByNearest}
                     aria-pressed={sortByNearest}
-                    className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 shadow-sm inline-flex items-center gap-1 transition-colors ${
+                    className={`min-h-[34px] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm inline-flex items-center gap-1 transition-colors ${
                       sortByNearest
-                        ? 'bg-[#E86F2C] text-white'
-                        : 'bg-white/95 text-[#E86F2C] border border-[#E86F2C]/45'
+                        ? 'bg-[#D46534] text-white'
+                        : 'bg-white/95 text-[#D46534] border border-[#D46534]/35'
                     }`}
                   >
                     {isLocating && sortByNearest ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <span aria-hidden="true">📍</span>
+                      <Navigation className="w-3.5 h-3.5" />
                     )}
                     <span>Gần tôi nhất</span>
                   </button>
@@ -3531,10 +3534,10 @@ export default function App() {
                         key={category}
                         type="button"
                         onClick={() => setSelectedCategory(category)}
-                        className={`min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shrink-0 shadow-sm transition-colors ${
+                        className={`min-h-[34px] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm transition-colors ${
                           active
                             ? 'bg-[#1B3B82] text-white'
-                            : 'bg-white/95 text-[#162442] border border-[#DFCBB5]'
+                            : 'bg-white/95 text-[#25292E] border border-[#E8DFD1]'
                         }`}
                       >
                         {category}
@@ -3545,16 +3548,16 @@ export default function App() {
 
                 {/* Trạng thái Loading nhẹ & Lỗi mạng trên Mobile */}
                 {isLoadingPublicData && (
-                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#DFCBB5] shadow-sm text-xs font-bold text-[#1B3B82]">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-[#E86F2C]" />
-                    <span>Đang tải dữ liệu từ Supabase...</span>
+                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-xs font-semibold text-[#1B3B82]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-[#D46534]" />
+                    <span>Đang tải bản đồ...</span>
                   </div>
                 )}
 
                 {publicDbError && (
                   <div
                     role="alert"
-                    className="pointer-events-auto rounded-2xl bg-white/95 backdrop-blur-md border border-[#B93818]/40 shadow-md px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#B93818]"
+                    className="pointer-events-auto rounded-2xl bg-white/95 backdrop-blur-md border border-[#B93818]/35 shadow-md px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#B93818]"
                   >
                     <span className="inline-flex items-center gap-1.5 min-w-0">
                       <WifiOff className="w-4 h-4 shrink-0" />
@@ -3573,12 +3576,8 @@ export default function App() {
                 )}
               </div>
 
-              {/* Bản đồ tương tác Leaflet + CartoDB Positron */}
-              <div
-                className={`w-full h-full ${
-                  mobileViewMode === 'list' ? 'hidden lg:block' : 'block'
-                }`}
-              >
+              {/* Bản đồ tương tác Leaflet + OpenStreetMap */}
+              <div className="w-full h-full">
                 <ArtisanMap
                   artisans={filteredArtisans}
                   selectedArtisan={selectedArtisan}
@@ -3589,7 +3588,7 @@ export default function App() {
                   routeInfo={routeInfo}
                   isRouting={isRouting}
                   travelMode={travelMode}
-                  mobileMapVisible={mobileViewMode === 'map'}
+                  mobileMapVisible={!mapBottomSheetExpanded}
                   onSelectArtisan={handleSelectArtisanFromMap}
                   onLocateUser={() => locateUser({ autoFallback: false })}
                   onUseDemoLocation={handleUseDemoLocation}
@@ -3598,159 +3597,122 @@ export default function App() {
                 />
               </div>
 
-              {/* Chế độ Danh sách trên Mobile */}
-              {mobileViewMode === 'list' && (
-                <div className="lg:hidden absolute inset-0 bg-[#FDF8F2] overflow-y-auto pt-[156px] pb-36 px-3.5 space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <p className="font-mono text-xs font-semibold text-[#5C564E] tabular-nums">
-                      Tìm thấy {filteredArtisans.length} góc thợ tại TP.HCM
-                      {sortByNearest && userLocation ? ' · Gần nhất trước' : ''}
-                    </p>
-                    {hasActiveFilters && (
-                      <button
-                        type="button"
-                        onClick={handleResetFilters}
-                        className="text-xs font-bold text-[#E86F2C]"
-                      >
-                        Xóa lọc
-                      </button>
-                    )}
-                  </div>
-
-                  {isLoadingPublicData ? (
-                    <div className="rounded-2xl bg-white border border-[#E6D5C3] p-6 text-center space-y-2">
-                      <Loader2 className="w-6 h-6 text-[#E86F2C] animate-spin mx-auto" />
-                      <p className="text-sm font-bold text-[#162442]">
-                        Đang tải dữ liệu từ Supabase...
-                      </p>
-                    </div>
-                  ) : publicDbError ? (
-                    <div className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/30 p-5 text-center space-y-3">
-                      <WifiOff className="w-6 h-6 text-[#B93818] mx-auto" />
-                      <p className="text-xs text-[#7A2B1B] font-medium">
-                        {publicDbError}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => void loadPublicArtisans()}
-                        className="min-h-[40px] px-4 py-2 rounded-xl bg-[#B93818] text-white text-xs font-bold inline-flex items-center gap-1.5"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Thử tải lại</span>
-                      </button>
-                    </div>
-                  ) : filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-dashed border-[#D8C3AE] p-6 text-center space-y-3">
-                      <p className="font-display text-sm font-bold text-[#162442]">
-                        {publicArtisans.length === 0 && isSupabaseConfigured
-                          ? 'Chưa có cô chú thợ nào trên bản đồ'
-                          : 'Chưa tìm thấy góc thợ phù hợp'}
-                      </p>
-                      {hasActiveFilters && (
-                        <button
-                          type="button"
-                          onClick={handleResetFilters}
-                          className="min-h-[44px] px-4 py-2 rounded-xl bg-[#E86F2C] text-white text-xs font-bold shadow-[2px_2px_0px_#162442]"
-                        >
-                          Đặt lại bộ lọc
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    filteredArtisans.map((artisan) => (
-                      <ArtisanCard
-                        key={artisan.id}
-                        artisan={artisan}
-                        isSelected={selectedArtisanId === artisan.id}
-                        isHovered={false}
-                        isFavorite={favoriteIdsSet.has(artisan.id)}
-                        distanceKm={getDistanceForArtisan(artisan)}
-                        onSelect={handleSelectArtisanFromList}
-                        onHoverChange={() => {}}
-                        onToggleFavorite={(id) => void handleToggleFavorite(id)}
-                      />
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* Mini Artisan Card trượt lên ngay trên Bottom Bar trên Mobile */}
-              {selectedArtisan &&
-                mobileViewMode === 'map' &&
-                !mobileDetailOpen && (
-                  <div className="lg:hidden fixed left-3 right-3 bottom-[76px] z-[460]">
-                    <div className="rounded-2xl bg-white border-2 border-[#162442] shadow-[4px_4px_0px_#1B3B82] p-3 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#FDF8F2] border border-[#E6D5C3]">
+              {/* =======================================================
+                  DESKTOP FLOATING DETAIL CARD (góc dưới-trái trên bản đồ)
+                 ======================================================= */}
+              {selectedArtisan && (
+                <div className="hidden lg:block absolute left-5 bottom-5 z-[460] w-[392px] max-w-[calc(100%-2.5rem)]">
+                  <div className="rounded-3xl bg-white/98 backdrop-blur-md border border-[#E8DFD1] shadow-2xl overflow-hidden">
+                    <div className="p-4 space-y-3.5">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
                           <ArtisanIllustration
                             variant={selectedArtisan.illustrationVariant}
-                            customImageUrl={selectedArtisan.customImageUrl}
+                            customImageUrl={
+                              selectedArtisan.hidePortrait
+                                ? undefined
+                                : selectedArtisan.customImageUrl
+                            }
                             alt={selectedArtisan.name}
                           />
                         </div>
 
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-display text-sm font-bold text-[#162442] leading-snug line-clamp-2">
+                            <h3 className="font-display text-base font-bold text-[#25292E] leading-snug line-clamp-2">
                               {selectedArtisan.name}
                             </h3>
-                            <button
-                              type="button"
-                              onClick={handleCloseSelectedArtisan}
-                              aria-label="Đóng thẻ xem nhanh"
-                              className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#8A8177] hover:text-[#162442] flex items-center justify-center shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleToggleFavorite(selectedArtisan.id)
+                                }
+                                aria-label={
+                                  favoriteIdsSet.has(selectedArtisan.id)
+                                    ? 'Bỏ lưu góc thợ'
+                                    : 'Lưu góc thợ'
+                                }
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                  favoriteIdsSet.has(selectedArtisan.id)
+                                    ? 'text-[#B93818] bg-[#B93818]/10'
+                                    : 'text-[#8E8880] hover:text-[#B93818] hover:bg-[#F7F2E8]'
+                                }`}
+                              >
+                                <Heart
+                                  className={`w-4 h-4 ${
+                                    favoriteIdsSet.has(selectedArtisan.id)
+                                      ? 'fill-current'
+                                      : ''
+                                  }`}
+                                />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCloseSelectedArtisan}
+                                aria-label="Đóng thẻ xem nhanh"
+                                className="w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                             {miniCardStatus && (
                               <span
-                                className={`font-semibold ${miniCardStatus.textClass}`}
+                                className={`inline-flex items-center gap-1 font-semibold ${miniCardStatus.textClass}`}
                               >
                                 {miniCardStatus.label}
                               </span>
                             )}
-                            <span className="text-[#D8C3AE]">·</span>
-                            <span className="font-mono font-bold text-[#E86F2C] tabular-nums">
-                              {selectedArtisan.minPriceLabel}
-                            </span>
                             {typeof miniCardDistance === 'number' && (
                               <>
-                                <span className="text-[#D8C3AE]">·</span>
-                                <span className="font-mono inline-flex items-center gap-0.5 text-[#1B3B82] font-bold tabular-nums">
-                                  <Navigation className="w-3 h-3" />
+                                <span className="text-[#DDD2C2]">·</span>
+                                <span className="font-mono font-semibold text-[#1B3B82] tabular-nums">
                                   {formatDistanceWithPrefix(miniCardDistance)}
                                 </span>
                               </>
                             )}
                           </div>
 
-                          <p className="text-[11px] text-[#5C564E] line-clamp-1">
-                            {selectedArtisan.addressLandmark}
+                          <p className="text-xs text-[#615D57] line-clamp-1 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-[#D46534] shrink-0" />
+                            <span className="truncate">
+                              {selectedArtisan.addressLandmark}
+                            </span>
+                          </p>
+
+                          <p className="text-[11px] text-[#615D57] flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-[#8E8880] shrink-0" />
+                            <span className="truncate">
+                              {selectedArtisan.hours}
+                            </span>
                           </p>
                         </div>
                       </div>
 
+                      {/* Tóm tắt giá 2 dịch vụ tiêu biểu */}
+                      {selectedArtisan.prices.length > 0 && (
+                        <div className="rounded-2xl bg-[#F7F2E8]/80 border border-dashed border-[#DDD2C2] px-3 py-2 space-y-1">
+                          {selectedArtisan.prices.slice(0, 2).map((item) => (
+                            <div
+                              key={item.service}
+                              className="flex items-center justify-between gap-2 text-xs"
+                            >
+                              <span className="text-[#615D57] truncate">
+                                {item.service}
+                              </span>
+                              <span className="font-mono font-semibold text-[#D46534] tabular-nums shrink-0">
+                                {item.priceRange}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Các nút hành động trực tiếp */}
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setMobileDetailOpen(true)}
-                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-xs font-bold text-[#162442]"
-                        >
-                          Xem chi tiết
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleDrawRouteFromDetail(selectedArtisan)
-                          }
-                          className="min-h-[44px] px-3 py-2 rounded-xl bg-[#1B3B82] text-white text-xs font-bold inline-flex items-center justify-center gap-1 whitespace-nowrap"
-                        >
-                          <Navigation className="w-3.5 h-3.5" />
-                          <span>Vẽ đường</span>
-                        </button>
                         <a
                           href={buildGoogleMapsDirectionsUrl(
                             selectedArtisan.coordinates,
@@ -3759,72 +3721,323 @@ export default function App() {
                           )}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-[#E86F2C] text-white text-xs font-bold inline-flex items-center justify-center gap-1 whitespace-nowrap shadow-[2px_2px_0px_#162442]"
+                          className="flex-1 h-10 px-3 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <span>Chỉ đường</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
+
+                        {selectedArtisan.phone ? (
+                          <a
+                            href={`tel:${selectedArtisan.phone.replace(/\s+/g, '')}`}
+                            className="h-10 px-3 rounded-xl bg-[#EDF3EE] hover:bg-[#DFEBDF] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>Gọi điện</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDrawRouteFromDetail(selectedArtisan)
+                            }
+                            className="h-10 px-3 rounded-xl bg-[#EEF2FA] hover:bg-[#E1E9F8] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            <span>Vẽ đường</span>
+                          </button>
+                        )}
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenArtisanProfile(selectedArtisan)}
+                        className="w-full h-10 px-4 rounded-xl bg-[#25292E] hover:bg-[#1B3B82] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <span>Xem hồ sơ & câu chuyện</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-              {/* Nút nổi chuyển chế độ Bản đồ <-> Danh sách trên Mobile */}
-              {(!selectedArtisan || mobileViewMode === 'list') && (
-                <div className="lg:hidden fixed left-1/2 -translate-x-1/2 bottom-[82px] z-[455]">
+              {/* =======================================================
+                  MOBILE BOTTOM SHEET (2 trạng thái + Thẻ xem nhanh cô chú)
+                 ======================================================= */}
+              <div className="lg:hidden fixed left-0 right-0 bottom-16 z-[460] px-2.5 pb-2 pointer-events-none">
+                {selectedArtisan ? (
+                  <div className="pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl p-3.5 space-y-3">
+                    <div className="w-10 h-1 rounded-full bg-[#DDD2C2] mx-auto" />
+                    <div className="flex items-start gap-3">
+                      <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
+                        <ArtisanIllustration
+                          variant={selectedArtisan.illustrationVariant}
+                          customImageUrl={
+                            selectedArtisan.hidePortrait
+                              ? undefined
+                              : selectedArtisan.customImageUrl
+                          }
+                          alt={selectedArtisan.name}
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-display text-sm font-bold text-[#25292E] leading-snug line-clamp-2">
+                            {selectedArtisan.name}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={handleCloseSelectedArtisan}
+                            aria-label="Đóng thẻ xem nhanh"
+                            className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#8E8880] hover:text-[#25292E] flex items-center justify-center shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                          {miniCardStatus && (
+                            <span
+                              className={`font-semibold ${miniCardStatus.textClass}`}
+                            >
+                              {miniCardStatus.label}
+                            </span>
+                          )}
+                          <span className="text-[#DDD2C2]">·</span>
+                          <span className="font-mono font-semibold text-[#D46534] tabular-nums">
+                            {selectedArtisan.minPriceLabel}
+                          </span>
+                          {typeof miniCardDistance === 'number' && (
+                            <>
+                              <span className="text-[#DDD2C2]">·</span>
+                              <span className="font-mono inline-flex items-center gap-0.5 text-[#1B3B82] font-semibold tabular-nums">
+                                <Navigation className="w-3 h-3" />
+                                {formatDistanceWithPrefix(miniCardDistance)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-[#615D57] line-clamp-1">
+                          {selectedArtisan.addressLandmark}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={buildGoogleMapsDirectionsUrl(
+                          selectedArtisan.coordinates,
+                          userLocation?.coords,
+                          travelMode
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <span>Chỉ đường</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+
+                      {selectedArtisan.phone ? (
+                        <a
+                          href={`tel:${selectedArtisan.phone.replace(/\s+/g, '')}`}
+                          className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EDF3EE] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>Gọi</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDrawRouteFromDetail(selectedArtisan)
+                          }
+                          className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EEF2FA] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                        >
+                          <Navigation className="w-3.5 h-3.5" />
+                          <span>Vẽ đường</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenArtisanProfile(selectedArtisan)}
+                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#25292E] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <span>Xem hồ sơ</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl overflow-hidden transition-all duration-300 flex flex-col ${
+                      mapBottomSheetExpanded ? 'h-[62dvh]' : 'h-auto'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setMapBottomSheetExpanded((v) => !v)}
+                      className="w-full px-4 py-3 flex flex-col items-center gap-1.5 bg-white shrink-0"
+                    >
+                      <span className="w-10 h-1 rounded-full bg-[#DDD2C2]" />
+                      <div className="w-full flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[#25292E]">
+                          {mapBottomSheetExpanded
+                            ? `Danh sách ${filteredArtisans.length} góc thợ quanh đây`
+                            : `Xem ${filteredArtisans.length} góc thợ quanh đây`}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#D46534]">
+                          {mapBottomSheetExpanded ? (
+                            <>
+                              <span>Thu gọn</span>
+                              <ChevronDown className="w-4 h-4" />
+                            </>
+                          ) : (
+                            <>
+                              <span>Mở danh sách</span>
+                              <ChevronUp className="w-4 h-4" />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+
+                    {mapBottomSheetExpanded && (
+                      <div className="flex-1 overflow-y-auto thin-scrollbar bg-[#F7F2E8] border-t border-[#E8DFD1] p-3 space-y-2.5">
+                        {hasActiveFilters && (
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-medium text-[#615D57]">
+                              Đang bật bộ lọc
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleResetFilters}
+                              className="text-xs font-semibold text-[#D46534]"
+                            >
+                              Đặt lại bộ lọc
+                            </button>
+                          </div>
+                        )}
+
+                        {filteredArtisans.length === 0 ? (
+                          <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-5 text-center space-y-2">
+                            <p className="text-xs font-bold text-[#25292E]">
+                              Chưa tìm thấy góc thợ phù hợp
+                            </p>
+                            {hasActiveFilters && (
+                              <button
+                                type="button"
+                                onClick={handleResetFilters}
+                                className="px-4 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold"
+                              >
+                                Đặt lại bộ lọc
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          filteredArtisans.map((artisan) => (
+                            <ArtisanCard
+                              key={artisan.id}
+                              artisan={artisan}
+                              isSelected={selectedArtisanId === artisan.id}
+                              isHovered={false}
+                              isFavorite={favoriteIdsSet.has(artisan.id)}
+                              distanceKm={getDistanceForArtisan(artisan)}
+                              onSelect={handleSelectArtisanFromList}
+                              onHoverChange={() => {}}
+                              onToggleFavorite={(id) =>
+                                void handleToggleFavorite(id)
+                              }
+                            />
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'artisan' && (
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
+            <div className="flex-1">
+              {selectedArtisan ? (
+                <CraftsmanProfileView
+                  artisan={selectedArtisan}
+                  distanceKm={getDistanceForArtisan(selectedArtisan)}
+                  userLocation={userLocation}
+                  travelMode={travelMode}
+                  userKudosKeys={kudosReactedMap[selectedArtisan.id] ?? []}
+                  approvedThankYouNotes={selectedArtisanApprovedThanks}
+                  isFavorite={favoriteIdsSet.has(selectedArtisan.id)}
+                  currentUserDisplayName={
+                    currentUser?.displayName || currentUser?.name || ''
+                  }
+                  onBackToMap={() =>
+                    navigateToTab('explore', { skipScroll: true })
+                  }
+                  onOpenOnMap={(artisan) =>
+                    navigateToTab('explore', {
+                      artisanId: artisan.id,
+                      skipScroll: true,
+                    })
+                  }
+                  onShare={handleShareArtisan}
+                  onToggleFavorite={(id) => void handleToggleFavorite(id)}
+                  onMarkRevived={handleMarkRevived}
+                  onSubmitThankYou={handleSubmitThankYou}
+                  onOpenQr={setQrModalArtisan}
+                  onOpenStatusReport={handleRequestStatusReport}
+                  onToggleKudos={handleToggleKudos}
+                  onAddPraise={handleAddPraise}
+                />
+              ) : isLoadingPublicData ? (
+                <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-3">
+                  <Loader2 className="w-7 h-7 text-[#D46534] animate-spin mx-auto" />
+                  <p className="font-display text-base font-bold text-[#25292E]">
+                    Đang tải hồ sơ góc thợ...
+                  </p>
+                </div>
+              ) : (
+                <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#FDF0E9] text-[#D46534] flex items-center justify-center mx-auto">
+                    <MapPin className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h2 className="font-display text-xl font-bold text-[#25292E]">
+                      Không tìm thấy hồ sơ góc thợ này
+                    </h2>
+                    <p className="text-sm text-[#615D57]">
+                      Có thể đường dẫn đã thay đổi hoặc cô chú vừa tạm ẩn khỏi
+                      bản đồ công khai.
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      setMobileViewMode((m) => (m === 'map' ? 'list' : 'map'))
-                    }
-                    className="min-h-[44px] px-5 py-2.5 rounded-full bg-[#1B3B82] text-white text-xs font-bold shadow-[3px_3px_0px_#E86F2C] inline-flex items-center gap-2 active:scale-[0.98] transition-transform whitespace-nowrap"
+                    onClick={() => navigateToTab('explore', { skipScroll: true })}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#D46534] hover:bg-[#BC5326] text-white text-sm font-semibold transition-colors"
                   >
-                    {mobileViewMode === 'map' ? (
-                      <>
-                        <List className="w-4 h-4" />
-                        <span>Danh sách ({filteredArtisans.length})</span>
-                      </>
-                    ) : (
-                      <>
-                        <MapIcon className="w-4 h-4" />
-                        <span>Xem bản đồ</span>
-                      </>
-                    )}
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Quay về Bản đồ thợ</span>
                   </button>
                 </div>
               )}
-
-              {/* Bottom Sheet Chi tiết toàn màn hình trên Mobile */}
-              {selectedArtisan && mobileDetailOpen && (
-                <div className="lg:hidden fixed inset-0 z-50 bg-white flex flex-col">
-                  <ArtisanDetail
-                    artisan={selectedArtisan}
-                    distanceKm={getDistanceForArtisan(selectedArtisan)}
-                    userLocation={userLocation}
-                    routeInfo={routeInfo}
-                    isRouting={isRouting}
-                    travelMode={travelMode}
-                    userKudosKeys={kudosReactedMap[selectedArtisan.id] ?? []}
-                    approvedThankYouNotes={selectedArtisanApprovedThanks}
-                    isFavorite={favoriteIdsSet.has(selectedArtisan.id)}
-                    currentUserDisplayName={
-                      currentUser?.displayName || currentUser?.name || ''
-                    }
-                    onBack={() => setMobileDetailOpen(false)}
-                    onShare={handleShareArtisan}
-                    onToggleFavorite={(id) => void handleToggleFavorite(id)}
-                    onMarkRevived={handleMarkRevived}
-                    onSubmitThankYou={handleSubmitThankYou}
-                    onDrawRoute={handleDrawRouteFromDetail}
-                    onChangeTravelMode={handleChangeTravelMode}
-                    onOpenQr={setQrModalArtisan}
-                    onOpenStatusReport={handleRequestStatusReport}
-                    onToggleKudos={handleToggleKudos}
-                    onAddPraise={handleAddPraise}
-                  />
-                </div>
-              )}
-            </section>
+            </div>
+            <SiteFooter
+              currentUser={currentUser}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
+            />
           </div>
         )}
 
@@ -3844,6 +4057,31 @@ export default function App() {
                 onRefresh={() => void loadPublicArticles()}
                 onOpenArtisanOnMap={(artisanId) =>
                   navigateToTab('explore', { artisanId, skipScroll: true })
+                }
+                onOpenArtisanProfile={handleOpenArtisanProfile}
+              />
+            </div>
+            <SiteFooter
+              currentUser={currentUser}
+              onNavigate={handleNavigateTab}
+              onOpenAuth={() => openAuthModal()}
+              onOpenAdmin={handleOpenAdmin}
+            />
+          </div>
+        )}
+
+        {activeTab === 'community' && (
+          <div
+            ref={pageScrollRef}
+            className="h-full overflow-y-auto thin-scrollbar flex flex-col"
+          >
+            <div className="flex-1">
+              <CommunityView
+                currentUser={currentUser}
+                onRequestAuth={(prompt) => openAuthModal(prompt)}
+                onSubmitPendingSuggestion={handleSubmitPendingSuggestion}
+                onBackToExplore={() =>
+                  navigateToTab('explore', { skipScroll: true })
                 }
               />
             </div>
@@ -3924,6 +4162,12 @@ export default function App() {
         onAuthSuccess={handleAuthSuccess}
       />
 
+      {/* Modal So sánh chi phí mở từ trang Bản đồ */}
+      <PriceComparisonModal
+        isOpen={mapPriceModalOpen}
+        onClose={() => setMapPriceModalOpen(false)}
+      />
+
       {/* Modals: Huy hiệu, Góc thợ đã lưu, Lịch sử đóng góp, Mã QR & Báo tình trạng */}
       {badgeModalOpen && currentUser && (
         <BadgeModal
@@ -3941,10 +4185,7 @@ export default function App() {
           savedArtisans={savedArtisans}
           onSelectArtisan={(artisan) => {
             setSavedModalOpen(false);
-            navigateToTab('explore', {
-              artisanId: artisan.id,
-              skipScroll: true,
-            });
+            handleOpenArtisanProfile(artisan);
           }}
           onRemoveFavorite={(id) => void handleToggleFavorite(id)}
           onClose={() => setSavedModalOpen(false)}
@@ -3958,7 +4199,7 @@ export default function App() {
           onRefresh={() => void loadUserContributions(currentUser)}
           onOpenApprovedArtisan={(artisanId) => {
             setContributionsModalOpen(false);
-            navigateToTab('explore', { artisanId, skipScroll: true });
+            handleOpenArtisanProfile(artisanId);
           }}
           onSuggestNew={() => handleNavigateTab('suggest')}
           onClose={() => setContributionsModalOpen(false)}
@@ -3991,8 +4232,8 @@ export default function App() {
           aria-live="polite"
           className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] sm:max-w-md pointer-events-none"
         >
-          <div className="bg-[#162442] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#1B3B82] shadow-[3px_3px_0px_#E86F2C] flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#E86F2C] shrink-0" />
+          <div className="bg-[#25292E] text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-2xl border border-[#3A4048] shadow-lg flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#D46534] shrink-0" />
             <span>{toastMessage}</span>
           </div>
         </div>
