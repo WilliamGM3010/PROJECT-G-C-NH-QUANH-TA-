@@ -815,7 +815,7 @@ export function AboutView({
 
               {/* Hàng 2: Dòng Lớp & Trường tách riêng gọn gàng */}
               <p className="mt-3.5 md:mt-4 text-sm md:text-base text-stone-600 font-medium leading-relaxed max-w-2xl">
-                <span className="font-semibold text-emerald-900">Lớp K65F</span>
+                <span className="font-semibold text-emerald-900">Lớp Học phần KDO441</span>
                 <span className="mx-1.5 text-stone-400" aria-hidden="true">
                   ·
                 </span>
@@ -838,12 +838,12 @@ export function AboutView({
               <div className="group aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#EAE3D8] border border-stone-200/80 shadow-[0_8px_30px_rgba(31,41,51,0.05)]">
                 <img
                   src={TEAM_WHO_PHOTO_SRC}
-                  alt="Ảnh tập thể 9 thành viên Team WHO — Lớp K65F FTU HCMC"
+                  alt="Ảnh tập thể 9 thành viên Team WHO — Lớp Học phần KDO441 FTU HCMC"
                   className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
               </div>
               <figcaption className="text-center text-xs text-[#616E7C] font-medium">
-                9 mảnh ghép của Team WHO — K65F FTU HCMC
+                9 mảnh ghép của Team WHO — LỚP HỌC PHẦN KDO441 FTU HCMC
               </figcaption>
             </figure>
           </div>
