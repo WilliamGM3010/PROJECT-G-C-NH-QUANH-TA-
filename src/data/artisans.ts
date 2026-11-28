@@ -11,6 +11,7 @@ import type {
   ThankYouNote,
   UserContributionStats,
 } from '../types/artisan';
+import { HCMC_ADMINISTRATIVE_UNITS } from './hcmcLocations';
 
 export const HCMC_DEFAULT_CENTER: Coordinates = {
   lat: 10.788,
@@ -33,9 +34,12 @@ export const CRAFT_CATEGORIES: CraftCategory[] = [
   'Sửa balo/túi',
 ];
 
-export const DISTRICTS: District[] = ['Bình Thạnh', 'Quận 1', 'Quận 3'];
+export const DISTRICTS: District[] = HCMC_ADMINISTRATIVE_UNITS;
 
-export const DISTRICT_COORDS: Record<District, Coordinates> = {
+export const DISTRICT_COORDS: Record<string, Coordinates> = {
+  'Phường Thạnh Mỹ Tây': { lat: 10.8015, lng: 106.7128 },
+  'Phường Sài Gòn': { lat: 10.7824, lng: 106.6998 },
+  'Phường Xuân Hòa': { lat: 10.7791, lng: 106.6905 },
   'Bình Thạnh': { lat: 10.8015, lng: 106.7128 },
   'Quận 1': { lat: 10.7824, lng: 106.6998 },
   'Quận 3': { lat: 10.7791, lng: 106.6905 },
@@ -85,7 +89,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Chú Ba – Sửa Giày Dép & Balo',
     shortTitle: 'Chú Ba · Giày & Balo',
     categories: ['Sửa giày dép', 'Sửa balo/túi'],
-    district: 'Bình Thạnh',
+    district: 'Phường Thạnh Mỹ Tây',
     coordinates: { lat: 10.8035, lng: 106.7155 },
     addressLandmark: 'Vỉa hè trước 124 Nguyễn Gia Trí (D2), cạnh tiệm tạp hóa',
     problems: [
@@ -147,7 +151,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Cô Tư – May Vá & Sửa Quần Áo',
     shortTitle: 'Cô Tư · May vá',
     categories: ['May vá'],
-    district: 'Quận 1',
+    district: 'Phường Sài Gòn',
     coordinates: { lat: 10.7852, lng: 106.7012 },
     addressLandmark: 'Đầu hẻm 18A Nguyễn Thị Minh Khai, gần khu văn phòng',
     problems: [
@@ -209,7 +213,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Chú Sáu – Sửa Khóa & Đồng Hồ',
     shortTitle: 'Chú Sáu · Khóa & Đồng hồ',
     categories: ['Sửa khóa', 'Sửa đồng hồ'],
-    district: 'Quận 3',
+    district: 'Phường Xuân Hòa',
     coordinates: { lat: 10.7768, lng: 106.6885 },
     addressLandmark:
       'Góc đường Võ Văn Tần – Cách Mạng Tháng Tám, dưới tán cây xà cừ',
@@ -272,7 +276,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Chú Năm – Sửa Balo & Vali',
     shortTitle: 'Chú Năm · Balo & Vali',
     categories: ['Sửa balo/túi'],
-    district: 'Bình Thạnh',
+    district: 'Phường Thạnh Mỹ Tây',
     coordinates: { lat: 10.7992, lng: 106.7104 },
     addressLandmark: 'Góc đường Điện Biên Phủ – Ung Văn Khiêm, gần trạm xe buýt',
     problems: [
@@ -326,7 +330,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Cô Hạnh – May Vá & Sửa Đồ Len',
     shortTitle: 'Cô Hạnh · May & Đồ len',
     categories: ['May vá'],
-    district: 'Quận 3',
+    district: 'Phường Xuân Hòa',
     coordinates: { lat: 10.7815, lng: 106.6928 },
     addressLandmark: 'Vỉa hè đường Trần Quốc Thảo, đối diện cổng trường học',
     problems: [
@@ -380,7 +384,7 @@ export const INITIAL_ARTISANS: Artisan[] = [
     name: 'Chú Bảy – Sửa Giày Da & Đánh Xi',
     shortTitle: 'Chú Bảy · Giày da & Xi',
     categories: ['Sửa giày dép'],
-    district: 'Quận 1',
+    district: 'Phường Sài Gòn',
     coordinates: { lat: 10.7795, lng: 106.6982 },
     addressLandmark: 'Góc đường Pasteur – Lý Tự Trọng, ngồi cạnh bức tường vàng',
     problems: [
@@ -444,7 +448,7 @@ export const INITIAL_PENDING_SUGGESTIONS: PendingSuggestion[] = [
     id: 'pending-dup-sample',
     name: 'Chú Ba D2 – Khâu Sneaker & Sửa Giày',
     categories: ['Sửa giày dép'],
-    district: 'Bình Thạnh',
+    district: 'Phường Thạnh Mỹ Tây',
     coordinates: { lat: 10.8041, lng: 106.7159 },
     addressLandmark:
       'Vỉa hè đường Nguyễn Gia Trí (D2), gần tiệm tạp hóa số 124',
@@ -462,7 +466,7 @@ export const INITIAL_PENDING_SUGGESTIONS: PendingSuggestion[] = [
     id: 'pending-1',
     name: 'Chú Tám – Sửa Khóa & Đánh Chìa',
     categories: ['Sửa khóa'],
-    district: 'Bình Thạnh',
+    district: 'Phường Gia Định',
     coordinates: { lat: 10.7998, lng: 106.6914 },
     addressLandmark:
       'Vỉa hè đầu đường Vạn Kiếp giao Phan Xích Long, cạnh trụ ATM',
@@ -480,7 +484,7 @@ export const INITIAL_PENDING_SUGGESTIONS: PendingSuggestion[] = [
     id: 'pending-2',
     name: 'Cô Mai – Sửa Quần Áo & Thay Dây Kéo',
     categories: ['May vá', 'Sửa balo/túi'],
-    district: 'Quận 3',
+    district: 'Phường Nhiêu Lộc',
     coordinates: { lat: 10.7886, lng: 106.6789 },
     addressLandmark:
       'Đầu hẻm 284 Lê Văn Sỹ, ngồi dưới mái hiên xanh gần tiệm bánh mì',

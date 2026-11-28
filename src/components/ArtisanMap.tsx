@@ -6,6 +6,8 @@ import {
   Footprints,
   Loader2,
   MapPin,
+  Minus,
+  Plus,
   Route,
   X,
 } from 'lucide-react';
@@ -216,8 +218,6 @@ export function ArtisanMap({
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
     markersLayerRef.current = L.layerGroup().addTo(map);
     userLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
@@ -350,9 +350,10 @@ export function ArtisanMap({
 
     const bounds = routeLine.getBounds();
     if (bounds.isValid()) {
+      const isDesktop = window.innerWidth >= 768;
       map.fitBounds(bounds, {
-        paddingTopLeft: [48, 84],
-        paddingBottomRight: [48, 120],
+        paddingTopLeft: isDesktop ? [396, 96] : [36, 152],
+        paddingBottomRight: [56, 128],
         maxZoom: 16,
       });
     }
@@ -368,7 +369,7 @@ export function ArtisanMap({
 
       {/* Thanh thông tin lộ trình GPS khi đang vẽ đường đi */}
       {(routeInfo || isRouting) && selectedArtisan && (
-        <div className="absolute top-3 left-3 right-16 lg:top-4 lg:left-4 lg:right-auto lg:max-w-md z-[450] pointer-events-auto">
+        <div className="absolute top-[132px] left-3 right-3 md:top-[76px] md:left-[372px] lg:left-[392px] md:right-auto md:max-w-md z-[450] pointer-events-auto">
           <div className="bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-[0_8px_24px_rgba(37,41,46,0.12)] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-8 h-8 rounded-xl bg-[#FDF0E9] text-[#D46534] border border-[#D46534]/20 flex items-center justify-center shrink-0">
@@ -438,10 +439,10 @@ export function ArtisanMap({
         </div>
       )}
 
-      {/* Nút định vị GPS nổi trên bản đồ */}
-      <div className="absolute right-3 bottom-32 lg:bottom-28 z-[450] flex flex-col items-end gap-2">
+      {/* Cụm nút Zoom (+/-) & Định vị GPS tối giản ở góc dưới bên phải */}
+      <div className="absolute right-3.5 md:right-4 bottom-36 md:bottom-20 lg:bottom-6 z-[450] flex flex-col items-end gap-2.5 pointer-events-none">
         {gpsError && !userLocation && (
-          <div className="max-w-[235px] bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md p-2.5 text-[11px] text-[#615D57] space-y-1.5">
+          <div className="pointer-events-auto max-w-[235px] bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md p-2.5 text-[11px] text-[#615D57] space-y-1.5">
             <p className="leading-snug">{gpsError}</p>
             <button
               type="button"
@@ -449,37 +450,66 @@ export function ArtisanMap({
               className="w-full min-h-[36px] px-2.5 py-1.5 rounded-xl bg-[#1B3B82] hover:bg-[#142D66] text-[#F7F2E8] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Dùng mốc trung tâm Q.1</span>
+              <span>Dùng mốc trung tâm TP.HCM</span>
             </button>
           </div>
         )}
 
+        {/* Nút định vị GPS tròn tối giản */}
         <button
           type="button"
           onClick={onLocateUser}
           disabled={isLocating}
-          title="Định vị GPS của tôi"
-          className={`min-h-[42px] px-3.5 py-2 rounded-xl border inline-flex items-center gap-2 text-xs font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] ${
-            userLocation
-              ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82] shadow-md'
-              : 'bg-white/95 text-[#25292E] border-[#E8DFD1] shadow-md hover:border-[#1B3B82] hover:text-[#1B3B82]'
+          aria-label="Định vị GPS của tôi"
+          title={
+            isLocating
+              ? 'Đang dò vị trí GPS...'
+              : userLocation
+                ? userLocation.source === 'gps'
+                  ? 'Đã định vị GPS — bấm để cập nhật lại'
+                  : 'Đang dùng mốc trung tâm — bấm để dò GPS'
+                : 'Định vị GPS của tôi'
+          }
+          className={`pointer-events-auto w-10 h-10 rounded-full border inline-flex items-center justify-center transition-all duration-150 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B3B82] ${
+            userLocation?.source === 'gps'
+              ? 'bg-[#4F6B54] text-white border-[#4F6B54]'
+              : userLocation
+                ? 'bg-[#1B3B82] text-[#F7F2E8] border-[#1B3B82]'
+                : 'bg-white/95 backdrop-blur-md text-[#25292E] border-[#E8DFD1] hover:border-[#4F6B54] hover:text-[#4F6B54]'
           }`}
         >
           {isLocating ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4.5 h-4.5 animate-spin" />
           ) : (
-            <Crosshair className="w-4 h-4" />
+            <Crosshair className="w-4.5 h-4.5" />
           )}
-          <span className="whitespace-nowrap">
-            {isLocating
-              ? 'Đang dò GPS...'
-              : userLocation
-                ? userLocation.source === 'gps'
-                  ? 'Đã định vị GPS'
-                  : 'Mốc Q.1 (mẫu)'
-                : 'Định vị GPS'}
-          </span>
         </button>
+
+        {/* Cụm nút Zoom + / - tối giản */}
+        <div
+          role="group"
+          aria-label="Thu phóng bản đồ"
+          className="pointer-events-auto flex flex-col bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md overflow-hidden"
+        >
+          <button
+            type="button"
+            onClick={() => mapRef.current?.zoomIn()}
+            aria-label="Phóng to bản đồ"
+            title="Phóng to"
+            className="w-10 h-10 flex items-center justify-center text-[#25292E] hover:bg-[#F7F2E8] hover:text-[#D46534] border-b border-[#E8DFD1] transition-colors"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2.4} />
+          </button>
+          <button
+            type="button"
+            onClick={() => mapRef.current?.zoomOut()}
+            aria-label="Thu nhỏ bản đồ"
+            title="Thu nhỏ"
+            className="w-10 h-10 flex items-center justify-center text-[#25292E] hover:bg-[#F7F2E8] hover:text-[#D46534] transition-colors"
+          >
+            <Minus className="w-4 h-4" strokeWidth={2.4} />
+          </button>
+        </div>
       </div>
     </div>
   );

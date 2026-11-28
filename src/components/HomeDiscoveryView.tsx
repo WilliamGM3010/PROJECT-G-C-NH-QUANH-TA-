@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
-  ChevronDown,
   Compass,
   Footprints,
   KeyRound,
@@ -20,108 +19,72 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { DISTRICTS } from '../data/artisans';
 import { GTQT_COVER_SRC } from '../data/team';
 import type {
   AppTab,
   Article,
   Artisan,
-  CraftCategory,
   District,
   GpsPermissionStatus,
   UserLocation,
 } from '../types/artisan';
-import {
-  calculateDistanceKm,
-  formatCompactDistance,
-  normalizeVietnamese,
-} from '../utils/geo';
+import { formatCompactDistance } from '../utils/geo';
 import { sanitizeImageSrc } from '../utils/richText';
+import {
+  artisanMatchesCraftGroup,
+  searchAndRankArtisans,
+  type CraftGroupId,
+} from '../utils/searchArtisans';
 import { ArtisanIllustration } from './ArtisanIllustration';
 import { HomeMiniMap } from './HomeMiniMap';
+import { LocationSelector } from './LocationSelector';
 import { PriceComparisonModal } from './PriceComparisonModal';
 
 interface ServiceCategoryItem {
   id: string;
+  groupId: CraftGroupId;
   label: string;
   Icon: typeof Wrench;
-  categories?: CraftCategory[];
-  keywords?: string[];
 }
 
 const SERVICE_CATEGORY_ITEMS: ServiceCategoryItem[] = [
   {
     id: 'shoes',
+    groupId: 'shoes',
     label: 'Giày dép',
     Icon: Footprints,
-    categories: ['Sửa giày dép'],
-    keywords: ['giay', 'dep', 'bung de', 'bung keo', 'ho keo', 'khau de', 'got'],
   },
   {
     id: 'tailor',
+    groupId: 'tailor',
     label: 'Quần áo / May vá',
     Icon: Scissors,
-    categories: ['May vá'],
-    keywords: ['day keo', 'may va', 'len lai', 'bop eo', 'quan', 'ao', 'va'],
   },
   {
     id: 'lock',
+    groupId: 'lock',
     label: 'Chìa khóa',
     Icon: KeyRound,
-    categories: ['Sửa khóa'],
-    keywords: ['khoa', 'chia', 'o khoa', 'smartkey', 'ket'],
   },
   {
     id: 'watch',
+    groupId: 'watch',
     label: 'Đồng hồ',
     Icon: Watch,
-    categories: ['Sửa đồng hồ'],
-    keywords: ['dong ho', 'thay pin', 'day da', 'cat mat'],
   },
   {
     id: 'bag',
+    groupId: 'bag',
     label: 'Balo / Túi xách',
     Icon: ShoppingBag,
-    categories: ['Sửa balo/túi'],
-    keywords: ['balo', 'tui', 'vali', 'quai deo', 'khoa keo'],
   },
   {
     id: 'electronics',
+    groupId: 'other',
     label: 'Đồ điện & Khác',
     Icon: Wrench,
-    keywords: [
-      'do dien',
-      'quat',
-      'noi com',
-      'am sieu toc',
-      'ban ui',
-      'dien gia dung',
-      'o cam',
-    ],
   },
 ];
-
-function matchesServiceCategory(
-  artisan: Artisan,
-  item: ServiceCategoryItem
-): boolean {
-  const categoryMatch =
-    item.categories?.some((cat) => artisan.categories.includes(cat)) ?? false;
-  if (categoryMatch) return true;
-
-  const searchable = normalizeVietnamese(
-    [
-      artisan.name,
-      artisan.shortTitle,
-      ...artisan.categories,
-      ...artisan.problems,
-      ...artisan.prices.map((p) => p.service),
-      artisan.story,
-    ].join(' ')
-  );
-
-  return item.keywords?.some((kw) => searchable.includes(kw)) ?? false;
-}
 
 interface HomeDiscoveryViewProps {
   artisans: Artisan[];
@@ -186,19 +149,11 @@ export function HomeDiscoveryView({
     [artisans]
   );
 
-  const availableDistricts = useMemo(() => {
-    const set = new Set<string>(DISTRICTS);
-    for (const a of visiblePublicArtisans) {
-      if (a.district) set.add(a.district);
-    }
-    return Array.from(set);
-  }, [visiblePublicArtisans]);
-
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const item of SERVICE_CATEGORY_ITEMS) {
       map[item.id] = visiblePublicArtisans.filter((a) =>
-        matchesServiceCategory(a, item)
+        artisanMatchesCraftGroup(a, item.groupId)
       ).length;
     }
     return map;
@@ -213,9 +168,7 @@ export function HomeDiscoveryView({
   );
 
   const suggestedArtisans = useMemo(() => {
-    const queryNorm = normalizeVietnamese(searchQuery);
-
-    const matched = visiblePublicArtisans.filter((artisan) => {
+    const preFiltered = visiblePublicArtisans.filter((artisan) => {
       if (
         selectedDistrict !== 'Tất cả khu vực' &&
         artisan.district !== selectedDistrict
@@ -223,51 +176,21 @@ export function HomeDiscoveryView({
         return false;
       }
 
-      if (activeCategory && !matchesServiceCategory(artisan, activeCategory)) {
+      if (
+        activeCategory &&
+        !artisanMatchesCraftGroup(artisan, activeCategory.groupId)
+      ) {
         return false;
-      }
-
-      if (queryNorm.length > 0) {
-        const haystack = normalizeVietnamese(
-          [
-            artisan.name,
-            artisan.shortTitle,
-            artisan.district,
-            artisan.addressLandmark,
-            ...artisan.categories,
-            ...artisan.problems,
-            ...artisan.prices.map((p) => p.service),
-          ].join(' ')
-        );
-        if (!haystack.includes(queryNorm)) {
-          return false;
-        }
       }
 
       return true;
     });
 
-    const enriched = matched.map((artisan) => ({
-      artisan,
-      distanceKm:
-        hasRealGps && userLocation
-          ? calculateDistanceKm(userLocation.coords, artisan.coordinates)
-          : null,
-    }));
-
-    enriched.sort((a, b) => {
-      const aWorking = a.artisan.status === 'working' ? 0 : 1;
-      const bWorking = b.artisan.status === 'working' ? 0 : 1;
-      if (aWorking !== bWorking) return aWorking - bWorking;
-
-      if (a.distanceKm !== null && b.distanceKm !== null) {
-        return a.distanceKm - b.distanceKm;
-      }
-
-      return 0;
+    return searchAndRankArtisans(preFiltered, searchQuery, {
+      userCoords: hasRealGps && userLocation ? userLocation.coords : null,
+      sortByNearest: true,
+      preferWorkingWhenNoQuery: true,
     });
-
-    return enriched;
   }, [
     visiblePublicArtisans,
     searchQuery,
@@ -443,27 +366,21 @@ export function HomeDiscoveryView({
                     <span>Gần bạn</span>
                   </button>
                 ) : (
-                  <div className="inline-flex items-center gap-1">
-                    <div className="relative flex items-center">
-                      <select
-                        aria-label="Chọn khu vực"
-                        value={selectedDistrict}
-                        onChange={(e) =>
-                          onSelectedDistrictChange(
-                            e.target.value as District | 'Tất cả khu vực'
-                          )
-                        }
-                        className="appearance-none h-9 pl-2.5 pr-6 rounded-xl bg-[#F7F2E8] hover:bg-[#EFE7D8] text-xs font-medium text-[#25292E] cursor-pointer focus:outline-none"
-                      >
-                        <option value="Tất cả khu vực">Tất cả quận</option>
-                        {availableDistricts.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3 h-3 text-[#615D57] absolute right-2 pointer-events-none" />
-                    </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <LocationSelector
+                      mode="filter"
+                      variant="inline"
+                      align="right"
+                      value={selectedDistrict}
+                      onChange={(nextVal) =>
+                        onSelectedDistrictChange(
+                          nextVal as District | 'Tất cả khu vực'
+                        )
+                      }
+                      artisans={visiblePublicArtisans}
+                      onSuggestArtisan={() => onNavigateTab('suggest')}
+                      placeholder="Khu vực"
+                    />
                     <button
                       type="button"
                       onClick={onRequestGps}

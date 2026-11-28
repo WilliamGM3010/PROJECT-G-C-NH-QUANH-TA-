@@ -11,7 +11,11 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { CRAFT_CATEGORIES, DISTRICT_COORDS, DISTRICTS } from '../data/artisans';
+import { CRAFT_CATEGORIES } from '../data/artisans';
+import {
+  DEFAULT_HCMC_LOCATION,
+  getLocationFallbackCoords,
+} from '../data/hcmcLocations';
 import type {
   AdminAccount,
   CraftCategory,
@@ -21,6 +25,7 @@ import type {
   PendingSuggestion,
 } from '../types/artisan';
 import { formatVietnamTimestamp } from '../utils/storage';
+import { LocationSelector } from './LocationSelector';
 
 interface SuggestArtisanViewProps {
   currentUser: AdminAccount | null;
@@ -49,7 +54,7 @@ export function SuggestArtisanView({
   const [selectedCategories, setSelectedCategories] = useState<CraftCategory[]>(
     ['Sửa giày dép']
   );
-  const [district, setDistrict] = useState<District>('Bình Thạnh');
+  const [district, setDistrict] = useState<District>(DEFAULT_HCMC_LOCATION);
   const [landmark, setLandmark] = useState('');
   const [hours, setHours] = useState('08:00 – 17:30 (T2–T7)');
   const [problemsText, setProblemsText] = useState('');
@@ -127,7 +132,7 @@ export function SuggestArtisanView({
       ? cleanName
       : `${cleanName} – ${selectedCategories.join(' & ')}`;
 
-    const baseCoords = DISTRICT_COORDS[district];
+    const baseCoords = getLocationFallbackCoords(district);
     const defaultStory = isOwnerMode
       ? `[Đăng ký trực tiếp từ chính chủ/người thân] Góc nghề tại ${district}.`
       : `Địa điểm được cộng đồng Góc Thợ Quanh Ta giới thiệu tại ${district}.`;
@@ -340,20 +345,15 @@ export function SuggestArtisanView({
                       htmlFor="artisan-district"
                       className="block text-sm font-bold text-[#25292E] mb-1.5"
                     >
-                      Khu vực
+                      Phường / Xã / Đặc khu
                     </label>
-                    <select
+                    <LocationSelector
                       id="artisan-district"
+                      mode="input"
+                      variant="form"
                       value={district}
-                      onChange={(e) => setDistrict(e.target.value as District)}
-                      className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-sm text-[#25292E] focus:bg-white focus:outline-none focus:border-[#1B3B82]"
-                    >
-                      {DISTRICTS.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setDistrict(val)}
+                    />
                   </div>
 
                   <div>

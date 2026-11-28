@@ -5,7 +5,7 @@ export type CraftCategory =
   | 'Sửa đồng hồ'
   | 'Sửa balo/túi';
 
-export type District = 'Bình Thạnh' | 'Quận 1' | 'Quận 3';
+export type District = string;
 
 export type ArtisanStatus = 'working' | 'off_today' | 'relocated';
 

@@ -1,9 +1,11 @@
 import {
   CRAFT_CATEGORIES,
-  DISTRICT_COORDS,
-  DISTRICTS,
   INITIAL_ADMIN_ACCOUNTS,
 } from '../data/artisans';
+import {
+  getLocationFallbackCoords,
+  resolveLocationName,
+} from '../data/hcmcLocations';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import type {
   AdminAccount,
@@ -134,10 +136,7 @@ function safeImageUrl(value: unknown): string | undefined {
 }
 
 function normalizeDistrict(value: unknown): District {
-  const str = String(value ?? '').trim();
-  return (
-    DISTRICTS.find((d) => d.toLowerCase() === str.toLowerCase()) ?? 'Bình Thạnh'
-  );
+  return resolveLocationName(value);
 }
 
 function normalizeCategories(value: unknown): CraftCategory[] {
@@ -192,7 +191,7 @@ function normalizeStatus(value: unknown): ArtisanStatus {
 }
 
 function extractCoordinates(row: UnknownRow, district: District): { lat: number; lng: number } {
-  const fallback = DISTRICT_COORDS[district];
+  const fallback = getLocationFallbackCoords(district);
   const latDirect = Number(row.lat);
   const lngDirect = Number(row.lng);
   if (Number.isFinite(latDirect) && Number.isFinite(lngDirect) && latDirect !== 0) {
@@ -382,7 +381,8 @@ export function artisanToRow(
 export function pendingSuggestionToRow(
   suggestion: PendingSuggestion
 ): Record<string, unknown> {
-  const coords = suggestion.coordinates ?? DISTRICT_COORDS[suggestion.district];
+  const coords =
+    suggestion.coordinates ?? getLocationFallbackCoords(suggestion.district);
   const primaryCat = suggestion.categories[0] ?? 'Sửa giày dép';
   const firstPart = suggestion.name.split(/[–-]/)[0]?.trim() || suggestion.name;
 

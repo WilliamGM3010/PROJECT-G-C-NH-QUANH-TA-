@@ -10,7 +10,11 @@ import type {
   ParkingInfo,
   PaymentMethod,
 } from '../types/artisan';
-import { CRAFT_CATEGORIES, DISTRICT_COORDS, DISTRICTS } from '../data/artisans';
+import { CRAFT_CATEGORIES } from '../data/artisans';
+import {
+  getLocationFallbackCoords,
+  resolveLocationName,
+} from '../data/hcmcLocations';
 
 export const STORAGE_KEYS = {
   ARTISANS: 'gtqt_v2_artisans',
@@ -267,7 +271,7 @@ export function downloadArtisansCsvTemplate(): void {
     [
       'Cô Xuân – May Vá Nhanh',
       'May vá',
-      'Quận 3',
+      'Phường Xuân Hòa',
       '10.7834',
       '106.6872',
       'Đầu hẻm 112 Nguyễn Đình Chiểu, ngồi cạnh quán cà phê cóc',
@@ -367,7 +371,15 @@ export function parseArtisansFromCsv(csvText: string): {
 
   const idxName = findCol(['tên cô chú', 'tên', 'name']);
   const idxServices = findCol(['dịch vụ', 'category', 'nghề']);
-  const idxDistrict = findCol(['khu vực', 'quận', 'district']);
+  const idxDistrict = findCol([
+    'phường / xã / đặc khu',
+    'phường',
+    'xã',
+    'đặc khu',
+    'khu vực',
+    'quận',
+    'district',
+  ]);
   const idxLat = findCol(['vĩ độ', 'lat']);
   const idxLng = findCol(['kinh độ', 'lng']);
   const idxLandmark = findCol(['mốc nhận diện', 'địa chỉ', 'landmark']);
@@ -397,10 +409,7 @@ export function parseArtisansFromCsv(csvText: string): {
     }
 
     const rawDistrict = getCell(idxDistrict);
-    const district: District =
-      DISTRICTS.find(
-        (d) => d.toLowerCase() === rawDistrict.toLowerCase()
-      ) ?? 'Bình Thạnh';
+    const district: District = resolveLocationName(rawDistrict);
 
     const rawServices = getCell(idxServices)
       .split(/[;,]/)
@@ -416,7 +425,7 @@ export function parseArtisansFromCsv(csvText: string): {
 
     const latParsed = Number.parseFloat(getCell(idxLat));
     const lngParsed = Number.parseFloat(getCell(idxLng));
-    const fallbackCoord = DISTRICT_COORDS[district];
+    const fallbackCoord = getLocationFallbackCoords(district);
     const lat = Number.isFinite(latParsed)
       ? latParsed
       : fallbackCoord.lat + (i * 0.0004) % 0.004;

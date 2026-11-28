@@ -9,11 +9,11 @@ import {
   UserCheck,
   X,
 } from 'lucide-react';
+import { CRAFT_CATEGORIES } from '../data/artisans';
 import {
-  CRAFT_CATEGORIES,
-  DISTRICT_COORDS,
-  DISTRICTS,
-} from '../data/artisans';
+  DEFAULT_HCMC_LOCATION,
+  getLocationFallbackCoords,
+} from '../data/hcmcLocations';
 import type {
   Artisan,
   ArtisanStatus,
@@ -26,6 +26,7 @@ import type {
   PriceItem,
 } from '../types/artisan';
 import { findPotentialDuplicates } from '../utils/geo';
+import { LocationSelector } from './LocationSelector';
 import { formatVietnamDate, toIsoDate } from '../utils/storage';
 
 interface AdminArtisanFormModalProps {
@@ -75,11 +76,13 @@ export function AdminArtisanFormModal({
   onSave,
 }: AdminArtisanFormModalProps) {
   const defaultDistrict: District =
-    initialArtisan?.district ?? pendingSuggestion?.district ?? 'Bình Thạnh';
+    initialArtisan?.district ??
+    pendingSuggestion?.district ??
+    DEFAULT_HCMC_LOCATION;
   const defaultCoords =
     initialArtisan?.coordinates ??
     pendingSuggestion?.coordinates ??
-    DISTRICT_COORDS[defaultDistrict];
+    getLocationFallbackCoords(defaultDistrict);
 
   const [name, setName] = useState(
     initialArtisan?.name ?? pendingSuggestion?.name ?? ''
@@ -176,7 +179,7 @@ export function AdminArtisanFormModal({
   const handleDistrictChange = (nextDistrict: District) => {
     setDistrict(nextDistrict);
     if (mode === 'create') {
-      const preset = DISTRICT_COORDS[nextDistrict];
+      const preset = getLocationFallbackCoords(nextDistrict);
       setLatStr(String(preset.lat));
       setLngStr(String(preset.lng));
     }
@@ -412,19 +415,14 @@ export function AdminArtisanFormModal({
 
             <div>
               <label className="block text-xs font-semibold text-[#162442] mb-1">
-                Khu vực
+                Phường / Xã / Đặc khu
               </label>
-              <select
+              <LocationSelector
+                mode="input"
+                variant="form"
                 value={district}
-                onChange={(e) => handleDistrictChange(e.target.value as District)}
-                className="w-full min-h-[42px] px-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
-              >
-                {DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => handleDistrictChange(val)}
+              />
             </div>
 
             <div>

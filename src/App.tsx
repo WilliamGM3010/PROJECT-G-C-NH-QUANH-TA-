@@ -10,18 +10,17 @@ import {
   ExternalLink,
   Heart,
   Loader2,
+  LocateFixed,
   LogIn,
   LogOut,
   MapPin,
   Navigation,
   Phone,
-  Recycle,
   RefreshCw,
   RotateCcw,
   Search,
   ShieldAlert,
   ShieldCheck,
-  SlidersHorizontal,
   Tag,
   WifiOff,
   X,
@@ -32,7 +31,6 @@ import {
   CRAFT_CATEGORIES,
   DEFAULT_REVIVED_ITEMS_COUNT,
   DEFAULT_USER_CONTRIBUTION,
-  DISTRICTS,
   FALLBACK_NEARBY_LOCATION,
   INITIAL_ADMIN_ACCOUNTS,
   INITIAL_ARTISANS,
@@ -40,7 +38,6 @@ import {
   INITIAL_PENDING_SUGGESTIONS,
   INITIAL_STATUS_REPORTS,
   INITIAL_THANK_YOU_NOTES,
-  QUICK_PROBLEM_CHIPS,
 } from './data/artisans';
 import type {
   AdminAccount,
@@ -72,8 +69,8 @@ import {
   calculateDistanceKm,
   fetchStreetRoute,
   formatDistanceWithPrefix,
-  normalizeVietnamese,
 } from './utils/geo';
+import { searchAndRankArtisans } from './utils/searchArtisans';
 import {
   canAccessAdminDashboard,
   formatVietnamDate,
@@ -135,9 +132,9 @@ import { BadgeModal, evaluateUserBadges } from './components/BadgeModal';
 import { CommunityView } from './components/CommunityView';
 import { CraftsmanProfileView } from './components/CraftsmanProfileView';
 import { HomeDiscoveryView } from './components/HomeDiscoveryView';
+import { LocationSelector } from './components/LocationSelector';
 import { QrDirectionsModal, StatusReportModal } from './components/Modals';
 import {
-  AccountMenuDropdown,
   DesktopNavbar,
   MobileBottomNav,
   MobileTopHeader,
@@ -877,11 +874,9 @@ export default function App() {
     [articles, readingArticleKey]
   );
 
-  // Lọc & sắp xếp danh sách người thợ công khai
+  // Lọc & sắp xếp danh sách người thợ công khai dùng chung thuật toán tìm kiếm thông minh Việt–Anh
   const filteredArtisans = useMemo(() => {
-    const queryNorm = normalizeVietnamese(searchQuery);
-
-    const matched = publicArtisans.filter((artisan) => {
+    const preFiltered = publicArtisans.filter((artisan) => {
       if (
         selectedCategory !== 'Tất cả' &&
         !artisan.categories.includes(selectedCategory)
@@ -900,34 +895,13 @@ export default function App() {
         return false;
       }
 
-      if (queryNorm.length > 0) {
-        const haystack = normalizeVietnamese(
-          [
-            artisan.name,
-            artisan.district,
-            artisan.addressLandmark,
-            artisan.paymentMethod,
-            artisan.parkingInfo,
-            ...artisan.categories,
-            ...artisan.problems,
-            ...artisan.prices.map((p) => p.service),
-          ].join(' ')
-        );
-        return haystack.includes(queryNorm);
-      }
-
       return true;
     });
 
-    if (userLocation && sortByNearest) {
-      return [...matched].sort(
-        (a, b) =>
-          calculateDistanceKm(userLocation.coords, a.coordinates) -
-          calculateDistanceKm(userLocation.coords, b.coordinates)
-      );
-    }
-
-    return matched;
+    return searchAndRankArtisans(preFiltered, searchQuery, {
+      userCoords: userLocation?.coords ?? null,
+      sortByNearest,
+    }).map((item) => item.artisan);
   }, [
     publicArtisans,
     searchQuery,
@@ -3106,454 +3080,170 @@ export default function App() {
         )}
 
         {activeTab === 'explore' && (
-          <div className="h-full w-full lg:flex">
+          <div className="relative w-full h-full overflow-hidden isolate">
+            {/* Bản đồ OpenStreetMap tràn toàn màn hình (Full-bleed z-0) */}
+            <div className="absolute inset-0 z-0">
+              <ArtisanMap
+                artisans={filteredArtisans}
+                selectedArtisan={selectedArtisan}
+                hoveredArtisanId={hoveredArtisanId}
+                userLocation={userLocation}
+                isLocating={isLocating}
+                gpsError={gpsError}
+                routeInfo={routeInfo}
+                isRouting={isRouting}
+                travelMode={travelMode}
+                mobileMapVisible={!mapBottomSheetExpanded}
+                onSelectArtisan={handleSelectArtisanFromMap}
+                onLocateUser={() => locateUser({ autoFallback: false })}
+                onUseDemoLocation={handleUseDemoLocation}
+                onChangeTravelMode={handleChangeTravelMode}
+                onClearRoute={() => setRouteInfo(null)}
+              />
+            </div>
+
             {/* =======================================================
-                CỘT TRÁI DESKTOP (36%, 340px–440px): Bộ lọc & Danh sách góc thợ
+                1. THANH TÌM KIẾM & BỘ LỌC NỔI PHÍA TRÊN (TOP FLOATING BAR)
                ======================================================= */}
-            <aside className="hidden lg:flex flex-col w-[36%] min-w-[340px] max-w-[440px] shrink-0 h-full bg-[#F7F2E8] border-r border-[#E8DFD1] relative overflow-hidden">
-              <div className="flex flex-col h-full">
-                {/* Thanh tóm tắt tác động + Quay lại Trang chủ */}
-                <div className="px-4 py-2.5 bg-white/80 border-b border-[#E8DFD1] flex items-center justify-between gap-2 shrink-0">
+            <div className="absolute top-3 left-3 right-3 md:top-4 md:left-4 md:right-4 z-[1000] flex flex-col md:flex-row md:items-center gap-2.5 pointer-events-none">
+              {/* Ô tìm kiếm dạng viên thuốc */}
+              <div className="pointer-events-auto w-full md:w-[340px] lg:w-[360px] shrink-0 bg-white/98 backdrop-blur-md rounded-full shadow-md border border-[#E8DFD1] px-4 py-2 flex items-center gap-2.5 focus-within:border-[#1B3B82] focus-within:ring-2 focus-within:ring-[#1B3B82]/12 transition-all">
+                <Search className="w-4 h-4 text-[#615D57] shrink-0 pointer-events-none" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm lỗi cần sửa, tên đường, phường..."
+                  aria-label="Tìm lỗi cần sửa, tên đường hoặc phường xã"
+                  className="flex-1 min-w-0 h-7 bg-transparent text-sm text-[#25292E] placeholder:text-[#8E877E] focus:outline-none"
+                />
+                {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => navigateToTab('home')}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#615D57] hover:text-[#D46534] transition-colors whitespace-nowrap shrink-0"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Xóa từ khóa tìm kiếm"
+                    className="w-6 h-6 rounded-full text-[#8E877E] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center shrink-0 transition-colors"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Trang chủ</span>
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                  <p className="font-mono text-[11px] font-semibold text-[#4F6B54] flex items-center gap-1 tabular-nums truncate">
-                    <Recycle className="w-3.5 h-3.5 shrink-0 text-[#4F6B54]" />
-                    <span>
-                      <strong className="font-bold">{revivedCount}</strong> món
-                      đồ hồi sinh
-                    </span>
-                  </p>
-                </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleToggleSortByNearest}
+                  disabled={isLocating}
+                  aria-label="Định vị GPS gần tôi nhất"
+                  title={
+                    userLocation?.source === 'gps'
+                      ? 'Đã định vị GPS — bấm để xếp theo khoảng cách gần nhất'
+                      : 'Định vị gần tôi nhất'
+                  }
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                    userLocation?.source === 'gps'
+                      ? 'bg-[#EDF3EE] text-[#4F6B54] border border-[#4F6B54]/30'
+                      : sortByNearest
+                        ? 'bg-[#FDF0E9] text-[#D46534] border border-[#D46534]/30'
+                        : 'text-[#615D57] hover:text-[#4F6B54] hover:bg-[#F7F2E8]'
+                  }`}
+                >
+                  {isLocating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LocateFixed className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
 
-                {/* Khối Tìm kiếm theo vấn đề & Bộ lọc thông minh */}
-                <div className="p-4 bg-white border-b border-[#E8DFD1] space-y-3 shrink-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-medium text-[#615D57]">
-                      Hỏng đâu tìm đó – Quanh khu vực của bạn
-                    </p>
-                    <span className="font-mono text-xs font-bold text-[#1B3B82] tabular-nums">
-                      {filteredArtisans.length} góc thợ
-                    </span>
-                  </div>
-
-                  {/* Ô tìm kiếm theo vấn đề */}
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-[#D46534] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Tìm lỗi cần sửa (bung đế, lên lai, thay khóa...)"
-                      className="w-full h-11 pl-10 pr-9 rounded-xl bg-[#F7F2E8]/75 border border-[#E8DFD1] text-sm text-[#25292E] placeholder:text-[#8E8880] focus:bg-white focus:outline-none focus:border-[#D46534] focus:ring-2 focus:ring-[#D46534]/15 transition-all"
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        aria-label="Xóa từ khóa"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-[#8E8880] hover:text-[#25292E] hover:bg-[#EFE8DC] flex items-center justify-center"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Chip gợi ý vấn đề nhanh */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                    {QUICK_PROBLEM_CHIPS.map((problem) => {
-                      const active =
-                        normalizeVietnamese(searchQuery) ===
-                        normalizeVietnamese(problem);
-                      return (
-                        <button
-                          key={problem}
-                          type="button"
-                          onClick={() => setSearchQuery(active ? '' : problem)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 transition-colors ${
-                            active
-                              ? 'bg-[#D46534] text-white'
-                              : 'bg-[#F7F2E8] border border-[#E8DFD1] text-[#615D57] hover:border-[#D46534]/45 hover:text-[#D46534]'
-                          }`}
-                        >
-                          {problem}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Thanh chip: Gần tôi nhất + Danh mục trượt ngang */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto thin-scrollbar pb-1">
+              {/* Hàng Chip bộ lọc cuộn ngang mượt ngay bên phải */}
+              <div className="pointer-events-auto flex-1 min-w-0 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {CRAFT_CATEGORIES.map((category) => {
+                  const active = selectedCategory === category;
+                  const activeTone: Record<CraftCategory, string> = {
+                    'Sửa giày dép':
+                      'bg-[#D46534] border-[#D46534] text-white shadow-sm',
+                    'May vá':
+                      'bg-[#DCE7F7] border-[#1B3B82]/35 text-[#1B3B82] shadow-sm',
+                    'Sửa khóa':
+                      'bg-[#EFE4D2] border-[#8A673B]/35 text-[#4A3519] shadow-sm',
+                    'Sửa đồng hồ':
+                      'bg-[#E5EFE7] border-[#4F6B54]/40 text-[#2E4A34] shadow-sm',
+                    'Sửa balo/túi':
+                      'bg-[#F6E2D6] border-[#B93818]/35 text-[#8E2E14] shadow-sm',
+                  };
+                  return (
                     <button
+                      key={category}
                       type="button"
-                      onClick={handleToggleSortByNearest}
-                      aria-pressed={sortByNearest}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 inline-flex items-center gap-1 transition-colors ${
-                        sortByNearest
-                          ? 'bg-[#D46534] text-white shadow-xs'
-                          : 'bg-[#FDF0E9] border border-[#D46534]/30 text-[#D46534] hover:bg-[#FAE2D6]'
+                      aria-pressed={active}
+                      onClick={() =>
+                        setSelectedCategory(active ? 'Tất cả' : category)
+                      }
+                      className={`h-9 rounded-full px-3.5 text-xs md:text-sm font-medium transition-all shrink-0 inline-flex items-center gap-1.5 border ${
+                        active
+                          ? activeTone[category]
+                          : 'bg-white/95 backdrop-blur-sm border-[#25292E]/25 text-[#25292E] hover:border-[#25292E]/60 shadow-xs'
                       }`}
                     >
-                      {isLocating && sortByNearest ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Navigation className="w-3 h-3" />
-                      )}
-                      <span>Gần tôi nhất</span>
+                      <span className="whitespace-nowrap">{category}</span>
+                      {active && <X className="w-3.5 h-3.5 opacity-85 shrink-0" />}
                     </button>
+                  );
+                })}
 
-                    {(['Tất cả', ...CRAFT_CATEGORIES] as const).map(
-                      (category) => {
-                        const active = selectedCategory === category;
-                        return (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => setSelectedCategory(category)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
-                              active
-                                ? 'bg-[#1B3B82] text-white'
-                                : 'bg-white border border-[#E8DFD1] text-[#615D57] hover:border-[#1B3B82]/40 hover:text-[#1B3B82]'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
+                {/* Combobox chọn Phường / Xã / Đặc khu (168 đơn vị TP.HCM) */}
+                <LocationSelector
+                  mode="filter"
+                  variant="pill"
+                  value={selectedDistrict}
+                  onChange={(nextVal) =>
+                    setSelectedDistrict(nextVal as District | 'Tất cả khu vực')
+                  }
+                  artisans={publicArtisans}
+                  onSuggestArtisan={() => handleNavigateTab('suggest')}
+                  placeholder="Khu vực"
+                />
 
-                  {/* Lọc khu vực, Toggle Đang làm việc & Nút So sánh giá */}
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <select
-                      aria-label="Lọc theo khu vực"
-                      value={selectedDistrict}
-                      onChange={(e) =>
-                        setSelectedDistrict(
-                          e.target.value as District | 'Tất cả khu vực'
-                        )
-                      }
-                      className="h-9 px-3 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8]/80 text-xs font-semibold text-[#25292E] focus:outline-none focus:border-[#D46534]"
-                    >
-                      <option value="Tất cả khu vực">Tất cả khu vực</option>
-                      {DISTRICTS.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="flex items-center gap-2.5">
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={onlyWorking}
-                          onChange={(e) => setOnlyWorking(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <span className="w-8 h-4.5 rounded-full bg-[#DDD2C2] peer-checked:bg-[#4F6B54] relative transition-colors after:content-[''] after:w-3.5 after:h-3.5 after:rounded-full after:bg-white after:shadow-xs after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-3.5 after:transition-transform" />
-                        <span className="text-xs font-semibold text-[#25292E] whitespace-nowrap">
-                          Đang mở
-                        </span>
-                      </label>
-
-                      <button
-                        type="button"
-                        onClick={() => setMapPriceModalOpen(true)}
-                        title="So sánh chi phí sửa chữa và mua mới"
-                        className="h-9 px-2.5 rounded-xl bg-[#FDF0E9] hover:bg-[#FAE2D6] border border-[#D46534]/25 text-[#D46534] text-[11px] font-semibold inline-flex items-center gap-1 whitespace-nowrap transition-colors"
-                      >
-                        <Tag className="w-3.5 h-3.5" />
-                        <span>So giá</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Danh sách thẻ người thợ cuộn dọc */}
-                <div className="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-3">
-                  {isLoadingPublicData ? (
-                    <div className="rounded-2xl bg-white border border-[#E8DFD1] p-6 text-center space-y-2.5 mt-4">
-                      <Loader2 className="w-6 h-6 text-[#D46534] animate-spin mx-auto" />
-                      <p className="font-display text-sm font-bold text-[#25292E]">
-                        Đang tải danh sách cô chú thợ...
-                      </p>
-                      <p className="text-xs text-[#615D57]">
-                        Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu.
-                      </p>
-                    </div>
-                  ) : publicDbError ? (
-                    <div
-                      role="alert"
-                      className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/25 p-5 text-center space-y-3 mt-4"
-                    >
-                      <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
-                      <div className="space-y-1">
-                        <p className="font-display text-sm font-bold text-[#B93818]">
-                          Không thể tải dữ liệu
-                        </p>
-                        <p className="text-xs text-[#7A2B1B] leading-relaxed">
-                          {publicDbError}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void loadPublicArtisans()}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#992C12] text-white text-xs font-bold transition-colors"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Thử tải lại</span>
-                      </button>
-                    </div>
-                  ) : filteredArtisans.length === 0 ? (
-                    <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-6 text-center space-y-3 mt-4">
-                      <MapPin className="w-8 h-8 text-[#D46534]/65 mx-auto" />
-                      <div className="space-y-1">
-                        <p className="font-display text-sm font-bold text-[#25292E]">
-                          {publicArtisans.length === 0 && isSupabaseConfigured
-                            ? 'Chưa có cô chú thợ nào trên bản đồ'
-                            : 'Chưa tìm thấy góc thợ phù hợp'}
-                        </p>
-                        <p className="text-xs text-[#615D57] leading-relaxed">
-                          {publicArtisans.length === 0 && isSupabaseConfigured
-                            ? 'Quản trị viên có thể vào mục Quản trị để nạp dữ liệu vào hệ thống.'
-                            : 'Thử xóa bớt bộ lọc hoặc tìm từ khóa ngắn hơn như “giày”, “quần”, “khóa” nhé.'}
-                        </p>
-                      </div>
-                      {hasActiveFilters && (
-                        <button
-                          type="button"
-                          onClick={handleResetFilters}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold transition-colors"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Đặt lại bộ lọc</span>
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    filteredArtisans.map((artisan) => (
-                      <ArtisanCard
-                        key={artisan.id}
-                        artisan={artisan}
-                        isSelected={selectedArtisanId === artisan.id}
-                        isHovered={hoveredArtisanId === artisan.id}
-                        isFavorite={favoriteIdsSet.has(artisan.id)}
-                        distanceKm={getDistanceForArtisan(artisan)}
-                        onSelect={handleSelectArtisanFromList}
-                        onHoverChange={setHoveredArtisanId}
-                        onToggleFavorite={(id) => void handleToggleFavorite(id)}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            </aside>
-
-            {/* =======================================================
-                CỘT PHẢI DESKTOP & TOÀN MÀN HÌNH MOBILE: BẢN ĐỒ OSM + FLOATING CARD + BOTTOM SHEET
-               ======================================================= */}
-            <section className="relative flex-1 h-full w-full">
-              {/* Thanh tìm kiếm & bộ lọc nổi gọn phía trên cho Mobile */}
-              <div className="lg:hidden absolute top-0 left-0 right-0 z-[440] p-3 pointer-events-none space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => navigateToTab('home')}
-                    className="pointer-events-auto h-9 px-3 rounded-xl bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-xs font-semibold text-[#25292E] hover:text-[#D46534] inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Trang chủ</span>
-                  </button>
-
-                  <div className="pointer-events-auto flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setMapPriceModalOpen(true)}
-                      className="h-9 px-2.5 rounded-xl bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-[#D46534] text-xs font-semibold inline-flex items-center gap-1"
-                    >
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>So giá</span>
-                    </button>
-
-                    {currentUser ? (
-                      <AccountMenuDropdown
-                        compact
-                        currentUser={currentUser}
-                        badgeEmoji={badgeSummary.highestUnlocked?.emoji ?? '🏅'}
-                        favoritesCount={savedArtisans.length}
-                        contributionsCount={userContributions.length}
-                        pendingCount={pendingSuggestions.length}
-                        onOpenBadge={handleOpenBadgeModal}
-                        onOpenSaved={() => setSavedModalOpen(true)}
-                        onOpenContributions={() => {
-                          setContributionsModalOpen(true);
-                          void loadUserContributions(currentUser);
-                        }}
-                        onSuggestArtisan={() => handleNavigateTab('suggest')}
-                        onOpenAdmin={handleOpenAdmin}
-                        onLogout={handleLogout}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => openAuthModal()}
-                        className="h-9 px-3.5 rounded-full bg-white/95 backdrop-blur-md hover:bg-[#1B3B82] text-[#1B3B82] hover:text-white border border-[#1B3B82]/30 shadow-sm text-xs font-semibold whitespace-nowrap transition-colors"
-                      >
-                        Đăng nhập
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pointer-events-auto flex items-center gap-2 bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md px-3 py-1.5">
-                  <Search className="w-4 h-4 text-[#D46534] shrink-0" />
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Bạn cần sửa gì? (bung đế, lên lai...)"
-                    className="flex-1 min-w-0 h-9 bg-transparent text-sm text-[#25292E] placeholder:text-[#8E8880] focus:outline-none"
+                {/* Chip gạt Đang làm việc */}
+                <button
+                  type="button"
+                  aria-pressed={onlyWorking}
+                  onClick={() => setOnlyWorking((prev) => !prev)}
+                  className={`h-9 rounded-full px-3.5 text-xs md:text-sm font-medium transition-all shrink-0 inline-flex items-center gap-1.5 border ${
+                    onlyWorking
+                      ? 'bg-[#4F6B54] border-[#4F6B54] text-white shadow-sm'
+                      : 'bg-white/95 backdrop-blur-sm border-[#25292E]/25 text-[#25292E] hover:border-[#25292E]/60 shadow-xs'
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      onlyWorking ? 'bg-white' : 'bg-[#4F6B54]'
+                    }`}
                   />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      aria-label="Xóa từ khóa"
-                      className="w-8 h-8 rounded-lg text-[#8E8880] flex items-center justify-center"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setMobileFiltersOpen((v) => !v)}
-                    aria-label="Mở bộ lọc khu vực và trạng thái"
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
-                      mobileFiltersOpen ||
-                      selectedDistrict !== 'Tất cả khu vực' ||
-                      onlyWorking
-                        ? 'bg-[#D46534] text-white'
-                        : 'bg-[#F7F2E8] text-[#1B3B82]'
-                    }`}
-                  >
-                    <SlidersHorizontal className="w-4 h-4" />
-                  </button>
-                </div>
+                  <span className="whitespace-nowrap">Đang làm việc</span>
+                  {onlyWorking && <X className="w-3.5 h-3.5 opacity-90 shrink-0" />}
+                </button>
 
-                {mobileFiltersOpen && (
-                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md border border-[#E8DFD1] rounded-2xl shadow-md p-3 space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <select
-                        aria-label="Chọn khu vực"
-                        value={selectedDistrict}
-                        onChange={(e) =>
-                          setSelectedDistrict(
-                            e.target.value as District | 'Tất cả khu vực'
-                          )
-                        }
-                        className="h-10 px-3 rounded-xl border border-[#E8DFD1] bg-[#F7F2E8] text-xs font-semibold text-[#25292E]"
-                      >
-                        <option value="Tất cả khu vực">Tất cả khu vực</option>
-                        {DISTRICTS.map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
+                {/* Nút viên thuốc tương phản đậm mở Modal So sánh giá */}
+                <button
+                  type="button"
+                  onClick={() => setMapPriceModalOpen(true)}
+                  title="So sánh chi phí sửa chữa và mua mới"
+                  className="h-9 rounded-full px-4 bg-[#162442] hover:bg-[#1B3B82] text-white border border-[#162442] shadow-sm text-xs md:text-sm font-semibold inline-flex items-center gap-1.5 shrink-0 transition-colors md:ml-auto"
+                >
+                  <Tag className="w-3.5 h-3.5 text-[#F2A67E]" />
+                  <span className="whitespace-nowrap">So sánh giá</span>
+                </button>
+              </div>
+            </div>
 
-                      <label className="inline-flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={onlyWorking}
-                          onChange={(e) => setOnlyWorking(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <span className="w-9 h-5 rounded-full bg-[#DDD2C2] peer-checked:bg-[#4F6B54] relative transition-colors after:content-[''] after:w-4 after:h-4 after:rounded-full after:bg-white after:absolute after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
-                        <span className="text-xs font-semibold text-[#25292E]">
-                          Đang mở
-                        </span>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                      {QUICK_PROBLEM_CHIPS.map((problem) => {
-                        const active =
-                          normalizeVietnamese(searchQuery) ===
-                          normalizeVietnamese(problem);
-                        return (
-                          <button
-                            key={problem}
-                            type="button"
-                            onClick={() =>
-                              setSearchQuery(active ? '' : problem)
-                            }
-                            className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 ${
-                              active
-                                ? 'bg-[#D46534] text-white'
-                                : 'bg-[#F7F2E8] border border-[#E8DFD1] text-[#615D57]'
-                            }`}
-                          >
-                            {problem}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Thanh chip: Gần tôi nhất + Danh mục trượt ngang */}
-                <div className="pointer-events-auto flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                  <button
-                    type="button"
-                    onClick={handleToggleSortByNearest}
-                    aria-pressed={sortByNearest}
-                    className={`min-h-[34px] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm inline-flex items-center gap-1 transition-colors ${
-                      sortByNearest
-                        ? 'bg-[#D46534] text-white'
-                        : 'bg-white/95 text-[#D46534] border border-[#D46534]/35'
-                    }`}
-                  >
-                    {isLocating && sortByNearest ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Navigation className="w-3.5 h-3.5" />
-                    )}
-                    <span>Gần tôi nhất</span>
-                  </button>
-
-                  {(['Tất cả', ...CRAFT_CATEGORIES] as const).map((category) => {
-                    const active = selectedCategory === category;
-                    return (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() => setSelectedCategory(category)}
-                        className={`min-h-[34px] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm transition-colors ${
-                          active
-                            ? 'bg-[#1B3B82] text-white'
-                            : 'bg-white/95 text-[#25292E] border border-[#E8DFD1]'
-                        }`}
-                      >
-                        {category}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Trạng thái Loading nhẹ & Lỗi mạng trên Mobile */}
+            {/* Trạng thái Loading nhẹ & Lỗi mạng trên Mobile */}
+            {(isLoadingPublicData || publicDbError) && (
+              <div className="md:hidden absolute top-[116px] left-3 right-3 z-[990] pointer-events-none flex flex-col gap-2">
                 {isLoadingPublicData && (
-                  <div className="pointer-events-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-xs font-semibold text-[#1B3B82]">
+                  <div className="pointer-events-auto self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#E8DFD1] shadow-sm text-xs font-semibold text-[#1B3B82]">
                     <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-[#D46534]" />
                     <span>Đang tải bản đồ...</span>
                   </div>
                 )}
-
                 {publicDbError && (
                   <div
                     role="alert"
@@ -3575,202 +3265,139 @@ export default function App() {
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Bản đồ tương tác Leaflet + OpenStreetMap */}
-              <div className="w-full h-full">
-                <ArtisanMap
-                  artisans={filteredArtisans}
-                  selectedArtisan={selectedArtisan}
-                  hoveredArtisanId={hoveredArtisanId}
-                  userLocation={userLocation}
-                  isLocating={isLocating}
-                  gpsError={gpsError}
-                  routeInfo={routeInfo}
-                  isRouting={isRouting}
-                  travelMode={travelMode}
-                  mobileMapVisible={!mapBottomSheetExpanded}
-                  onSelectArtisan={handleSelectArtisanFromMap}
-                  onLocateUser={() => locateUser({ autoFallback: false })}
-                  onUseDemoLocation={handleUseDemoLocation}
-                  onChangeTravelMode={handleChangeTravelMode}
-                  onClearRoute={() => setRouteInfo(null)}
-                />
+            {/* =======================================================
+                2. BẢNG KẾT QUẢ NỔI BÊN TRÁI (FLOATING RESULTS PANEL — DESKTOP)
+               ======================================================= */}
+            <aside className="hidden md:flex flex-col absolute left-4 top-[76px] bottom-20 lg:bottom-4 w-[340px] lg:w-[360px] z-[999] bg-[#FAF6EE]/95 backdrop-blur-md rounded-3xl shadow-xl border border-[#E8DFD1] overflow-hidden">
+              {/* Header bảng kết quả */}
+              <div className="px-4 py-3.5 border-b border-[#E8DFD1] bg-white/75 flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <h2 className="font-display text-base font-extrabold text-[#25292E] tracking-tight">
+                    Kết quả
+                  </h2>
+                  <span className="font-mono text-xs font-semibold text-[#615D57] tabular-nums whitespace-nowrap">
+                    {filteredArtisans.length} góc thợ
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleToggleSortByNearest}
+                    aria-pressed={sortByNearest}
+                    className={`h-7 px-2.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 transition-colors whitespace-nowrap ${
+                      sortByNearest
+                        ? 'bg-[#FDF0E9] text-[#D46534] border border-[#D46534]/30'
+                        : 'bg-[#F7F2E8] text-[#615D57] hover:text-[#25292E] border border-[#E8DFD1]'
+                    }`}
+                  >
+                    <Navigation className="w-3 h-3" />
+                    <span>Gần nhất</span>
+                  </button>
+
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      title="Đặt lại bộ lọc"
+                      className="h-7 px-2 rounded-full text-[11px] font-semibold text-[#B93818] hover:bg-[#B93818]/10 transition-colors whitespace-nowrap"
+                    >
+                      Xóa lọc
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* =======================================================
-                  DESKTOP FLOATING DETAIL CARD (góc dưới-trái trên bản đồ)
-                 ======================================================= */}
-              {selectedArtisan && (
-                <div className="hidden lg:block absolute left-5 bottom-5 z-[460] w-[392px] max-w-[calc(100%-2.5rem)]">
-                  <div className="rounded-3xl bg-white/98 backdrop-blur-md border border-[#E8DFD1] shadow-2xl overflow-hidden">
-                    <div className="p-4 space-y-3.5">
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
-                          <ArtisanIllustration
-                            variant={selectedArtisan.illustrationVariant}
-                            customImageUrl={
-                              selectedArtisan.hidePortrait
-                                ? undefined
-                                : selectedArtisan.customImageUrl
-                            }
-                            alt={selectedArtisan.name}
-                          />
-                        </div>
-
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-display text-base font-bold text-[#25292E] leading-snug line-clamp-2">
-                              {selectedArtisan.name}
-                            </h3>
-                            <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-1">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleToggleFavorite(selectedArtisan.id)
-                                }
-                                aria-label={
-                                  favoriteIdsSet.has(selectedArtisan.id)
-                                    ? 'Bỏ lưu góc thợ'
-                                    : 'Lưu góc thợ'
-                                }
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                                  favoriteIdsSet.has(selectedArtisan.id)
-                                    ? 'text-[#B93818] bg-[#B93818]/10'
-                                    : 'text-[#8E8880] hover:text-[#B93818] hover:bg-[#F7F2E8]'
-                                }`}
-                              >
-                                <Heart
-                                  className={`w-4 h-4 ${
-                                    favoriteIdsSet.has(selectedArtisan.id)
-                                      ? 'fill-current'
-                                      : ''
-                                  }`}
-                                />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={handleCloseSelectedArtisan}
-                                aria-label="Đóng thẻ xem nhanh"
-                                className="w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center transition-colors"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-                            {miniCardStatus && (
-                              <span
-                                className={`inline-flex items-center gap-1 font-semibold ${miniCardStatus.textClass}`}
-                              >
-                                {miniCardStatus.label}
-                              </span>
-                            )}
-                            {typeof miniCardDistance === 'number' && (
-                              <>
-                                <span className="text-[#DDD2C2]">·</span>
-                                <span className="font-mono font-semibold text-[#1B3B82] tabular-nums">
-                                  {formatDistanceWithPrefix(miniCardDistance)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-
-                          <p className="text-xs text-[#615D57] line-clamp-1 flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-[#D46534] shrink-0" />
-                            <span className="truncate">
-                              {selectedArtisan.addressLandmark}
-                            </span>
-                          </p>
-
-                          <p className="text-[11px] text-[#615D57] flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-[#8E8880] shrink-0" />
-                            <span className="truncate">
-                              {selectedArtisan.hours}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Tóm tắt giá 2 dịch vụ tiêu biểu */}
-                      {selectedArtisan.prices.length > 0 && (
-                        <div className="rounded-2xl bg-[#F7F2E8]/80 border border-dashed border-[#DDD2C2] px-3 py-2 space-y-1">
-                          {selectedArtisan.prices.slice(0, 2).map((item) => (
-                            <div
-                              key={item.service}
-                              className="flex items-center justify-between gap-2 text-xs"
-                            >
-                              <span className="text-[#615D57] truncate">
-                                {item.service}
-                              </span>
-                              <span className="font-mono font-semibold text-[#D46534] tabular-nums shrink-0">
-                                {item.priceRange}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Các nút hành động trực tiếp */}
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={buildGoogleMapsDirectionsUrl(
-                            selectedArtisan.coordinates,
-                            userLocation?.coords,
-                            travelMode
-                          )}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 h-10 px-3 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
-                        >
-                          <span>Chỉ đường</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-
-                        {selectedArtisan.phone ? (
-                          <a
-                            href={`tel:${selectedArtisan.phone.replace(/\s+/g, '')}`}
-                            className="h-10 px-3 rounded-xl bg-[#EDF3EE] hover:bg-[#DFEBDF] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            <span>Gọi điện</span>
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleDrawRouteFromDetail(selectedArtisan)
-                            }
-                            className="h-10 px-3 rounded-xl bg-[#EEF2FA] hover:bg-[#E1E9F8] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            <span>Vẽ đường</span>
-                          </button>
-                        )}
-                      </div>
-
+              {/* Danh sách thẻ người thợ cuộn dọc */}
+              <div className="flex-1 overflow-y-auto thin-scrollbar p-3 space-y-2.5">
+                {isLoadingPublicData ? (
+                  <div className="rounded-2xl bg-white border border-[#E8DFD1] p-6 text-center space-y-2.5 mt-3">
+                    <Loader2 className="w-6 h-6 text-[#D46534] animate-spin mx-auto" />
+                    <p className="font-display text-sm font-bold text-[#25292E]">
+                      Đang tải danh sách cô chú thợ...
+                    </p>
+                    <p className="text-xs text-[#615D57]">
+                      Đang đồng bộ dữ liệu trực tuyến từ cơ sở dữ liệu.
+                    </p>
+                  </div>
+                ) : publicDbError ? (
+                  <div
+                    role="alert"
+                    className="rounded-2xl bg-[#B93818]/8 border border-[#B93818]/25 p-5 text-center space-y-3 mt-3"
+                  >
+                    <WifiOff className="w-7 h-7 text-[#B93818] mx-auto" />
+                    <div className="space-y-1">
+                      <p className="font-display text-sm font-bold text-[#B93818]">
+                        Không thể tải dữ liệu
+                      </p>
+                      <p className="text-xs text-[#7A2B1B] leading-relaxed">
+                        {publicDbError}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void loadPublicArtisans()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B93818] hover:bg-[#992C12] text-white text-xs font-bold transition-colors"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Thử tải lại</span>
+                    </button>
+                  </div>
+                ) : filteredArtisans.length === 0 ? (
+                  <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-6 text-center space-y-3 mt-3">
+                    <MapPin className="w-8 h-8 text-[#D46534]/65 mx-auto" />
+                    <div className="space-y-1">
+                      <p className="font-display text-sm font-bold text-[#25292E]">
+                        {publicArtisans.length === 0 && isSupabaseConfigured
+                          ? 'Chưa có cô chú thợ nào trên bản đồ'
+                          : 'Chưa tìm thấy góc thợ phù hợp'}
+                      </p>
+                      <p className="text-xs text-[#615D57] leading-relaxed">
+                        {publicArtisans.length === 0 && isSupabaseConfigured
+                          ? 'Quản trị viên có thể vào mục Quản trị để nạp dữ liệu vào hệ thống.'
+                          : 'Thử xóa bớt bộ lọc hoặc gõ từ khóa tự nhiên như “may áo”, “hở keo giày”, “lên lai” nhé.'}
+                      </p>
+                    </div>
+                    {hasActiveFilters && (
                       <button
                         type="button"
-                        onClick={() => handleOpenArtisanProfile(selectedArtisan)}
-                        className="w-full h-10 px-4 rounded-xl bg-[#25292E] hover:bg-[#1B3B82] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
+                        onClick={handleResetFilters}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold transition-colors"
                       >
-                        <span>Xem hồ sơ & câu chuyện</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Đặt lại bộ lọc</span>
                       </button>
-                    </div>
+                    )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  filteredArtisans.map((artisan) => (
+                    <ArtisanCard
+                      key={artisan.id}
+                      artisan={artisan}
+                      isSelected={selectedArtisanId === artisan.id}
+                      isHovered={hoveredArtisanId === artisan.id}
+                      isFavorite={favoriteIdsSet.has(artisan.id)}
+                      distanceKm={getDistanceForArtisan(artisan)}
+                      onSelect={handleSelectArtisanFromList}
+                      onHoverChange={setHoveredArtisanId}
+                      onToggleFavorite={(id) => void handleToggleFavorite(id)}
+                    />
+                  ))
+                )}
+              </div>
+            </aside>
 
-              {/* =======================================================
-                  MOBILE BOTTOM SHEET (2 trạng thái + Thẻ xem nhanh cô chú)
-                 ======================================================= */}
-              <div className="lg:hidden fixed left-0 right-0 bottom-16 z-[460] px-2.5 pb-2 pointer-events-none">
-                {selectedArtisan ? (
-                  <div className="pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl p-3.5 space-y-3">
-                    <div className="w-10 h-1 rounded-full bg-[#DDD2C2] mx-auto" />
-                    <div className="flex items-start gap-3">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
+            {/* =======================================================
+                3. DESKTOP FLOATING QUICK-DETAIL CARD (ngay cạnh bảng kết quả)
+               ======================================================= */}
+            {selectedArtisan && (
+              <div className="hidden md:block absolute left-[372px] lg:left-[392px] bottom-20 lg:bottom-4 z-[998] w-[372px] max-w-[calc(100%-410px)]">
+                <div className="rounded-3xl bg-white/98 backdrop-blur-md border border-[#E8DFD1] shadow-2xl overflow-hidden">
+                  <div className="p-4 space-y-3.5">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-22 h-22 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
                         <ArtisanIllustration
                           variant={selectedArtisan.illustrationVariant}
                           customImageUrl={
@@ -3784,48 +3411,103 @@ export default function App() {
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-display text-sm font-bold text-[#25292E] leading-snug line-clamp-2">
+                          <h3 className="font-display text-base font-bold text-[#25292E] leading-snug line-clamp-2">
                             {selectedArtisan.name}
                           </h3>
-                          <button
-                            type="button"
-                            onClick={handleCloseSelectedArtisan}
-                            aria-label="Đóng thẻ xem nhanh"
-                            className="w-8 h-8 -mr-1 -mt-1 rounded-lg text-[#8E8880] hover:text-[#25292E] flex items-center justify-center shrink-0"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void handleToggleFavorite(selectedArtisan.id)
+                              }
+                              aria-label={
+                                favoriteIdsSet.has(selectedArtisan.id)
+                                  ? 'Bỏ lưu góc thợ'
+                                  : 'Lưu góc thợ'
+                              }
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                favoriteIdsSet.has(selectedArtisan.id)
+                                  ? 'text-[#B93818] bg-[#B93818]/10'
+                                  : 'text-[#8E8880] hover:text-[#B93818] hover:bg-[#F7F2E8]'
+                              }`}
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  favoriteIdsSet.has(selectedArtisan.id)
+                                    ? 'fill-current'
+                                    : ''
+                                }`}
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCloseSelectedArtisan}
+                              aria-label="Đóng thẻ xem nhanh"
+                              className="w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] hover:bg-[#F7F2E8] flex items-center justify-center transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
                           {miniCardStatus && (
                             <span
-                              className={`font-semibold ${miniCardStatus.textClass}`}
+                              className={`inline-flex items-center gap-1 font-semibold ${miniCardStatus.textClass}`}
                             >
                               {miniCardStatus.label}
                             </span>
                           )}
                           <span className="text-[#DDD2C2]">·</span>
-                          <span className="font-mono font-semibold text-[#D46534] tabular-nums">
-                            {selectedArtisan.minPriceLabel}
+                          <span className="text-[#615D57] font-medium">
+                            {selectedArtisan.district}
                           </span>
                           {typeof miniCardDistance === 'number' && (
                             <>
                               <span className="text-[#DDD2C2]">·</span>
-                              <span className="font-mono inline-flex items-center gap-0.5 text-[#1B3B82] font-semibold tabular-nums">
-                                <Navigation className="w-3 h-3" />
+                              <span className="font-mono font-semibold text-[#1B3B82] tabular-nums">
                                 {formatDistanceWithPrefix(miniCardDistance)}
                               </span>
                             </>
                           )}
                         </div>
 
-                        <p className="text-[11px] text-[#615D57] line-clamp-1">
-                          {selectedArtisan.addressLandmark}
+                        <p className="text-xs text-[#615D57] line-clamp-1 flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-[#D46534] shrink-0" />
+                          <span className="truncate">
+                            {selectedArtisan.addressLandmark}
+                          </span>
+                        </p>
+
+                        <p className="text-[11px] text-[#615D57] flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-[#8E8880] shrink-0" />
+                          <span className="truncate">
+                            {selectedArtisan.hours}
+                          </span>
                         </p>
                       </div>
                     </div>
 
+                    {/* Tóm tắt giá 2 dịch vụ tiêu biểu */}
+                    {selectedArtisan.prices.length > 0 && (
+                      <div className="rounded-2xl bg-[#F7F2E8]/80 border border-dashed border-[#DDD2C2] px-3 py-2 space-y-1">
+                        {selectedArtisan.prices.slice(0, 2).map((item) => (
+                          <div
+                            key={item.service}
+                            className="flex items-center justify-between gap-2 text-xs"
+                          >
+                            <span className="text-[#615D57] truncate">
+                              {item.service}
+                            </span>
+                            <span className="font-mono font-semibold text-[#D46534] tabular-nums shrink-0">
+                              {item.priceRange}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Các nút hành động trực tiếp */}
                     <div className="flex items-center gap-2">
                       <a
                         href={buildGoogleMapsDirectionsUrl(
@@ -3835,7 +3517,7 @@ export default function App() {
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                        className="flex-1 h-10 px-3 rounded-xl bg-[#D46534] hover:bg-[#BC5326] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                       >
                         <span>Chỉ đường</span>
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -3844,10 +3526,10 @@ export default function App() {
                       {selectedArtisan.phone ? (
                         <a
                           href={`tel:${selectedArtisan.phone.replace(/\s+/g, '')}`}
-                          className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EDF3EE] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                          className="h-10 px-3 rounded-xl bg-[#EDF3EE] hover:bg-[#DFEBDF] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                          <span>Gọi</span>
+                          <span>Gọi điện</span>
                         </a>
                       ) : (
                         <button
@@ -3855,112 +3537,252 @@ export default function App() {
                           onClick={() =>
                             handleDrawRouteFromDetail(selectedArtisan)
                           }
-                          className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EEF2FA] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                          className="h-10 px-3 rounded-xl bg-[#EEF2FA] hover:bg-[#E1E9F8] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <Navigation className="w-3.5 h-3.5" />
                           <span>Vẽ đường</span>
                         </button>
                       )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArtisanProfile(selectedArtisan)}
-                        className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#25292E] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
-                      >
-                        <span>Xem hồ sơ</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
                     </div>
-                  </div>
-                ) : (
-                  <div
-                    className={`pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl overflow-hidden transition-all duration-300 flex flex-col ${
-                      mapBottomSheetExpanded ? 'h-[62dvh]' : 'h-auto'
-                    }`}
-                  >
+
                     <button
                       type="button"
-                      onClick={() => setMapBottomSheetExpanded((v) => !v)}
-                      className="w-full px-4 py-3 flex flex-col items-center gap-1.5 bg-white shrink-0"
+                      onClick={() => handleOpenArtisanProfile(selectedArtisan)}
+                      className="w-full h-10 px-4 rounded-xl bg-[#25292E] hover:bg-[#1B3B82] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors"
                     >
-                      <span className="w-10 h-1 rounded-full bg-[#DDD2C2]" />
-                      <div className="w-full flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-[#25292E]">
-                          {mapBottomSheetExpanded
-                            ? `Danh sách ${filteredArtisans.length} góc thợ quanh đây`
-                            : `Xem ${filteredArtisans.length} góc thợ quanh đây`}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#D46534]">
-                          {mapBottomSheetExpanded ? (
-                            <>
-                              <span>Thu gọn</span>
-                              <ChevronDown className="w-4 h-4" />
-                            </>
-                          ) : (
-                            <>
-                              <span>Mở danh sách</span>
-                              <ChevronUp className="w-4 h-4" />
-                            </>
-                          )}
-                        </span>
-                      </div>
+                      <span>Xem hồ sơ & câu chuyện</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    {mapBottomSheetExpanded && (
-                      <div className="flex-1 overflow-y-auto thin-scrollbar bg-[#F7F2E8] border-t border-[#E8DFD1] p-3 space-y-2.5">
-                        {hasActiveFilters && (
-                          <div className="flex items-center justify-between px-1">
-                            <span className="text-[11px] font-medium text-[#615D57]">
-                              Đang bật bộ lọc
+            {/* =======================================================
+                4. MOBILE BOTTOM SHEET (2 trạng thái + Thẻ xem nhanh cô chú)
+               ======================================================= */}
+            <div className="md:hidden fixed left-0 right-0 bottom-16 z-[999] px-2.5 pb-2 pointer-events-none">
+              {selectedArtisan ? (
+                <div className="pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl p-3.5 space-y-3">
+                  <div className="w-10 h-1 rounded-full bg-[#DDD2C2] mx-auto" />
+                  <div className="flex items-start gap-3">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-[#F7F2E8] border border-[#E8DFD1]">
+                      <ArtisanIllustration
+                        variant={selectedArtisan.illustrationVariant}
+                        customImageUrl={
+                          selectedArtisan.hidePortrait
+                            ? undefined
+                            : selectedArtisan.customImageUrl
+                        }
+                        alt={selectedArtisan.name}
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-display text-sm font-bold text-[#25292E] leading-snug line-clamp-2">
+                          {selectedArtisan.name}
+                        </h3>
+                        <div className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleToggleFavorite(selectedArtisan.id)
+                            }
+                            aria-label={
+                              favoriteIdsSet.has(selectedArtisan.id)
+                                ? 'Bỏ lưu góc thợ'
+                                : 'Lưu góc thợ'
+                            }
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              favoriteIdsSet.has(selectedArtisan.id)
+                                ? 'text-[#B93818]'
+                                : 'text-[#8E8880]'
+                            }`}
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${
+                                favoriteIdsSet.has(selectedArtisan.id)
+                                  ? 'fill-current'
+                                  : ''
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCloseSelectedArtisan}
+                            aria-label="Đóng thẻ xem nhanh"
+                            className="w-8 h-8 rounded-lg text-[#8E8880] hover:text-[#25292E] flex items-center justify-center shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-x-1.5 text-xs">
+                        {miniCardStatus && (
+                          <span
+                            className={`font-semibold ${miniCardStatus.textClass}`}
+                          >
+                            {miniCardStatus.label}
+                          </span>
+                        )}
+                        <span className="text-[#DDD2C2]">·</span>
+                        <span className="font-mono font-semibold text-[#D46534] tabular-nums">
+                          {selectedArtisan.minPriceLabel}
+                        </span>
+                        {typeof miniCardDistance === 'number' && (
+                          <>
+                            <span className="text-[#DDD2C2]">·</span>
+                            <span className="font-mono inline-flex items-center gap-0.5 text-[#1B3B82] font-semibold tabular-nums">
+                              <Navigation className="w-3 h-3" />
+                              {formatDistanceWithPrefix(miniCardDistance)}
                             </span>
+                          </>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-[#615D57] line-clamp-1">
+                        {selectedArtisan.district} ·{' '}
+                        {selectedArtisan.addressLandmark}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={buildGoogleMapsDirectionsUrl(
+                        selectedArtisan.coordinates,
+                        userLocation?.coords,
+                        travelMode
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                    >
+                      <span>Chỉ đường</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+
+                    {selectedArtisan.phone ? (
+                      <a
+                        href={`tel:${selectedArtisan.phone.replace(/\s+/g, '')}`}
+                        className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EDF3EE] border border-[#4F6B54]/25 text-[#4F6B54] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Gọi</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDrawRouteFromDetail(selectedArtisan)
+                        }
+                        className="min-h-[42px] px-3 py-2 rounded-xl bg-[#EEF2FA] border border-[#1B3B82]/20 text-[#1B3B82] text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                      >
+                        <Navigation className="w-3.5 h-3.5" />
+                        <span>Vẽ đường</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenArtisanProfile(selectedArtisan)}
+                      className="flex-1 min-h-[42px] px-3 py-2 rounded-xl bg-[#25292E] text-white text-xs font-semibold inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                    >
+                      <span>Xem hồ sơ</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={`pointer-events-auto rounded-3xl bg-white border border-[#E8DFD1] shadow-2xl overflow-hidden transition-all duration-300 flex flex-col ${
+                    mapBottomSheetExpanded ? 'h-[62dvh]' : 'h-auto'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setMapBottomSheetExpanded((v) => !v)}
+                    className="w-full px-4 py-3 flex flex-col items-center gap-1.5 bg-white shrink-0"
+                  >
+                    <span className="w-10 h-1 rounded-full bg-[#DDD2C2]" />
+                    <div className="w-full flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[#25292E]">
+                        {mapBottomSheetExpanded
+                          ? `Kết quả · ${filteredArtisans.length} góc thợ`
+                          : `Xem ${filteredArtisans.length} góc thợ quanh đây`}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#D46534]">
+                        {mapBottomSheetExpanded ? (
+                          <>
+                            <span>Thu gọn</span>
+                            <ChevronDown className="w-4 h-4" />
+                          </>
+                        ) : (
+                          <>
+                            <span>Mở danh sách</span>
+                            <ChevronUp className="w-4 h-4" />
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </button>
+
+                  {mapBottomSheetExpanded && (
+                    <div className="flex-1 overflow-y-auto thin-scrollbar bg-[#FAF6EE] border-t border-[#E8DFD1] p-3 space-y-2.5">
+                      {hasActiveFilters && (
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-medium text-[#615D57]">
+                            Đang bật bộ lọc
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="text-xs font-semibold text-[#D46534]"
+                          >
+                            Đặt lại bộ lọc
+                          </button>
+                        </div>
+                      )}
+
+                      {filteredArtisans.length === 0 ? (
+                        <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-5 text-center space-y-2">
+                          <p className="text-xs font-bold text-[#25292E]">
+                            Chưa tìm thấy góc thợ phù hợp
+                          </p>
+                          {hasActiveFilters && (
                             <button
                               type="button"
                               onClick={handleResetFilters}
-                              className="text-xs font-semibold text-[#D46534]"
+                              className="px-4 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold"
                             >
                               Đặt lại bộ lọc
                             </button>
-                          </div>
-                        )}
-
-                        {filteredArtisans.length === 0 ? (
-                          <div className="rounded-2xl bg-white border border-dashed border-[#DDD2C2] p-5 text-center space-y-2">
-                            <p className="text-xs font-bold text-[#25292E]">
-                              Chưa tìm thấy góc thợ phù hợp
-                            </p>
-                            {hasActiveFilters && (
-                              <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="px-4 py-2 rounded-xl bg-[#D46534] text-white text-xs font-semibold"
-                              >
-                                Đặt lại bộ lọc
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          filteredArtisans.map((artisan) => (
-                            <ArtisanCard
-                              key={artisan.id}
-                              artisan={artisan}
-                              isSelected={selectedArtisanId === artisan.id}
-                              isHovered={false}
-                              isFavorite={favoriteIdsSet.has(artisan.id)}
-                              distanceKm={getDistanceForArtisan(artisan)}
-                              onSelect={handleSelectArtisanFromList}
-                              onHoverChange={() => {}}
-                              onToggleFavorite={(id) =>
-                                void handleToggleFavorite(id)
-                              }
-                            />
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </section>
+                          )}
+                        </div>
+                      ) : (
+                        filteredArtisans.map((artisan) => (
+                          <ArtisanCard
+                            key={artisan.id}
+                            artisan={artisan}
+                            isSelected={selectedArtisanId === artisan.id}
+                            isHovered={false}
+                            isFavorite={favoriteIdsSet.has(artisan.id)}
+                            distanceKm={getDistanceForArtisan(artisan)}
+                            onSelect={handleSelectArtisanFromList}
+                            onHoverChange={() => {}}
+                            onToggleFavorite={(id) =>
+                              void handleToggleFavorite(id)
+                            }
+                          />
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

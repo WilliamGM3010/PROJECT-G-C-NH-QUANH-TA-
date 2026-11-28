@@ -37,7 +37,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { CRAFT_CATEGORIES, DISTRICTS } from '../data/artisans';
+import { CRAFT_CATEGORIES } from '../data/artisans';
 import { GTQT_LOGO_SRC } from '../data/team';
 import type {
   AdminAccount,
@@ -350,12 +350,17 @@ export function AdminDashboard({
     [thankYouNotes]
   );
 
-  // Biểu đồ thanh ngang CSS thuần
+  // Biểu đồ thanh ngang CSS thuần theo Phường / Xã / Đặc khu đang có thợ
   const districtStats = useMemo(() => {
-    const counts = DISTRICTS.map((d) => ({
-      label: d,
-      count: visibleArtisans.filter((a) => a.district === d).length,
-    }));
+    const map = new Map<string, number>();
+    for (const artisan of visibleArtisans) {
+      const label = (artisan.district || '').trim();
+      if (!label) continue;
+      map.set(label, (map.get(label) ?? 0) + 1);
+    }
+    const counts = Array.from(map.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'vi'));
     const max = Math.max(1, ...counts.map((c) => c.count));
     return counts.map((c) => ({
       ...c,
@@ -977,7 +982,7 @@ export function AdminDashboard({
                         Bảng dữ liệu cô chú thợ trên Supabase đang trống
                       </p>
                       <p className="text-[#5C564E]">
-                        Bạn có thể bấm 1 lần để đẩy sẵn 6 cô chú thợ mẫu khu vực Bình Thạnh, Quận 1, Quận 3 lên Database.
+                        Bạn có thể bấm 1 lần để đẩy sẵn 6 cô chú thợ mẫu tại các Phường trung tâm TP.HCM lên Database.
                       </p>
                     </div>
                   </div>
@@ -1515,7 +1520,7 @@ export function AdminDashboard({
                       type="search"
                       value={artisanSearch}
                       onChange={(e) => setArtisanSearch(e.target.value)}
-                      placeholder="Tìm theo tên, quận, dịch vụ, PIC hoặc mốc đường..."
+                      placeholder="Tìm theo tên, phường/xã/đặc khu, dịch vụ, PIC hoặc mốc đường..."
                       className="w-full min-h-[42px] pl-10 pr-3 py-2 rounded-xl border border-[#DFCBB5] bg-[#FDF8F2] text-sm focus:bg-white focus:outline-none focus:border-[#E86F2C]"
                     />
                   </div>

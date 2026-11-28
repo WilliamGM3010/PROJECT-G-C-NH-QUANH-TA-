@@ -97,7 +97,7 @@
 
 /* Warm-paper filter applied STRICTLY to map tiles — never markers or popups */
 .leaflet-tile-pane {
-  filter: saturate(35%) sepia(18%) brightness(103%) contrast(94%);
+  filter: saturate(30%) sepia(10%) brightness(104%) contrast(95%);
 }
 
 .artisan-div-icon {
